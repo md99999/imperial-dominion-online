@@ -50,7 +50,7 @@ endorsed by its creators or rights holders.
 | Page | Shortcode | What it is |
 | --- | --- | --- |
 | Throne Room | `[ido_throne]` | The state of the kingdom, and what one turn currently yields |
-| Lands | `[ido_lands]` | Settle wilderness, raise buildings, raze them |
+| Lands | `[ido_lands]` | Settle wilderness, raise buildings, demolish them |
 | Muster Field | `[ido_military]` | Train and disband troops |
 | War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
 | Spy Court | `[ido_covert]` | Hire an agent and send them out |

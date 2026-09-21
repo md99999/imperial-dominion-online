@@ -15,7 +15,7 @@
         var question = '';
         if (value === 'attack') {
             question = 'Send your army? Losses are permanent and the battle resolves at once.';
-        } else if (value === 'raze') {
+        } else if (value === 'demolish') {
             question = 'Pull these buildings down? Only a fraction of the cost comes back.';
         } else if (value === 'disband') {
             question = 'Disband these troops? They return to the fields as peasants.';

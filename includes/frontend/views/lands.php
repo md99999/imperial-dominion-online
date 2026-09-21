@@ -44,7 +44,7 @@ $build_days = IDO_Settings::int('build_days');
         <?php endif; ?>
     </p>
     <table class="ido-table ido-table-wide">
-        <thead><tr><th>Building</th><th class="ido-right">Standing</th><th>What it does</th><th>Order</th><th>Raze</th></tr></thead>
+        <thead><tr><th>Building</th><th class="ido-right">Standing</th><th>What it does</th><th>Order</th><th>Demolish</th></tr></thead>
         <tbody>
         <?php foreach (IDO_Buildings::all() as $key => $building) : ?>
             <tr>
@@ -59,10 +59,10 @@ $build_days = IDO_Settings::int('build_days');
                     </form>
                 </td>
                 <td>
-                    <?php echo IDO_UI::form_open('raze', 'ido-form-inline'); ?>
+                    <?php echo IDO_UI::form_open('demolish', 'ido-form-inline'); ?>
                         <input type="hidden" name="building" value="<?php echo esc_attr($key); ?>">
                         <?php echo IDO_UI::number_field('qty', 0, 0); ?>
-                        <button type="submit" class="ido-btn ido-btn-alt ido-btn-small">Raze</button>
+                        <button type="submit" class="ido-btn ido-btn-alt ido-btn-small">Demolish</button>
                     </form>
                 </td>
             </tr>
@@ -70,7 +70,7 @@ $build_days = IDO_Settings::int('build_days');
         </tbody>
     </table>
     <p class="ido-dim">
-        Razing returns <?php echo esc_html((string) IDO_Settings::int('raze_refund_percent')); ?>% of the building cost as salvage
+        Demolishing returns <?php echo esc_html((string) IDO_Settings::int('demolish_refund_percent')); ?>% of the building cost as salvage
         and hands the acres back to wilderness.
     </p>
 </div>

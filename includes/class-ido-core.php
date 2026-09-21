@@ -85,7 +85,7 @@ class IDO_Settings {
             'build_gold_per_acre'    => 300,
             'build_iron_per_acre'    => 15,
             'build_days'             => 1,
-            'raze_refund_percent'    => 20,
+            'demolish_refund_percent'    => 20,
             // War
             'target_min_percent'     => 40,
             'target_max_percent'     => 250,

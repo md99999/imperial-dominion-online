@@ -122,7 +122,7 @@ $highest_title = end($titles);
     </table>
     <p class="ido-dim">
         Settling gets harder as you grow: a scouting party finds fewer acres and charges more for each one. Razing a
-        building returns <?php echo esc_html((string) $s['raze_refund_percent']); ?>% of its cost and hands the acre
+        building returns <?php echo esc_html((string) $s['demolish_refund_percent']); ?>% of its cost and hands the acre
         back to wilderness.
     </p>
 </div>

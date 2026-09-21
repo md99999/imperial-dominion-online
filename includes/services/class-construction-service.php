@@ -67,7 +67,7 @@ class IDO_Construction {
     }
 
     /** Tears down standing buildings, returning the acres to wilderness. */
-    public static function raze(object $kingdom, string $building, int $qty): string {
+    public static function demolish(object $kingdom, string $building, int $qty): string {
         if (!IDO_Buildings::exists($building)) {
             throw new IDO_Game_Exception('No such building.');
         }
@@ -78,7 +78,7 @@ class IDO_Construction {
             throw new IDO_Game_Exception('You have none of those standing.');
         }
 
-        $refund = (int) round($qty * IDO_Settings::int('build_gold_per_acre') * IDO_Settings::int('raze_refund_percent') / 100);
+        $refund = (int) round($qty * IDO_Settings::int('build_gold_per_acre') * IDO_Settings::int('demolish_refund_percent') / 100);
         IDO_Kingdom::pay($kingdom, [$column => -$qty, 'gold' => $refund], 'Those buildings are no longer standing.');
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 

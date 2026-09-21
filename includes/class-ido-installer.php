@@ -27,8 +27,32 @@ class IDO_Installer {
 
     public static function maybe_upgrade(): void {
         if (get_option('ido_db_version') !== IDO_DB_VERSION) {
+            self::migrate_settings();
             self::install_schema();
         }
+    }
+
+    /**
+     * Carries settings across when a key is renamed, so a game master who had
+     * tuned a value does not silently get the default back.
+     */
+    private static function migrate_settings(): void {
+        $saved = get_option(IDO_Settings::OPTION);
+        if (!is_array($saved)) return;
+
+        $renamed = ['raze_refund_percent' => 'demolish_refund_percent'];
+        $changed = false;
+        foreach ($renamed as $old => $new) {
+            if (array_key_exists($old, $saved)) {
+                if (!array_key_exists($new, $saved)) {
+                    $saved[$new] = $saved[$old];
+                    $changed = true;
+                }
+                unset($saved[$old]);
+                $changed = true;
+            }
+        }
+        if ($changed) update_option(IDO_Settings::OPTION, $saved);
     }
 
     /** Runs sql/install.sql through dbDelta, substituting the table prefix. */

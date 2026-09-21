@@ -221,7 +221,7 @@ class IDO_Military {
             $ratio = $defence > 0 ? $offence / $defence : 2.0;
 
             $result = [
-                'land' => 0, 'gold' => 0, 'grain' => 0, 'iron' => 0, 'razed' => 0,
+                'land' => 0, 'gold' => 0, 'grain' => 0, 'iron' => 0, 'demolished' => 0,
             ];
             if ($won) {
                 switch ($type) {
@@ -232,7 +232,7 @@ class IDO_Military {
                         $result = array_merge($result, self::take_plunder($kingdom, $target, $ratio));
                         break;
                     case 'siege':
-                        $result['razed'] = self::raze_buildings($target, $ratio);
+                        $result['demolished'] = self::demolish_buildings($target, $ratio);
                         break;
                 }
             }
@@ -266,7 +266,9 @@ class IDO_Military {
                 'loot_gold'         => (int) $result['gold'],
                 'loot_grain'        => (int) $result['grain'],
                 'loot_iron'         => (int) $result['iron'],
-                'buildings_razed'   => (int) $result['razed'],
+                // The column keeps its original name: renaming it would cost a
+                // migration, and the word never reaches a player.
+                'buildings_razed'   => (int) $result['demolished'],
                 'attacker_report'   => implode("\n", $attacker_report),
                 'defender_report'   => implode("\n", $defender_report),
                 'created_at'        => IDO_Game::now(),
@@ -340,7 +342,7 @@ class IDO_Military {
     }
 
     /** Throws down buildings, fortifications first. */
-    private static function raze_buildings(object $target, float $ratio): int {
+    private static function demolish_buildings(object $target, float $ratio): int {
         $built = IDO_Buildings::total($target);
         if ($built < 1) return 0;
         $total = (int) round($built * 0.04 * min(1.5, max(0.6, $ratio)));
@@ -418,8 +420,8 @@ class IDO_Military {
                     IDO_Game::fmt($result['gold']), IDO_Game::fmt($result['grain']), IDO_Game::fmt($result['iron'])
                 );
             }
-            if ($result['razed'] > 0) {
-                $lines[] = sprintf('%s buildings were thrown down.', IDO_Game::fmt($result['razed']));
+            if ($result['demolished'] > 0) {
+                $lines[] = sprintf('%s buildings were thrown down.', IDO_Game::fmt($result['demolished']));
             }
         }
 

@@ -90,8 +90,8 @@ class IDO_Actions {
                 return [IDO_Economy::explore($kingdom), null];
             case 'build':
                 return [IDO_Construction::order($kingdom, self::key('building'), self::int('qty')), null];
-            case 'raze':
-                return [[IDO_Construction::raze($kingdom, self::key('building'), self::int('qty'))], null];
+            case 'demolish':
+                return [[IDO_Construction::demolish($kingdom, self::key('building'), self::int('qty'))], null];
 
             // The army
             case 'train':
