@@ -1,0 +1,240 @@
+/*
+ * Imperial Dominion Online: a terminal on a web page. The look is borrowed from
+ * the amber-and-cyan BBS screens the game descends from, drawn with CSS so it
+ * reflows on a phone instead of breaking at 80 columns.
+ */
+
+.ido-game {
+    --ido-bg: #0b0f14;
+    --ido-panel: #111823;
+    --ido-border: #1f3448;
+    --ido-text: #cfe3f2;
+    --ido-dim: #7d94a8;
+    --ido-accent: #4fd6ff;
+    --ido-amber: #ffc861;
+    --ido-good: #57d98a;
+    --ido-bad: #ff6b6b;
+
+    /* How far the game breaks out of the theme content column, each side. */
+    --ido-bleed: 10%;
+
+    box-sizing: border-box;
+    background: var(--ido-bg);
+    color: var(--ido-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 16px;
+    border: 1px solid var(--ido-border);
+    border-radius: 6px;
+}
+
+/*
+ * Game screens carry a lot of numbers, so on a desktop the box is widened 20%
+ * beyond whatever content width the theme allows, 10% out of each side, and
+ * re-centred on its own column. It never exceeds the viewport, and below the
+ * breakpoint it goes back to filling the column normally.
+ *
+ * To change how much wider it runs, set --ido-bleed: half the extra width.
+ */
+@media (min-width: 900px) {
+    .ido-game {
+        width: min(calc(100% + (var(--ido-bleed) * 2)), calc(100vw - 32px));
+        margin-left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+.ido-game a { color: var(--ido-accent); }
+
+.ido-title {
+    color: var(--ido-amber);
+    font-size: 1.25rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding-bottom: 2px;
+}
+
+.ido-subtitle {
+    color: var(--ido-dim);
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--ido-border);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+/* Status bar */
+.ido-status { margin-bottom: 12px; }
+.ido-status-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+.ido-kingdom { color: var(--ido-amber); font-weight: 700; }
+.ido-ruler { color: var(--ido-text); }
+.ido-round { color: var(--ido-dim); margin-left: auto; }
+
+.ido-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+}
+.ido-stat {
+    background: var(--ido-panel);
+    border: 1px solid var(--ido-border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+}
+.ido-stat-label { color: var(--ido-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ido-stat-value { color: var(--ido-text); font-variant-numeric: tabular-nums; }
+
+.ido-protected {
+    margin-top: 8px;
+    padding: 6px 8px;
+    border-left: 3px solid var(--ido-good);
+    background: rgba(87, 217, 138, 0.08);
+    color: var(--ido-dim);
+    font-size: 0.85rem;
+}
+
+/* Navigation */
+.ido-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--ido-border);
+    padding-bottom: 8px;
+}
+.ido-nav-item {
+    padding: 4px 10px;
+    border: 1px solid var(--ido-border);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--ido-text);
+}
+.ido-nav-item:hover { border-color: var(--ido-accent); }
+.ido-nav-current { background: var(--ido-accent); color: #04121b; border-color: var(--ido-accent); }
+
+/* Panels */
+.ido-panel {
+    background: var(--ido-panel);
+    border: 1px solid var(--ido-border);
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+.ido-panel-title {
+    color: var(--ido-amber);
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 8px;
+}
+.ido-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+.ido-columns .ido-panel { margin-bottom: 0; }
+.ido-dim { color: var(--ido-dim); font-size: 0.85rem; }
+.ido-warning { color: var(--ido-amber); }
+
+/* Tables */
+.ido-table { width: 100%; border-collapse: collapse; }
+.ido-table th, .ido-table td {
+    text-align: left;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--ido-border);
+    vertical-align: top;
+}
+.ido-table th { color: var(--ido-dim); font-weight: 600; }
+.ido-table thead th { color: var(--ido-accent); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; }
+.ido-right { text-align: right; font-variant-numeric: tabular-nums; }
+.ido-row-me { background: rgba(79, 214, 255, 0.08); }
+.ido-table-wide { display: block; overflow-x: auto; white-space: nowrap; }
+.ido-table-wide td .ido-dim { white-space: normal; }
+
+/* Forms */
+.ido-field { display: block; margin-bottom: 10px; }
+.ido-field > span { display: block; color: var(--ido-dim); font-size: 0.8rem; margin-bottom: 3px; }
+.ido-field-small { display: inline-block; margin-right: 10px; vertical-align: top; }
+.ido-form-inline { display: inline-flex; gap: 4px; align-items: center; }
+.ido-force { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.ido-game input[type="text"],
+.ido-game input[type="number"],
+.ido-game select {
+    background: #0a1017;
+    color: var(--ido-text);
+    border: 1px solid var(--ido-border);
+    border-radius: 3px;
+    padding: 5px 7px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    max-width: 100%;
+}
+.ido-num { width: 9ch; text-align: right; }
+.ido-text, .ido-select { min-width: 220px; }
+
+.ido-btn {
+    display: inline-block;
+    background: var(--ido-accent);
+    color: #04121b;
+    border: 1px solid var(--ido-accent);
+    border-radius: 3px;
+    padding: 5px 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+.ido-btn:hover { filter: brightness(1.12); }
+.ido-btn-alt { background: transparent; color: var(--ido-accent); }
+.ido-btn-danger { background: var(--ido-bad); border-color: var(--ido-bad); color: #180404; }
+.ido-btn-small { padding: 3px 8px; font-size: 0.8rem; }
+
+/* Notices and reports */
+.ido-flash {
+    border-left: 3px solid var(--ido-accent);
+    background: rgba(79, 214, 255, 0.08);
+    padding: 8px 10px;
+    margin-bottom: 8px;
+}
+.ido-flash-success { border-color: var(--ido-good); background: rgba(87, 217, 138, 0.08); }
+.ido-flash-warning { border-color: var(--ido-amber); background: rgba(255, 200, 97, 0.08); }
+.ido-flash-error { border-color: var(--ido-bad); background: rgba(255, 107, 107, 0.08); }
+
+.ido-report {
+    border: 1px solid var(--ido-border);
+    border-left-width: 3px;
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+}
+.ido-report-good { border-left-color: var(--ido-good); }
+.ido-report-bad { border-left-color: var(--ido-bad); }
+.ido-report-head { color: var(--ido-dim); font-size: 0.8rem; margin-bottom: 4px; }
+
+.ido-list { margin: 0; padding-left: 18px; }
+.ido-list li { margin-bottom: 4px; }
+
+.ido-news { list-style: none; margin: 0; padding: 0; }
+.ido-news li { border-bottom: 1px solid var(--ido-border); padding: 5px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.ido-news-time { color: var(--ido-dim); font-size: 0.8rem; min-width: 13ch; }
+.ido-news-type { color: var(--ido-amber); font-size: 0.75rem; text-transform: uppercase; min-width: 9ch; }
+.ido-news-text { flex: 1 1 260px; }
+
+.ido-filters { display: flex; flex-wrap: wrap; gap: 4px; }
+
+@media (max-width: 640px) {
+    .ido-game { font-size: 14px; padding: 12px; }
+    .ido-round { margin-left: 0; }
+    .ido-text, .ido-select { min-width: 100%; }
+}

@@ -1,0 +1,17 @@
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Logs and build output
+debug.log
+*.log
+*.zip
+node_modules/
+vendor/
+
+# Test scratch output
+tests/preview.html
