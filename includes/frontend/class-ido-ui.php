@@ -19,7 +19,9 @@ class IDO_UI {
         'market'   => ['Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
         'gazette'  => ['Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
         'rankings' => ['Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
-        'guide'    => ['How to Play', 'imperial-dominion-online-how-to-play', 'ido_guide', 'How to Play'],
+        // The front door of the game, and the page a visitor lands on: it holds
+        // the goal, the rules and the leaderboard, so it carries the game name.
+        'guide'    => ['Imperial Dominion', 'imperial-dominion-online-how-to-play', 'ido_guide', 'Imperial Dominion'],
     ];
 
     public static function url(string $key, array $args = []): string {

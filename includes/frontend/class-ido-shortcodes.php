@@ -43,7 +43,12 @@ class IDO_Shortcodes {
 
         // The rules are public: anyone may read how the game is played, signed
         // in or not, because nobody joins a game they cannot see the shape of.
+        // This is also the page a visitor lands on, so anyone who is not yet
+        // playing gets the welcome and the leaderboard above the rules.
         if ($key === 'guide') {
+            if (!$kingdom) {
+                include IDO_PATH . 'includes/frontend/views/welcome.php';
+            }
             include IDO_PATH . 'includes/frontend/views/guide.php';
         } elseif (!is_user_logged_in()) {
             include IDO_PATH . 'includes/frontend/views/welcome.php';

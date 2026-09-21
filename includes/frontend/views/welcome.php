@@ -29,7 +29,10 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
         <?php if (get_option('users_can_register')) : ?>
             <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(wp_registration_url()); ?>">Register</a>
         <?php endif; ?>
-        <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(IDO_UI::url('guide')); ?>">How to play</a>
+        <?php /* On the guide page itself this button would only point at where the reader already is. */ ?>
+        <?php if (($key ?? '') !== 'guide') : ?>
+            <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(IDO_UI::url('guide')); ?>">How to play</a>
+        <?php endif; ?>
     </p>
 </div>
 
