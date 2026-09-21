@@ -137,15 +137,30 @@
     border-color: var(--ido-accent);
     color: var(--ido-text) !important;
 }
-.ido-game .ido-nav-current,
-.ido-game a.ido-nav-current,
-.ido-game a.ido-nav-current:link,
-.ido-game a.ido-nav-current:visited,
-.ido-game a.ido-nav-current:hover,
-.ido-game a.ido-nav-current:focus {
-    background: var(--ido-accent);
+/*
+ * The selected item, at higher specificity than every .ido-nav-item rule above
+ * so it wins in all states without relying on source order.
+ *
+ * -webkit-text-fill-color matters more than the colour here: a theme that uses
+ * the gradient-text trick (background-clip: text with a transparent fill)
+ * makes text disappear entirely, and no amount of `color` brings it back.
+ */
+.ido-game .ido-nav .ido-nav-item.ido-nav-current,
+.ido-game .ido-nav a.ido-nav-item.ido-nav-current,
+.ido-game .ido-nav a.ido-nav-item.ido-nav-current:link,
+.ido-game .ido-nav a.ido-nav-item.ido-nav-current:visited,
+.ido-game .ido-nav a.ido-nav-item.ido-nav-current:hover,
+.ido-game .ido-nav a.ido-nav-item.ido-nav-current:focus,
+.ido-game .ido-nav a.ido-nav-item.ido-nav-current:active {
+    background: var(--ido-accent) !important;
+    background-image: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
     color: #04121b !important;
-    border-color: var(--ido-accent);
+    -webkit-text-fill-color: #04121b !important;
+    border-color: var(--ido-accent) !important;
+    text-shadow: none !important;
+    opacity: 1 !important;
 }
 
 /* Panels */
@@ -194,17 +209,54 @@
 .ido-form-inline { display: inline-flex; gap: 4px; align-items: center; }
 .ido-force { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/*
+ * Form controls, forced past the theme. Themes routinely set a grey input
+ * colour for their own light backgrounds, which on this dark panel leaves the
+ * value barely legible. -webkit-text-fill-color is set alongside colour
+ * because it wins over it where a theme uses it, and it is what browsers apply
+ * to autofilled values.
+ */
 .ido-game input[type="text"],
 .ido-game input[type="number"],
+.ido-game input[type="search"],
+.ido-game textarea,
 .ido-game select {
-    background: #0a1017;
-    color: var(--ido-text);
+    background: #0a1017 !important;
+    color: var(--ido-text) !important;
+    -webkit-text-fill-color: var(--ido-text) !important;
+    opacity: 1 !important;
     border: 1px solid var(--ido-border);
     border-radius: 3px;
     padding: 5px 7px;
     font-family: inherit;
     font-size: 0.9rem;
     max-width: 100%;
+}
+.ido-game input:focus,
+.ido-game select:focus,
+.ido-game textarea:focus {
+    border-color: var(--ido-accent);
+    outline: 2px solid rgba(79, 214, 255, 0.35);
+    outline-offset: 1px;
+}
+/* Placeholders are hints, so they are dimmer than a real value but still readable. */
+.ido-game input::placeholder,
+.ido-game textarea::placeholder {
+    color: var(--ido-dim) !important;
+    -webkit-text-fill-color: var(--ido-dim) !important;
+    opacity: 1 !important;
+}
+/* Dropdown lists are drawn by the operating system and need their own colours. */
+.ido-game select option {
+    background: #0a1017;
+    color: var(--ido-text);
+}
+/* Browsers paint autofilled fields with their own background; override it. */
+.ido-game input:-webkit-autofill,
+.ido-game input:-webkit-autofill:hover,
+.ido-game input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ido-text) !important;
+    box-shadow: 0 0 0 1000px #0a1017 inset !important;
 }
 .ido-num { width: 9ch; text-align: right; }
 .ido-text, .ido-select { min-width: 220px; }
@@ -217,6 +269,11 @@
 .ido-game a.ido-btn:focus,
 .ido-game button.ido-btn {
     color: #04121b !important;
+    -webkit-text-fill-color: #04121b !important;
+    background-image: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    text-shadow: none !important;
     text-decoration: none !important;
 }
 .ido-btn {
@@ -243,6 +300,7 @@
 .ido-game button.ido-btn-alt {
     background: transparent;
     color: var(--ido-accent) !important;
+    -webkit-text-fill-color: var(--ido-accent) !important;
 }
 .ido-game .ido-btn-danger,
 .ido-game a.ido-btn-danger,
@@ -254,6 +312,7 @@
     background: var(--ido-bad);
     border-color: var(--ido-bad);
     color: #180404 !important;
+    -webkit-text-fill-color: #180404 !important;
 }
 .ido-btn-small { padding: 3px 8px; font-size: 0.8rem; }
 

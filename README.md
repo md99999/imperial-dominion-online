@@ -13,22 +13,19 @@ Players sign in to your WordPress site and rule.
 
 ## Inspiration and attribution
 
-Imperial Dominion Online is inspired by **Barren Kingdoms Elite**, the BBS door game that, from the
+Imperial Dominion Online is inspired by **Barren Realms Elite**, the BBS door game that, from the
 early 1990s, had players dialling in to spend a handful of turns a day building an empire,
 trading on a player-driven market and raiding their rivals.
 
-It is a **completely new game**:
+It is a **completely new game** and not specific to the old BRE.
 
 - Original setting, lore, names, buildings, troops, titles and rules.
 - Its own economy, combat maths, covert system and round structure.
 - A web-based way of playing built for WordPress, with pages, forms and a terminal-styled
   interface drawn in CSS rather than ANSI.
 
-It contains no code, text or artwork from Barren Kingdoms Elite and is not affiliated with or
+It contains no code, text or artwork from Barren Realms Elite and is not affiliated with or
 endorsed by its creators or rights holders.
-
-Its sister game, [Imperial Barons Online](../imperial-barons-online), does the same for
-*Trade Wars 2002*, and shares this plugin's structure and conventions.
 
 ---
 
