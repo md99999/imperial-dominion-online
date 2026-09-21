@@ -290,7 +290,7 @@ class IDO_Military {
         return 0.95 + (wp_rand(0, 1000) / 10000);
     }
 
-    /** Moves acres from defender to attacker, razing what stood on them. */
+    /** Moves acres from defender to attacker, demolishing what stood on them. */
     private static function take_land(object $kingdom, object $target, float $ratio): int {
         $percent = IDO_Settings::int('conquest_land_percent') / 100;
         $acres = (int) round((int) $target->land * $percent * min(1.5, max(0.5, $ratio)));

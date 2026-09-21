@@ -121,7 +121,7 @@ $highest_title = end($titles);
         </tbody>
     </table>
     <p class="ido-dim">
-        Settling gets harder as you grow: a scouting party finds fewer acres and charges more for each one. Razing a
+        Settling gets harder as you grow: a scouting party finds fewer acres and charges more for each one. Demolishing a
         building returns <?php echo esc_html((string) $s['demolish_refund_percent']); ?>% of its cost and hands the acre
         back to wilderness.
     </p>
