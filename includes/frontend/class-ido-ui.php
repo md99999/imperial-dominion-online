@@ -14,7 +14,7 @@ class IDO_UI {
      * of play: rule, grow, arm, march, scheme, trade, read.
      */
     const PAGES = [
-        'guide'    => ['Imperial Dominion', 'imperial-dominion-online-how-to-play', 'ido_guide', 'Home'],
+        'guide'    => ['Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
         'throne'   => ['Throne Room', 'imperial-dominion-online', 'ido_throne', 'Throne'],
         'lands'    => ['Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
         'military' => ['Muster Field', 'imperial-dominion-online-muster', 'ido_military', 'Muster'],

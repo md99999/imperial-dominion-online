@@ -118,11 +118,21 @@ class IDO_Admin {
         $created = 0;
         $kept = 0;
         $renamed = 0;
+        $claimed = [];
 
         foreach (IDO_UI::PAGES as $key => $def) {
             [$title, $slug, $shortcode] = $def;
             $existing = !empty($ids[$key]) ? get_post($ids[$key]) : get_page_by_path($slug);
+
+            // If a slug changes, the page under the old slug may still be
+            // recorded against another entry. Never let two menu entries own
+            // the same page: renaming it for one would break the other.
+            if ($existing && in_array((int) $existing->ID, $claimed, true)) {
+                $existing = null;
+            }
+
             if ($existing && $existing->post_status !== 'trash') {
+                $claimed[] = (int) $existing->ID;
                 $ids[$key] = (int) $existing->ID;
                 // A page whose name the game has since changed is brought back
                 // into line, so pressing this button always leaves the pages
@@ -144,6 +154,7 @@ class IDO_Admin {
             ], true);
             if (!is_wp_error($post_id)) {
                 $ids[$key] = (int) $post_id;
+                $claimed[] = (int) $post_id;
                 $created++;
             }
         }
