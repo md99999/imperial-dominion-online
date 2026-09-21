@@ -6,7 +6,7 @@ $settings = IDO_Settings::all();
 $groups = [
     'Turns' => ['turns_per_day', 'turn_cap', 'starting_turns', 'attack_turn_cost', 'op_turn_cost'],
     'A new kingdom' => ['starting_land', 'starting_gold', 'starting_grain', 'starting_iron',
-        'starting_peasants', 'starting_levies', 'starting_wardens', 'protection_hours'],
+        'starting_peasants', 'starting_pawns', 'starting_knights', 'protection_hours'],
     'Land and building' => ['explore_base_acres', 'build_gold_per_acre', 'build_iron_per_acre', 'build_days', 'raze_refund_percent'],
     'War' => ['target_min_percent', 'target_max_percent', 'max_hits_per_target', 'conquest_land_percent'],
     'Covert work' => ['agent_gold_cost', 'max_agents'],

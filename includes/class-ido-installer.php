@@ -60,6 +60,25 @@ class IDO_Installer {
         $columns = $wpdb->get_col('SHOW COLUMNS FROM `' . $table . '`');
         if (!is_array($columns)) return;
 
+        // 1.8.0 renamed the troop types. The columns are renamed rather than
+        // added, so standing armies carry over instead of being wiped, and any
+        // troops sitting on the market keep pointing at something real.
+        $troops = [
+            'u_levy'        => 'u_pawn',
+            'u_warden'      => 'u_knight',
+            'u_reaver'      => 'u_squire',
+            'u_siege_train' => 'u_rook',
+        ];
+        foreach ($troops as $old => $new) {
+            if (in_array($old, $columns, true) && !in_array($new, $columns, true)) {
+                $wpdb->query('ALTER TABLE `' . $table . '` CHANGE `' . $old . '` `' . $new . '` bigint(20) NOT NULL DEFAULT 0');
+                $wpdb->query($wpdb->prepare(
+                    'UPDATE ' . IDO_DB::t('listings') . ' SET item_key = %s WHERE item_key = %s',
+                    substr($new, 2), substr($old, 2)
+                ));
+            }
+        }
+
         // 1.5.0 dropped runestones: gold is the only currency now. The acres
         // under runeworks return to wilderness, which is what dropping the
         // column does on its own, since wilderness is land less what stands on it.

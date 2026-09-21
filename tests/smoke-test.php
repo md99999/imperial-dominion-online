@@ -124,7 +124,7 @@ $kingdom_row = (object) [
     'gold' => 75000, 'grain' => 40000, 'iron' => 5000, 'peasants' => 1500,
     'b_homestead' => 60, 'b_farmstead' => 60, 'b_counting_house' => 30, 'b_foundry' => 25,
     'b_barracks' => 13, 'b_fortification' => 13,
-    'u_levy' => 200, 'u_warden' => 50, 'u_reaver' => 0, 'u_siege_train' => 0,
+    'u_pawn' => 200, 'u_knight' => 50, 'u_squire' => 0, 'u_rook' => 0,
     'agents' => 0, 'networth' => 250000,
     'protection_until' => date('Y-m-d H:i:s', time() + 3600),
     'is_defeated' => 0, 'attacks_made' => 0, 'attacks_won' => 0, 'attacks_suffered' => 0,

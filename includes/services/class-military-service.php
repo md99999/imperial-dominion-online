@@ -161,7 +161,7 @@ class IDO_Military {
         }
         $offence_base = IDO_Units::offence_power($committed);
         if ($offence_base <= 0) {
-            throw new IDO_Game_Exception('None of those troops can carry an attack. Send reavers or siege trains.');
+            throw new IDO_Game_Exception('None of those troops can carry an attack. Send squires or rooks.');
         }
 
         $turn_cost = max(1, IDO_Settings::int('attack_turn_cost'));
@@ -203,8 +203,8 @@ class IDO_Military {
             IDO_Kingdom::drop_protection($kingdom);
 
             // Strength on the day. The small random swing keeps a narrow win uncertain.
-            $siege_share = $offence_base > 0
-                ? IDO_Units::offence_power(array_intersect_key($committed, ['siege_train' => 1])) / $offence_base
+            $rook_share = $offence_base > 0
+                ? IDO_Units::offence_power(array_intersect_key($committed, ['rook' => 1])) / $offence_base
                 : 0.0;
             $offence = $offence_base * self::swing();
 
@@ -212,9 +212,9 @@ class IDO_Military {
             foreach (IDO_Units::all() as $key => $unit) {
                 $raw_defence += $unit['defence'] * (int) $target->{IDO_Units::column($key)};
             }
-            // Siege trains blunt the fortification bonus rather than the troops behind it.
+            // Rooks blunt the fortification bonus rather than the troops behind it.
             $fortification = IDO_Buildings::fortification_bonus($target);
-            $effective_fortification = 1.0 + ($fortification - 1.0) * (1 - 0.75 * $siege_share);
+            $effective_fortification = 1.0 + ($fortification - 1.0) * (1 - 0.75 * $rook_share);
             $defence = $raw_defence * $effective_fortification * self::swing();
 
             $won = $offence > $defence;

@@ -29,7 +29,7 @@ write that applies the effect.
 **3. Authority.** A sending site may only speak for its own kingdoms, and may only assert that a
 force *left*. The receiving site decides what that force accomplishes: it owns the defender's
 numbers and runs the combat maths. A packet that says "you lost 400 acres" is never trusted; a
-packet that says "Vaelmark sent 800 reavers and 40 siege trains" is. The result travels back as a
+packet that says "Vaelmark sent 800 squires and 40 rooks" is. The result travels back as a
 second packet, and the sending site applies casualties only when it arrives.
 
 **4. Settlement.** Losses on the attacking side are only known after the defender resolves the

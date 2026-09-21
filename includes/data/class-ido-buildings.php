@@ -58,7 +58,7 @@ class IDO_Buildings {
             'fortification' => [
                 'label'   => 'Fortification',
                 'plural'  => 'Fortifications',
-                'effect'  => 'Each fortification adds 0.6% to your defence, to a maximum of 50%. Siege trains are built to break them.',
+                'effect'  => 'Each fortification adds 0.6% to your defence, to a maximum of 50%. Rooks are built to break them.',
                 'yield'   => [],
             ],
         ];

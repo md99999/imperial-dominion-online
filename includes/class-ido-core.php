@@ -77,8 +77,8 @@ class IDO_Settings {
             'starting_grain'         => 40000,
             'starting_iron'          => 5000,
             'starting_peasants'      => 1500,
-            'starting_levies'        => 200,
-            'starting_wardens'       => 50,
+            'starting_pawns'        => 200,
+            'starting_knights'       => 50,
             'protection_hours'       => 72,
             // Land and building
             'explore_base_acres'     => 30,

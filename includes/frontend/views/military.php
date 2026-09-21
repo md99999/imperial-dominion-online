@@ -77,10 +77,10 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
     <div class="ido-panel">
         <h3 class="ido-panel-title">A word on armies</h3>
         <ul class="ido-list">
-            <li>Levies are the cheapest way to make an attacker think twice, and useless for anything else.</li>
-            <li>Wardens hold ground. A kingdom with no wardens is a larder with the door open.</li>
-            <li>Reavers take ground. They are worth almost nothing at home, so never leave them idle.</li>
-            <li>Siege trains break fortifications. They cost a fortune and eat like three men each.</li>
+            <li>Pawns are the cheapest way to make an attacker think twice, and useless for anything else.</li>
+            <li>Knights hold ground. A kingdom with no knights is a larder with the door open.</li>
+            <li>Squires take ground. They are worth almost nothing at home, so never leave them idle.</li>
+            <li>Rooks break fortifications. They cost a fortune and eat like three men each.</li>
         </ul>
     </div>
 </div>

@@ -195,7 +195,7 @@ $highest_title = end($titles);
             <strong><?php echo esc_html((string) $s['protection_hours']); ?> hours</strong>. It ends the moment they
             march on somebody, so you cannot raid from behind it.</li>
         <li>Losses are permanent on both sides. Winning a battle still costs you soldiers.</li>
-        <li>Fortifications lift your defence; siege trains are built to break through them.</li>
+        <li>Fortifications lift your defence; rooks are built to break through them.</li>
     </ul>
 </div>
 

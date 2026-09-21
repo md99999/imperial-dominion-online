@@ -13,9 +13,9 @@ class IDO_Units {
 
     public static function all(): array {
         return [
-            'levy' => [
-                'label'   => 'Levy',
-                'plural'  => 'Levies',
+            'pawn' => [
+                'label'   => 'Pawn',
+                'plural'  => 'Pawns',
                 'offence' => 0,
                 'defence' => 3,
                 'gold'    => 120,
@@ -24,9 +24,9 @@ class IDO_Units {
                 'upkeep'  => 0.3,   // grain per turn
                 'note'    => 'Cheap conscripts. They hold a wall and nothing more.',
             ],
-            'warden' => [
-                'label'   => 'Warden',
-                'plural'  => 'Wardens',
+            'knight' => [
+                'label'   => 'Knight',
+                'plural'  => 'Knights',
                 'offence' => 1,
                 'defence' => 9,
                 'gold'    => 340,
@@ -35,20 +35,20 @@ class IDO_Units {
                 'upkeep'  => 0.5,
                 'note'    => 'Professional defenders, and the backbone of any kingdom that expects to be hit.',
             ],
-            'reaver' => [
-                'label'   => 'Reaver',
-                'plural'  => 'Reavers',
+            'squire' => [
+                'label'   => 'Squire',
+                'plural'  => 'Squires',
                 'offence' => 9,
                 'defence' => 1,
                 'gold'    => 380,
                 'iron'    => 30,
                 'peasants'=> 1,
                 'upkeep'  => 0.5,
-                'note'    => 'Raiders bred for the attack. At home they are little better than levies.',
+                'note'    => 'Raiders bred for the attack. At home they are little better than pawns.',
             ],
-            'siege_train' => [
-                'label'   => 'Siege Train',
-                'plural'  => 'Siege Trains',
+            'rook' => [
+                'label'   => 'Rook',
+                'plural'  => 'Rooks',
                 'offence' => 18,
                 'defence' => 4,
                 'gold'    => 1400,
@@ -111,7 +111,7 @@ class IDO_Units {
 
     /**
      * Defensive strength of everything standing at home.
-     * Siege trains left behind still count, at their poor defence value.
+     * Rooks left behind still count, at their poor defence value.
      */
     public static function defence_power(object $kingdom): float {
         $power = 0.0;
@@ -121,7 +121,7 @@ class IDO_Units {
         return $power * IDO_Buildings::fortification_bonus($kingdom);
     }
 
-    /** Offensive strength of a named force, e.g. ['reaver' => 500]. */
+    /** Offensive strength of a named force, e.g. ['squire' => 500]. */
     public static function offence_power(array $force): float {
         $power = 0.0;
         foreach ($force as $key => $qty) {

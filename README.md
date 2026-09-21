@@ -87,10 +87,10 @@ army built for one job is nearly useless at the other.
 
 | Troops | Offence | Defence | Notes |
 | --- | --- | --- | --- |
-| Levies | 0 | 3 | Cheap conscripts |
-| Wardens | 1 | 9 | The backbone of any kingdom expecting to be hit |
-| Reavers | 9 | 1 | Raiders, worthless at home |
-| Siege Trains | 18 | 4 | The only reliable answer to fortifications |
+| Pawns | 0 | 3 | Cheap conscripts |
+| Knights | 1 | 9 | The backbone of any kingdom expecting to be hit |
+| Squires | 9 | 1 | Raiders, worthless at home |
+| Rooks | 18 | 4 | The only reliable answer to fortifications |
 
 **War.** A march costs 2 turns and resolves the moment you commit, against whatever the defender
 has standing at that instant. Both sides get a written report. You may only attack kingdoms worth

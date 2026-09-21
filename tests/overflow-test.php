@@ -39,7 +39,7 @@ $monster = (object) [
     'peasants' => PHP_INT_MAX, 'agents' => PHP_INT_MAX,
     'b_homestead' => PHP_INT_MAX, 'b_farmstead' => PHP_INT_MAX, 'b_counting_house' => PHP_INT_MAX,
     'b_foundry' => PHP_INT_MAX, 'b_barracks' => PHP_INT_MAX, 'b_fortification' => PHP_INT_MAX,
-    'u_levy' => PHP_INT_MAX, 'u_warden' => PHP_INT_MAX, 'u_reaver' => PHP_INT_MAX, 'u_siege_train' => PHP_INT_MAX,
+    'u_pawn' => PHP_INT_MAX, 'u_knight' => PHP_INT_MAX, 'u_squire' => PHP_INT_MAX, 'u_rook' => PHP_INT_MAX,
 ];
 
 $army = IDO_Units::networth($monster);
