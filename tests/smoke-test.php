@@ -182,3 +182,33 @@ $sql = end($GLOBALS['wpdb']->queries);
 echo $sql . "\n";
 printf("ceiling on the increase : %s\n", strpos($sql, 'LEAST(9000000000000000') !== false ? 'yes' : 'NO');
 printf("floor on the decrease   : %s\n", strpos($sql, '`gold` >= 5000') !== false ? 'yes' : 'NO');
+
+echo "--- the three states of the home page ---\n";
+// A visitor, a signed-in reader with no kingdom, and a ruler: each must be
+// offered the next step that actually applies to them.
+$GLOBALS['ido_logged_out'] = true;
+$GLOBALS['ido_fake_kingdom'] = null;
+$visitor = IDO_Shortcodes::render('guide');
+
+$GLOBALS['ido_logged_out'] = false;
+$GLOBALS['ido_fake_kingdom'] = null;
+$signed_in = IDO_Shortcodes::render('guide');
+
+$GLOBALS['ido_fake_kingdom'] = $kingdom_row;
+$ruler = IDO_Shortcodes::render('guide');
+
+$state_fails = 0;
+function state(string $label, bool $ok) {
+    global $state_fails;
+    if (!$ok) $state_fails++;
+    printf("%-52s %s\n", $label, $ok ? 'PASS' : 'FAIL');
+}
+// Match the button, not the words: the guide's "first day" list opens with
+// the sentence "Claim your kingdom." as ordinary prose.
+$claim = '>Claim your kingdom</a>';
+state('visitor is asked to sign in', strpos($visitor, 'Sign in to play') !== false);
+state('signed-in reader is asked to claim, not sign in', strpos($signed_in, $claim) !== false
+    && strpos($signed_in, 'Sign in to play') === false);
+state('ruler is offered neither button', strpos($ruler, 'Sign in to play') === false
+    && strpos($ruler, $claim) === false);
+echo $state_fails === 0 ? "HOME PAGE STATES OK\n" : "$state_fails STATE CHECK(S) FAILED\n";

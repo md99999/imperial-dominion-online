@@ -24,16 +24,39 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
         than grinding. A round lasts <strong><?php echo esc_html((string) $s['round_days']); ?> days</strong>;
         at the end, the richest kingdom is champion, everything is wiped, and a new round opens for everyone.
     </p>
-    <p>
-        <a class="ido-btn" href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">Sign in to play</a>
-        <?php if (get_option('users_can_register')) : ?>
-            <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(wp_registration_url()); ?>">Register</a>
-        <?php endif; ?>
-        <?php /* On the guide page itself this button would only point at where the reader already is. */ ?>
-        <?php if (($key ?? '') !== 'guide') : ?>
-            <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(IDO_UI::url('guide')); ?>">How to play</a>
-        <?php endif; ?>
-    </p>
+    <?php
+    /*
+     * Three states, not two: a visitor has to sign in, a signed-in reader who
+     * has not claimed a kingdom has to claim one, and a ruler never sees this
+     * panel at all. Showing "Sign in to play" to somebody already signed in is
+     * the kind of dead end that makes a game look broken.
+     */
+    ?>
+    <?php if (!is_user_logged_in()) : ?>
+        <p>
+            <a class="ido-btn" href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">Sign in to play</a>
+            <?php if (get_option('users_can_register')) : ?>
+                <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(wp_registration_url()); ?>">Register</a>
+            <?php endif; ?>
+            <?php /* On the guide page itself this button would only point at where the reader already is. */ ?>
+            <?php if (($key ?? '') !== 'guide') : ?>
+                <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(IDO_UI::url('guide')); ?>">How to play</a>
+            <?php endif; ?>
+        </p>
+    <?php else : ?>
+        <p class="ido-dim">
+            Signed in as <strong><?php echo esc_html(wp_get_current_user()->display_name); ?></strong>,
+            with no kingdom in <?php echo esc_html($round ? $round->round_name : 'this round'); ?> yet.
+        </p>
+        <p>
+            <?php if ($round && IDO_Settings::int('allow_new_kingdoms')) : ?>
+                <a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('throne')); ?>">Claim your kingdom</a>
+            <?php endif; ?>
+            <?php if (($key ?? '') !== 'guide') : ?>
+                <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(IDO_UI::url('guide')); ?>">How to play</a>
+            <?php endif; ?>
+        </p>
+    <?php endif; ?>
 </div>
 
 <div class="ido-columns">
