@@ -80,6 +80,33 @@ $help = [
             </tr>
         </table>
 
+        <h2>Deleting the plugin</h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">Game data</th>
+                <td>
+                    <?php /* The hidden field is what lets the box be turned back off: an unchecked box posts nothing. */ ?>
+                    <input type="hidden" name="settings[delete_data_on_uninstall]" value="0">
+                    <label for="ido_delete_data_on_uninstall">
+                        <input type="checkbox" id="ido_delete_data_on_uninstall"
+                               name="settings[delete_data_on_uninstall]" value="1"
+                               <?php checked(1, (int) $settings['delete_data_on_uninstall']); ?>>
+                        Delete every game table when this plugin is deleted
+                    </label>
+                    <p class="description">
+                        Off by default, and deliberately so. Leave it off and deleting the plugin keeps every
+                        kingdom, round, battle and setting, so reinstalling picks the game up exactly where it
+                        stopped. Deactivating the plugin never touches the data either way.
+                    </p>
+                    <p class="description">
+                        <strong>Turn it on only when you want the game gone for good.</strong> Deleting then drops
+                        <?php echo esc_html((string) count(IDO_DB::TABLES)); ?> tables, including the Hall of Fame
+                        of every completed round. There is no undo and no export.
+                    </p>
+                </td>
+            </tr>
+        </table>
+
         <p><button type="submit" class="button button-primary">Save settings</button></p>
     </form>
 </div>

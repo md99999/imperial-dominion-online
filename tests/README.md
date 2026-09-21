@@ -12,6 +12,7 @@ these prove the code runs, not that the SQL is correct.
 
     php tests/overflow-test.php     # scoring cannot overflow or go negative
     php tests/smoke-test.php        # plugin loads, activates, and every page renders
+    php tests/uninstall-test.php    # deleting the plugin keeps data unless told otherwise
 
 `overflow-test.php` exits non-zero when a check fails, so it is safe to wire
 into CI. `smoke-test.php` prints the byte size of each rendered page; a fatal
@@ -27,6 +28,7 @@ If PHP is not on your PATH, the binary bundled with Local works:
 | --- | --- |
 | `overflow-test.php` | Drives net worth with maximum values and asserts it saturates at the ceiling instead of wrapping negative |
 | `smoke-test.php` | Loads the plugin, runs the activation path, renders all nine pages signed in and logged out, and checks the SQL guards |
+| `uninstall-test.php` | Runs `uninstall.php` with the setting off and on, proving the default keeps every table and the opt-in really drops them |
 | `wp-admin/includes/upgrade.php` | A stub `dbDelta()`, since the installer requires that file the way WordPress provides it |
 
 `smoke-test.php` also writes `preview.html` next to itself: a standalone copy of

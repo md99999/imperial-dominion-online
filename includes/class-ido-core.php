@@ -103,6 +103,8 @@ class IDO_Settings {
             'auto_start_next_round'  => 1,
             'news_retention_days'    => 14,
             'allow_new_kingdoms'      => 1,
+            // Deleting the plugin keeps the game's data unless this is turned on.
+            'delete_data_on_uninstall' => 0,
         ];
     }
 
@@ -139,6 +141,7 @@ class IDO_Settings {
         $current['max_agents']         = max(1, (int) $current['max_agents']);
         $current['target_max_percent'] = max((int) $current['target_min_percent'], (int) $current['target_max_percent']);
         $current['market_tax_percent'] = min(50, (int) $current['market_tax_percent']);
+        $current['delete_data_on_uninstall'] = !empty($current['delete_data_on_uninstall']) ? 1 : 0;
         update_option(self::OPTION, $current);
         return $current;
     }

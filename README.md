@@ -135,6 +135,16 @@ together without anybody getting two days of turns. For a real cron:
 
 The admin **Maintenance** screen shows when each tick last ran and can run either on demand.
 
+### Deleting the plugin
+
+Deleting Imperial Dominion Online **keeps every game table by default**: kingdoms, rounds,
+battles, the Hall of Fame and your settings all survive, so reinstalling resumes the game
+mid-round. Deactivating never touches the data either.
+
+To have the data removed on delete, tick **Delete every game table when this plugin is deleted**
+under Settings first. That is irreversible and there is no export, so it is off unless you say
+otherwise.
+
 ---
 
 ## Security notes
