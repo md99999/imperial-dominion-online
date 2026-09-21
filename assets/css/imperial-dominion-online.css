@@ -112,15 +112,41 @@
     border-bottom: 1px solid var(--ido-border);
     padding-bottom: 8px;
 }
-.ido-nav-item {
+/*
+ * Navigation and buttons are anchors, and themes style anchors hard, often
+ * with selectors more specific than a single class (.entry-content a beats
+ * .ido-nav-current). When the theme wins, a link keeps its own blue on top of
+ * our blue and becomes unreadable. Every anchor whose background this
+ * stylesheet sets therefore states its text colour at higher specificity and
+ * forces it, for every link state, since :visited and :hover are frequently
+ * styled separately.
+ */
+.ido-game .ido-nav-item,
+.ido-game a.ido-nav-item,
+.ido-game a.ido-nav-item:link,
+.ido-game a.ido-nav-item:visited {
     padding: 4px 10px;
     border: 1px solid var(--ido-border);
     border-radius: 4px;
     text-decoration: none;
-    color: var(--ido-text);
+    color: var(--ido-text) !important;
 }
-.ido-nav-item:hover { border-color: var(--ido-accent); }
-.ido-nav-current { background: var(--ido-accent); color: #04121b; border-color: var(--ido-accent); }
+.ido-game .ido-nav-item:hover,
+.ido-game a.ido-nav-item:hover,
+.ido-game a.ido-nav-item:focus {
+    border-color: var(--ido-accent);
+    color: var(--ido-text) !important;
+}
+.ido-game .ido-nav-current,
+.ido-game a.ido-nav-current,
+.ido-game a.ido-nav-current:link,
+.ido-game a.ido-nav-current:visited,
+.ido-game a.ido-nav-current:hover,
+.ido-game a.ido-nav-current:focus {
+    background: var(--ido-accent);
+    color: #04121b !important;
+    border-color: var(--ido-accent);
+}
 
 /* Panels */
 .ido-panel {
@@ -183,6 +209,16 @@
 .ido-num { width: 9ch; text-align: right; }
 .ido-text, .ido-select { min-width: 220px; }
 
+.ido-game .ido-btn,
+.ido-game a.ido-btn,
+.ido-game a.ido-btn:link,
+.ido-game a.ido-btn:visited,
+.ido-game a.ido-btn:hover,
+.ido-game a.ido-btn:focus,
+.ido-game button.ido-btn {
+    color: #04121b !important;
+    text-decoration: none !important;
+}
 .ido-btn {
     display: inline-block;
     background: var(--ido-accent);
@@ -196,8 +232,29 @@
     cursor: pointer;
 }
 .ido-btn:hover { filter: brightness(1.12); }
-.ido-btn-alt { background: transparent; color: var(--ido-accent); }
-.ido-btn-danger { background: var(--ido-bad); border-color: var(--ido-bad); color: #180404; }
+
+/* The outline variant sits on the panel, so its text takes the accent colour. */
+.ido-game .ido-btn-alt,
+.ido-game a.ido-btn-alt,
+.ido-game a.ido-btn-alt:link,
+.ido-game a.ido-btn-alt:visited,
+.ido-game a.ido-btn-alt:hover,
+.ido-game a.ido-btn-alt:focus,
+.ido-game button.ido-btn-alt {
+    background: transparent;
+    color: var(--ido-accent) !important;
+}
+.ido-game .ido-btn-danger,
+.ido-game a.ido-btn-danger,
+.ido-game a.ido-btn-danger:link,
+.ido-game a.ido-btn-danger:visited,
+.ido-game a.ido-btn-danger:hover,
+.ido-game a.ido-btn-danger:focus,
+.ido-game button.ido-btn-danger {
+    background: var(--ido-bad);
+    border-color: var(--ido-bad);
+    color: #180404 !important;
+}
 .ido-btn-small { padding: 3px 8px; font-size: 0.8rem; }
 
 /* Notices and reports */

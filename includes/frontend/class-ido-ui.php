@@ -8,9 +8,13 @@ if (!defined('ABSPATH')) exit;
 class IDO_UI {
     /**
      * key => [page title, slug, shortcode, nav label]
-     * The order is the order of play: rule, grow, arm, march, scheme, trade, read.
+     *
+     * Home comes first because it is the page a visitor lands on: it carries
+     * the game name, the rules and the leaderboard. The rest follow the order
+     * of play: rule, grow, arm, march, scheme, trade, read.
      */
     const PAGES = [
+        'guide'    => ['Imperial Dominion', 'imperial-dominion-online-how-to-play', 'ido_guide', 'Home'],
         'throne'   => ['Throne Room', 'imperial-dominion-online', 'ido_throne', 'Throne'],
         'lands'    => ['Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
         'military' => ['Muster Field', 'imperial-dominion-online-muster', 'ido_military', 'Muster'],
@@ -19,9 +23,6 @@ class IDO_UI {
         'market'   => ['Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
         'gazette'  => ['Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
         'rankings' => ['Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
-        // The front door of the game, and the page a visitor lands on: it holds
-        // the goal, the rules and the leaderboard, so it carries the game name.
-        'guide'    => ['Imperial Dominion', 'imperial-dominion-online-how-to-play', 'ido_guide', 'Imperial Dominion'],
     ];
 
     public static function url(string $key, array $args = []): string {

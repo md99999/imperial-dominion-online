@@ -111,19 +111,28 @@ class IDO_Admin {
         exit;
     }
 
-    /** Creates the eight WordPress pages, each holding one game shortcode. */
+    /** Creates the nine WordPress pages, each holding one game shortcode, and renames any whose name has changed. */
     private static function create_pages(): string {
         $ids = get_option('ido_page_ids', []);
         if (!is_array($ids)) $ids = [];
         $created = 0;
         $kept = 0;
+        $renamed = 0;
 
         foreach (IDO_UI::PAGES as $key => $def) {
             [$title, $slug, $shortcode] = $def;
             $existing = !empty($ids[$key]) ? get_post($ids[$key]) : get_page_by_path($slug);
             if ($existing && $existing->post_status !== 'trash') {
                 $ids[$key] = (int) $existing->ID;
-                $kept++;
+                // A page whose name the game has since changed is brought back
+                // into line, so pressing this button always leaves the pages
+                // named the way the game names them. Content is left alone.
+                if ($existing->post_title !== $title) {
+                    wp_update_post(['ID' => (int) $existing->ID, 'post_title' => $title]);
+                    $renamed++;
+                } else {
+                    $kept++;
+                }
                 continue;
             }
             $post_id = wp_insert_post([
@@ -140,8 +149,8 @@ class IDO_Admin {
         }
 
         update_option('ido_page_ids', $ids);
-        IDO_Log::admin('pages', sprintf('Created %d game pages, kept %d.', $created, $kept));
-        return sprintf('%d pages created, %d already existed.', $created, $kept);
+        IDO_Log::admin('pages', sprintf('Created %d game pages, renamed %d, kept %d.', $created, $renamed, $kept));
+        return sprintf('%d pages created, %d renamed to match the game, %d already correct.', $created, $renamed, $kept);
     }
 
     /** Removes one kingdom and everything hanging off it. */
