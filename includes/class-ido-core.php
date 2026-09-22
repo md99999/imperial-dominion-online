@@ -66,9 +66,11 @@ class IDO_Settings {
             // Blank means "name it after the WordPress site": see IDO_Game::dominion().
             'dominion_name'          => '',
             // Turns
-            'turns_per_day'          => 30,
+            'turns_per_day'          => 10,
             'turn_cap'               => 90,
-            'starting_turns'         => 30,
+            // What a kingdom is founded with, so a new ruler has more than one
+            // day's worth to learn the game with on their first sitting.
+            'starting_turns'         => 15,
             'attack_turn_cost'       => 2,
             'op_turn_cost'           => 1,
             // Starting kingdom

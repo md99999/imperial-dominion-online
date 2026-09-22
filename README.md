@@ -64,7 +64,8 @@ endorsed by its creators or rights holders.
 
 Each ruler gets **one kingdom per round**, tied to their WordPress account.
 
-**Turns are the currency.** You are granted 30 turns a day (configurable), stored up to 90.
+**Turns are the currency.** You are granted 10 turns a day (configurable), stored up to 90, and a new
+kingdom is founded with 15.
 Every order costs turns, and every turn spent pays out your income at that instant. Turns sitting
 unspent earn nothing at all, which is what keeps the game moving.
 
