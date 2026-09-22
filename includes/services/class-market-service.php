@@ -28,6 +28,75 @@ class IDO_Market {
         return $items[$key];
     }
 
+    /**
+     * What a unit of something is roughly worth, in gold.
+     *
+     * Derived from what the kingdom gives up to have it, using the counting
+     * house as the yardstick: a counting house earns 60 gold a turn, so a
+     * farmstead's 85 grain a turn is worth about 60 gold, and a foundry's 25
+     * iron about the same. Troops are priced at what training them costs,
+     * before any barracks discount, with their iron valued the same way.
+     *
+     * This is a reference point for a seller, not a price the game enforces.
+     * Rulers set their own prices and always have.
+     */
+    public static function reference_price(string $key): float {
+        $gold_per_turn = 60.0;                      // one counting house
+        $iron_value = $gold_per_turn / 25.0;        // one foundry
+
+        if ($key === 'grain')      return $gold_per_turn / 85.0;
+        if ($key === 'iron')       return $iron_value;
+        if ($key === 'runestones') return 0.0;      // no longer traded
+
+        if (IDO_Units::exists($key)) {
+            $unit = IDO_Units::get($key);
+            return (float) $unit['gold'] + ((float) $unit['iron'] * $iron_value);
+        }
+        return 0.0;
+    }
+
+    /**
+     * A suggested asking range for one item, plus what the market is already
+     * charging, so a seller can price to sell rather than guess.
+     *
+     * @return array{floor:int,ceiling:int,cheapest:?int,lots:int}
+     */
+    public static function price_guide(int $round_id, string $key): array {
+        global $wpdb;
+
+        $reference = self::reference_price($key);
+        $floor   = max(1, (int) round($reference));
+        $ceiling = max($floor + 1, (int) round($reference * 1.75));
+
+        $row = $wpdb->get_row($wpdb->prepare(
+            'SELECT MIN(unit_price) AS cheapest, COUNT(*) AS lots FROM ' . IDO_DB::t('listings')
+            . ' WHERE round_id = %d AND status = %s AND item_key = %s AND qty > 0',
+            $round_id, 'open', $key
+        ));
+
+        return [
+            'floor'    => $floor,
+            'ceiling'  => $ceiling,
+            'cheapest' => $row && $row->cheapest !== null ? (int) $row->cheapest : null,
+            'lots'     => $row ? (int) $row->lots : 0,
+        ];
+    }
+
+    /** The price guide as one short line for the posting form. */
+    public static function price_hint(int $round_id, string $key): string {
+        $guide = self::price_guide($round_id, $key);
+        $line = sprintf('Worth about %s to %s gold each.',
+            IDO_Game::fmt($guide['floor']), IDO_Game::fmt($guide['ceiling']));
+
+        if ($guide['cheapest'] !== null) {
+            $line .= sprintf(' Cheapest open lot: %s gold, so undercut that to sell first.',
+                IDO_Game::fmt($guide['cheapest']));
+        } else {
+            $line .= ' Nothing else is on sale, so you set the price.';
+        }
+        return $line;
+    }
+
     /** Open lots, newest first, optionally filtered to one item. */
     public static function listings(int $round_id, string $filter = '', int $limit = 100): array {
         global $wpdb;

@@ -18,9 +18,14 @@ $tax      = IDO_Settings::int('market_tax_percent');
     <?php echo IDO_UI::form_open('market_post', 'ido-form-inline'); ?>
         <label class="ido-field ido-field-small">
             <span>Goods</span>
-            <select name="item" class="ido-select">
+            <select name="item" class="ido-select" id="ido-post-item">
+                <?php $first_hint = ''; ?>
                 <?php foreach ($items as $key => $item) : ?>
-                    <option value="<?php echo esc_attr($key); ?>">
+                    <?php
+                    $hint = IDO_Market::price_hint((int) $kingdom->round_id, $key);
+                    if ($first_hint === '') $first_hint = $hint;
+                    ?>
+                    <option value="<?php echo esc_attr($key); ?>" data-hint="<?php echo esc_attr($hint); ?>">
                         <?php echo esc_html(sprintf('%s (%s held)', $item['label'], IDO_Game::fmt($kingdom->{$item['column']}))); ?>
                     </option>
                 <?php endforeach; ?>
@@ -35,6 +40,8 @@ $tax      = IDO_Settings::int('market_tax_percent');
             <?php echo IDO_UI::number_field('unit_price', 0, 1); ?>
         </label>
         <button type="submit" class="ido-btn">Post</button>
+        <?php /* Updated by the script as the goods change; correct without it too. */ ?>
+        <span class="ido-price-hint ido-dim" id="ido-price-hint"><?php echo esc_html($first_hint); ?></span>
     </form>
 </div>
 

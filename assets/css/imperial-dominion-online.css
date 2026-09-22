@@ -220,6 +220,8 @@
 .ido-field-small { display: inline-block; margin-right: 10px; vertical-align: top; }
 .ido-form-inline { display: inline-flex; gap: 4px; align-items: center; }
 .ido-force { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Price guidance sits beside the Post button and wraps under it when narrow. */
+.ido-price-hint { flex: 1 1 22ch; align-self: center; line-height: 1.35; }
 
 /*
  * Form controls, forced past the theme. Themes routinely set a grey input

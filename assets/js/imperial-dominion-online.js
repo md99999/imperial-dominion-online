@@ -38,4 +38,16 @@
             }, 0);
         }
     });
+
+    // The market's price guidance follows whichever goods are selected. The
+    // server renders the first item's guidance, so this only keeps it in step.
+    var itemSelect = document.getElementById('ido-post-item');
+    var priceHint = document.getElementById('ido-price-hint');
+    if (itemSelect && priceHint) {
+        itemSelect.addEventListener('change', function () {
+            var option = itemSelect.options[itemSelect.selectedIndex];
+            var hint = option && option.getAttribute('data-hint');
+            if (hint) priceHint.textContent = hint;
+        });
+    }
 }());
