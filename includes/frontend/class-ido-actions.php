@@ -12,7 +12,7 @@ class IDO_Actions {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || empty($_POST['ido_action'])) return;
         if (!is_user_logged_in()) return;
 
-        $redirect = wp_get_referer() ?: IDO_UI::url('throne');
+        $redirect = self::current_page_url();
 
         if (!isset($_POST['ido_nonce'])
             || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ido_nonce'])), 'ido_action')) {
@@ -48,6 +48,35 @@ class IDO_Actions {
 
         wp_safe_redirect($redirect);
         exit;
+    }
+
+    /**
+     * Where an order returns to: the page it was given on.
+     *
+     * Not wp_get_referer(). Every game form posts to its own page, and
+     * wp_get_referer() deliberately returns false when the referer matches the
+     * current request, so relying on it sent every order back to the Throne
+     * Room instead of leaving the ruler where they were working.
+     *
+     * The queried page is the reliable answer, since each game screen is an
+     * ordinary WordPress page holding one shortcode.
+     */
+    private static function current_page_url(): string {
+        $page_id = get_queried_object_id();
+        $url = $page_id ? get_permalink($page_id) : '';
+        if (!$url) {
+            $url = wp_get_referer() ?: IDO_UI::url('throne');
+        }
+
+        // Carry the view the ruler was looking at, so buying from a filtered
+        // market or targeting a kingdom does not reset the screen.
+        $carry = [];
+        foreach (['item', 'target'] as $key) {
+            if (!empty($_GET[$key])) {
+                $carry[$key] = sanitize_key(wp_unslash($_GET[$key]));
+            }
+        }
+        return $carry ? add_query_arg($carry, $url) : $url;
     }
 
     private static function field(string $name, string $default = '') {

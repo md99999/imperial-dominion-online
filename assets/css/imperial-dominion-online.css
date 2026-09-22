@@ -199,8 +199,20 @@
 .ido-table thead th { color: var(--ido-accent); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; }
 .ido-right { text-align: right; font-variant-numeric: tabular-nums; }
 .ido-row-me { background: rgba(79, 214, 255, 0.08); }
+/*
+ * Wide tables keep numbers and buttons on one line and scroll sideways only as
+ * a last resort. Prose columns must wrap, or one long description drags the
+ * whole table off the screen: the earlier rule only matched .ido-dim on a child
+ * element, while these tables put the class on the cell itself.
+ */
 .ido-table-wide { display: block; overflow-x: auto; white-space: nowrap; }
-.ido-table-wide td .ido-dim { white-space: normal; }
+.ido-table-wide td.ido-dim,
+.ido-table-wide td .ido-dim,
+.ido-table-wide td.ido-wrap {
+    white-space: normal;
+    min-width: 18ch;
+    max-width: 52ch;
+}
 
 /* Forms */
 .ido-field { display: block; margin-bottom: 10px; }
