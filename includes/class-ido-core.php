@@ -67,7 +67,9 @@ class IDO_Settings {
             'dominion_name'          => '',
             // Turns
             'turns_per_day'          => 10,
-            'turn_cap'               => 90,
+            // Three days' worth: enough to forgive a weekend away, not enough
+            // to bank a fortnight and spend it in one sitting.
+            'turn_cap'               => 30,
             // What a kingdom is founded with, so a new ruler has more than one
             // day's worth to learn the game with on their first sitting.
             'starting_turns'         => 15,
