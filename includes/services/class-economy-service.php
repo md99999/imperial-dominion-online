@@ -159,11 +159,19 @@ class IDO_Economy {
         $messages = IDO_Kingdom::spend_turns($kingdom, 1);
         $kingdom = IDO_Kingdom::reload($kingdom);
         IDO_Kingdom::pay($kingdom, ['gold' => -$cost, 'land' => $acres], 'Your treasury cannot pay the settlers.');
-        IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
+
+        // Re-read before reporting: $kingdom still holds the row as it was
+        // before the acres were added, and the message quotes the new total.
+        $kingdom = IDO_Kingdom::reload($kingdom);
+        IDO_Kingdom::recalc_networth($kingdom);
 
         $messages[] = sprintf(
-            'Your settlers claim %s acres of wilderness for %s gold.',
-            IDO_Game::fmt($acres), IDO_Game::fmt($cost)
+            // The running total matters: the acres a party finds barely changes
+            // between one exploration and the next, so without it the screen
+            // looks as though nothing happened.
+            'Your settlers claim %s acres of wilderness for %s gold. Your kingdom now holds %s acres, %s of them wilderness.',
+            IDO_Game::fmt($acres), IDO_Game::fmt($cost),
+            IDO_Game::fmt($kingdom->land), IDO_Game::fmt(IDO_Buildings::wilderness($kingdom))
         );
         return $messages;
     }
