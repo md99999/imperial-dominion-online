@@ -11,7 +11,7 @@ $groups = [
     'War' => ['target_min_percent', 'target_max_percent', 'max_hits_per_target', 'conquest_land_percent'],
     'Covert work' => ['agent_gold_cost', 'max_agents'],
     'Market' => ['market_tax_percent', 'listing_days', 'max_listings_per_kingdom'],
-    'Rounds and housekeeping' => ['round_days', 'auto_start_next_round', 'news_retention_days', 'allow_new_kingdoms'],
+    'Rounds and housekeeping' => ['round_days', 'auto_start_next_round', 'news_retention_days', 'allow_new_kingdoms', 'use_wp_cron'],
 ];
 
 $help = [
@@ -31,6 +31,7 @@ $help = [
     'market_tax_percent'     => 'Cut the crown takes from every sale.',
     'auto_start_next_round'  => '1 opens the next round automatically when one ends, 0 waits for you.',
     'allow_new_kingdoms'       => '1 lets players claim kingdoms, 0 closes the rolls.',
+    'use_wp_cron'            => '1 lets the plugin schedule its own WP-Cron events, 0 leaves the ticks to a real cron. Running both is safe either way: see Maintenance.',
 ];
 ?>
 <div class="wrap">

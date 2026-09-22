@@ -102,6 +102,8 @@ class IDO_Settings {
             'round_days'             => 45,
             'auto_start_next_round'  => 1,
             'news_retention_days'    => 14,
+            // Off when a real cron calls the scripts in /maintenance instead.
+            'use_wp_cron'            => 1,
             'allow_new_kingdoms'      => 1,
             // Deleting the plugin keeps the game's data unless this is turned on.
             'delete_data_on_uninstall' => 0,

@@ -5,4 +5,4 @@
  */
 if (PHP_SAPI !== "cli") exit("CLI only.\n");
 require_once __DIR__ . "/bootstrap.php";
-echo IDO_Maintenance::daily() . "\n";
+echo IDO_Maintenance::daily(false, "system cron") . "\n";

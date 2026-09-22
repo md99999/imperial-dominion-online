@@ -5,15 +5,35 @@ if (!defined('ABSPATH')) exit;
  * Scheduled upkeep. Runs from WP-Cron, from the admin Maintenance page, or from
  * the scripts in /maintenance when the site has a real system cron.
  *
- * Both ticks are idempotent and refuse to run twice in the same period, so a
- * site can have WP-Cron and a system cron configured at once without doubling
- * anyone turns.
+ * Running from more than one of those at once has to be safe, because a shared
+ * host often cannot disable WP-Cron at all. Two things make it safe:
+ *
+ *  - A named database lock. Only one tick of a kind runs at a time, whatever
+ *    started it, so two processes firing in the same second cannot both do the
+ *    work. Without this the "has it run recently" check below is a race: both
+ *    read the old timestamp before either writes the new one.
+ *  - A period check, taken again inside the lock. The second caller sees the
+ *    timestamp the first one wrote and stands down.
+ *
+ * The underlying work is written to be idempotent as well, so even a tick that
+ * somehow ran twice would not grant two days of turns.
  */
 class IDO_Maintenance {
     const HOURLY_HOOK = 'ido_hourly_maintenance';
     const DAILY_HOOK  = 'ido_daily_maintenance';
 
+    /** Schedules or clears the WP-Cron events to match the setting. */
+    public static function apply_schedule(): void {
+        if (IDO_Settings::int('use_wp_cron')) {
+            self::schedule();
+        } else {
+            self::unschedule();
+        }
+    }
+
     public static function schedule(): void {
+        if (!IDO_Settings::int('use_wp_cron')) return;
+
         if (!wp_next_scheduled(self::HOURLY_HOOK)) {
             wp_schedule_event(time() + HOUR_IN_SECONDS, 'hourly', self::HOURLY_HOOK);
         }
@@ -30,53 +50,83 @@ class IDO_Maintenance {
     }
 
     /** Market lots expire and a finished round is wound up. */
-    public static function hourly(bool $force = false): string {
+    public static function hourly(bool $force = false, string $source = 'WP-Cron'): string {
         $round = IDO_Rounds::current();
         if (!$round) return 'No round is running.';
 
-        $last = strtotime((string) get_option('ido_last_hourly'));
-        if (!$force && $last && current_time('timestamp') - $last < 50 * MINUTE_IN_SECONDS) {
-            return 'Hourly upkeep skipped: it already ran at ' . get_option('ido_last_hourly') . '.';
+        if (!IDO_Lock::acquire('maintenance_hourly', 0)) {
+            return 'Hourly upkeep skipped: another run is already in progress.';
         }
 
-        $expired = IDO_Market::expire((int) $round->id);
-        $rollover = IDO_Rounds::maybe_roll_over();
+        try {
+            // Checked again now the lock is held: a run that started a moment
+            // ago may have finished while this one was waiting.
+            $last = strtotime((string) get_option('ido_last_hourly'));
+            if (!$force && $last && current_time('timestamp') - $last < 50 * MINUTE_IN_SECONDS) {
+                return 'Hourly upkeep skipped: it already ran at ' . get_option('ido_last_hourly') . '.';
+            }
 
-        update_option('ido_last_hourly', IDO_Game::now(), false);
-        return sprintf('Hourly upkeep: %d market lots returned to their owners.%s',
-            $expired, $rollover ? ' ' . $rollover : '');
+            $expired = IDO_Market::expire((int) $round->id);
+            $rollover = IDO_Rounds::maybe_roll_over();
+
+            self::record('hourly', $source);
+            return sprintf('Hourly upkeep: %d market lots returned to their owners.%s',
+                $expired, $rollover ? ' ' . $rollover : '');
+        } finally {
+            IDO_Lock::release('maintenance_hourly');
+        }
     }
 
     /** Turns are granted, building work finishes, old news is cleared. */
-    public static function daily(bool $force = false): string {
+    public static function daily(bool $force = false, string $source = 'WP-Cron'): string {
         global $wpdb;
         $round = IDO_Rounds::current();
         if (!$round) return 'No round is running.';
 
-        $today = IDO_Game::today();
-        if (!$force && substr((string) get_option('ido_last_daily'), 0, 10) === $today) {
-            return 'Daily upkeep skipped: it already ran today at ' . get_option('ido_last_daily') . '.';
+        if (!IDO_Lock::acquire('maintenance_daily', 0)) {
+            return 'Daily upkeep skipped: another run is already in progress.';
         }
 
-        $granted = IDO_Kingdom::grant_daily_turns((int) $round->id);
-        $built   = IDO_Construction::complete_due((int) $round->id);
-        IDO_Market::expire((int) $round->id);
+        try {
+            $today = IDO_Game::today();
+            if (!$force && substr((string) get_option('ido_last_daily'), 0, 10) === $today) {
+                return 'Daily upkeep skipped: it already ran today at ' . get_option('ido_last_daily') . '.';
+            }
 
-        $cutoff = date('Y-m-d H:i:s', current_time('timestamp') - IDO_Settings::int('news_retention_days') * DAY_IN_SECONDS);
-        $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('news') . ' WHERE created_at < %s', $cutoff));
+            $granted = IDO_Kingdom::grant_daily_turns((int) $round->id);
+            $built   = IDO_Construction::complete_due((int) $round->id);
+            IDO_Market::expire((int) $round->id);
 
-        $rollover = IDO_Rounds::maybe_roll_over();
+            $cutoff = date('Y-m-d H:i:s', current_time('timestamp') - IDO_Settings::int('news_retention_days') * DAY_IN_SECONDS);
+            $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('news') . ' WHERE created_at < %s', $cutoff));
 
-        update_option('ido_last_daily', IDO_Game::now(), false);
-        return sprintf(
-            'Daily upkeep: turns granted to %d kingdoms, %d buildings finished.%s',
-            $granted, $built, $rollover ? ' ' . $rollover : ''
-        );
+            $rollover = IDO_Rounds::maybe_roll_over();
+
+            self::record('daily', $source);
+            return sprintf(
+                'Daily upkeep: turns granted to %d kingdoms, %d buildings finished.%s',
+                $granted, $built, $rollover ? ' ' . $rollover : ''
+            );
+        } finally {
+            IDO_Lock::release('maintenance_daily');
+        }
+    }
+
+    /** Notes when a tick ran and what started it, for the Maintenance screen. */
+    private static function record(string $which, string $source): void {
+        update_option('ido_last_' . $which, IDO_Game::now(), false);
+        update_option('ido_last_' . $which . '_source', sanitize_text_field($source), false);
+    }
+
+    public static function last_source(string $which): string {
+        $source = (string) get_option('ido_last_' . $which . '_source', '');
+        return $source !== '' ? $source : 'unknown';
     }
 
     /**
-     * Grants turns on demand for a single kingdom that has not had today allowance
-     * yet, so a ruler who logs in before cron has run is not left waiting.
+     * Grants turns on demand for a single kingdom that has not had today's
+     * allowance yet, so a ruler who logs in before cron has run is not left
+     * waiting. The guarded UPDATE makes this safe to race with the daily tick.
      */
     public static function catch_up(object $kingdom): void {
         if ($kingdom->last_turn_grant === IDO_Game::today() || (int) $kingdom->is_defeated === 1) return;

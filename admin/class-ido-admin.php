@@ -65,6 +65,9 @@ class IDO_Admin {
                 $values = isset($_POST['settings']) && is_array($_POST['settings'])
                     ? wp_unslash($_POST['settings']) : [];
                 IDO_Settings::update($values);
+                // The WP-Cron events follow the setting immediately, so turning
+                // it off actually stops them rather than waiting for a reload.
+                IDO_Maintenance::apply_schedule();
                 IDO_Log::admin('settings', 'Settings updated.');
                 $notice = 'Settings saved.';
                 break;
@@ -86,11 +89,11 @@ class IDO_Admin {
                 break;
 
             case 'run_hourly':
-                $notice = IDO_Maintenance::hourly(true);
+                $notice = IDO_Maintenance::hourly(true, 'admin');
                 break;
 
             case 'run_daily':
-                $notice = IDO_Maintenance::daily(true);
+                $notice = IDO_Maintenance::daily(true, 'admin');
                 break;
 
             case 'create_pages':

@@ -125,8 +125,15 @@ Two scheduled ticks keep the world turning:
   finished round.
 - **Hourly** returns expired market lots and catches a round whose time ran out between daily runs.
 
-Both refuse to run twice in the same period, so WP-Cron and a system cron can be configured
-together without anybody getting two days of turns. For a real cron:
+**Running WP-Cron and a real cron together is safe.** Each tick takes a named database lock
+before doing anything, so only one run of a kind happens at a time whatever started it, and a
+second run arriving mid-way stands down instead of repeating the work. Each also refuses to run
+twice in the same period, and the work underneath is idempotent. You do not need to disable
+WP-Cron, which many shared hosts will not allow anyway.
+
+Once a real cron is working you can set **Use wp cron** to 0 under Settings, which stops the
+plugin scheduling its own events. The Maintenance screen shows when each tick last ran and
+which scheduler started it. For a real cron:
 
 ```
 0 * * * * php /path/to/wp-content/plugins/imperial-dominion-online/maintenance/hourly_maintenance.php
