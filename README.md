@@ -42,7 +42,10 @@ endorsed by its creators or rights holders.
 2. Go to **Imperial Dominion &rarr; Dashboard** and press **Create any missing game pages**.
    That creates the nine pages below, each holding a single shortcode. Every title carries an
    `ID - ` prefix so the game's pages sort together and cannot be confused with the rest of the site.
-3. Adjust the game under **Imperial Dominion &rarr; Settings**.
+3. Adjust the game under **Imperial Dominion &rarr; Settings**. If you want a link in the site's
+   own menu, set **Assign menu to theme location** there: it creates a one-item menu pointing at
+   the game's front page. The other eight pages are kept out of menus a theme builds automatically
+   from the page list, since the game carries its own navigation on every screen.
 4. On a quiet site, set up a real cron (see **Maintenance** below). WP-Cron only fires when
    somebody visits, which is no good for a game where turns arrive at midnight.
 

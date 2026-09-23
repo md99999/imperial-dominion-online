@@ -108,6 +108,8 @@ class IDO_Settings {
             'news_retention_days'    => 14,
             // Off when a real cron calls the scripts in /maintenance instead.
             'use_wp_cron'            => 1,
+            // A theme menu location, or blank for "do not touch the site menu".
+            'menu_location'          => '',
             'allow_new_kingdoms'      => 1,
             // Deleting the plugin keeps the game's data unless this is turned on.
             'delete_data_on_uninstall' => 0,
@@ -116,7 +118,7 @@ class IDO_Settings {
 
     /** Settings that are free text rather than integers. */
     public static function text_keys(): array {
-        return ['dominion_name'];
+        return ['dominion_name', 'menu_location'];
     }
 
     public static function all(): array {

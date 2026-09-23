@@ -81,6 +81,41 @@ $help = [
             </tr>
         </table>
 
+        <h2>Site menu</h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><label for="ido_menu_location">Assign menu to theme location</label></th>
+                <td>
+                    <?php $locations = IDO_Menu::locations(); ?>
+                    <?php if (!$locations) : ?>
+                        <p><em>This theme registers no menu locations, so there is nowhere to assign one.</em></p>
+                        <input type="hidden" name="settings[menu_location]" value="">
+                    <?php else : ?>
+                        <select id="ido_menu_location" name="settings[menu_location]">
+                            <option value=""><?php echo esc_html('Do not assign'); ?></option>
+                            <?php foreach ($locations as $slug => $label) : ?>
+                                <option value="<?php echo esc_attr($slug); ?>"
+                                    <?php selected($slug, (string) $settings['menu_location']); ?>>
+                                    <?php echo esc_html($label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php endif; ?>
+                    <p class="description">
+                        Creates a menu called <strong><?php echo esc_html(IDO_Menu::MENU_NAME); ?></strong> holding
+                        only the game's front page, and hangs it on the location you choose. The other game pages are
+                        never added: the game carries its own navigation across the top of every screen, so the site
+                        needs one way in, not nine.
+                    </p>
+                    <p class="description">
+                        Choosing <em>Do not assign</em> releases the location but leaves the menu itself alone, so
+                        anything you have since added to it by hand survives. The game's other pages are kept out of
+                        menus a theme builds automatically from the page list, whatever you choose here.
+                    </p>
+                </td>
+            </tr>
+        </table>
+
         <h2>Deleting the plugin</h2>
         <table class="form-table" role="presentation">
             <tr>

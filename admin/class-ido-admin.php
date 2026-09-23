@@ -68,8 +68,9 @@ class IDO_Admin {
                 // The WP-Cron events follow the setting immediately, so turning
                 // it off actually stops them rather than waiting for a reload.
                 IDO_Maintenance::apply_schedule();
+                $menu_notice = IDO_Menu::apply();
                 IDO_Log::admin('settings', 'Settings updated.');
-                $notice = 'Settings saved.';
+                $notice = trim('Settings saved. ' . $menu_notice);
                 break;
 
             case 'start_round':
@@ -98,6 +99,9 @@ class IDO_Admin {
 
             case 'create_pages':
                 $notice = self::create_pages();
+                // The front page may have only just come into existence.
+                $menu_notice = IDO_Menu::apply();
+                if ($menu_notice) $notice .= ' ' . $menu_notice;
                 break;
 
             case 'delete_kingdom':
