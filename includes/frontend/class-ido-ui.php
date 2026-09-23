@@ -14,15 +14,15 @@ class IDO_UI {
      * of play: rule, grow, arm, march, scheme, trade, read.
      */
     const PAGES = [
-        'guide'    => ['Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
-        'throne'   => ['Throne Room', 'imperial-dominion-online', 'ido_throne', 'Throne'],
-        'lands'    => ['Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
-        'military' => ['Muster Field', 'imperial-dominion-online-muster', 'ido_military', 'Muster'],
-        'war'      => ['War Room', 'imperial-dominion-online-war', 'ido_war', 'War'],
-        'covert'   => ['Spy Court', 'imperial-dominion-online-spies', 'ido_covert', 'Spies'],
-        'market'   => ['Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
-        'gazette'  => ['Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
-        'rankings' => ['Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
+        'guide'    => ['ID - Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
+        'throne'   => ['ID - Throne Room', 'imperial-dominion-online', 'ido_throne', 'Throne'],
+        'lands'    => ['ID - Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
+        'military' => ['ID - Army', 'imperial-dominion-online-muster', 'ido_military', 'Army'],
+        'war'      => ['ID - War Room', 'imperial-dominion-online-war', 'ido_war', 'War'],
+        'covert'   => ['ID - Spy Court', 'imperial-dominion-online-spies', 'ido_covert', 'Spies'],
+        'market'   => ['ID - Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
+        'gazette'  => ['ID - Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
+        'rankings' => ['ID - Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
     ];
 
     public static function url(string $key, array $args = []): string {
@@ -94,8 +94,11 @@ class IDO_UI {
         $round = IDO_Rounds::current();
         $days_left = IDO_Rounds::days_left($round);
 
+        // Turns read as a pool with a ceiling, not a bare number: "7 of 30"
+        // tells a ruler how much room is left before a day's grant is wasted.
+        $cap = max(1, IDO_Settings::int('turn_cap'));
         $cells = [
-            'Turns'      => IDO_Game::fmt($kingdom->turns),
+            'Turns'      => sprintf('%s of %s', IDO_Game::fmt($kingdom->turns), IDO_Game::fmt($cap)),
             'Land'       => IDO_Game::fmt($kingdom->land) . ' acres',
             'Gold'       => IDO_Game::fmt($kingdom->gold),
             'Grain'      => IDO_Game::fmt($kingdom->grain),
@@ -120,6 +123,7 @@ class IDO_UI {
                 . '<span class="ido-stat-value">' . esc_html($value) . '</span></div>';
         }
         $out .= '</div>';
+        $out .= self::turn_help($kingdom);
 
         if (IDO_Kingdom::is_protected($kingdom)) {
             $out .= '<div class="ido-protected">Crown truce until '
@@ -127,6 +131,40 @@ class IDO_UI {
                 . '. No one may march on you, and you may not march on them.</div>';
         }
         return $out . '</div>';
+    }
+
+    /**
+     * One line explaining the only resource a new ruler misreads: turns.
+     * It states what spending one does, what the day brings, and whether the
+     * pool is already full, since a full pool means tomorrow's grant is lost.
+     */
+    public static function turn_help(object $kingdom): string {
+        $per_day = IDO_Settings::int('turns_per_day');
+        $cap     = max(1, IDO_Settings::int('turn_cap'));
+        $turns   = (int) $kingdom->turns;
+
+        $line = sprintf(
+            'Every order costs turns, and each turn pays out your income the moment you spend it. You gain %s a day, up to %s.',
+            IDO_Game::fmt($per_day), IDO_Game::fmt($cap)
+        );
+
+        $class = 'ido-turn-help';
+        if ($turns >= $cap) {
+            $class .= ' ido-turn-help-full';
+            $line .= " Your turns are at the ceiling, so the next daily grant will be wasted unless you spend some today.";
+        } elseif ($turns === 0) {
+            $class .= ' ido-turn-help-empty';
+            $line .= ' You have none left; more arrive on the daily tick.';
+        }
+
+        return '<div class="' . esc_attr($class) . '">' . esc_html($line) . '</div>';
+    }
+
+    /** A short note on what an order costs, shown beside the button that gives it. */
+    public static function turn_cost(int $turns = 1): string {
+        return '<span class="ido-turn-cost">'
+            . esc_html(sprintf(_n('Costs %d turn', 'Costs %d turns', $turns, 'imperial-dominion-online'), $turns))
+            . '</span>';
     }
 
     public static function nav(string $current): string {

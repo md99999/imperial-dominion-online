@@ -17,7 +17,7 @@ $build_days = IDO_Settings::int('build_days');
         </p>
         <p class="ido-dim">The larger your kingdom grows, the fewer acres a party finds and the more each one costs. Past a point it is cheaper to take land from a neighbour than to settle it.</p>
         <?php echo IDO_UI::form_open('explore'); ?>
-            <button type="submit" class="ido-btn">Send settlers</button>
+            <button type="submit" class="ido-btn">Send settlers</button> <?php echo IDO_UI::turn_cost(1); ?>
         </form>
     </div>
 
@@ -40,7 +40,7 @@ $build_days = IDO_Settings::int('build_days');
         Each building costs <?php echo esc_html(IDO_Game::fmt($gold_each)); ?> gold and
         <?php echo esc_html(IDO_Game::fmt($iron_each)); ?> iron per acre, plus one turn for the order.
         <?php if ($build_days > 0) : ?>
-            Work finishes on the daily tick, <?php echo esc_html(sprintf(_n('%d day from the order', '%d days from the order', $build_days, 'imperial-dominion-online'), $build_days)); ?>.
+            Each order costs one turn, however many buildings it covers, so place large orders. Work finishes on the daily tick, <?php echo esc_html(sprintf(_n('%d day from the order', '%d days from the order', $build_days, 'imperial-dominion-online'), $build_days)); ?>.
         <?php endif; ?>
     </p>
     <table class="ido-table ido-table-wide">

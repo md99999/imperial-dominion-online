@@ -40,7 +40,8 @@ endorsed by its creators or rights holders.
 1. Copy this folder into `wp-content/plugins/` and activate **Imperial Dominion Online**.
    Activation creates the tables, writes the default settings and opens **Round 1**.
 2. Go to **Imperial Dominion &rarr; Dashboard** and press **Create any missing game pages**.
-   That creates the eight pages below, each holding a single shortcode.
+   That creates the nine pages below, each holding a single shortcode. Every title carries an
+   `ID - ` prefix so the game's pages sort together and cannot be confused with the rest of the site.
 3. Adjust the game under **Imperial Dominion &rarr; Settings**.
 4. On a quiet site, set up a real cron (see **Maintenance** below). WP-Cron only fires when
    somebody visits, which is no good for a game where turns arrive at midnight.
@@ -49,14 +50,14 @@ endorsed by its creators or rights holders.
 
 | Page | Shortcode | What it is |
 | --- | --- | --- |
-| Throne Room | `[ido_throne]` | The state of the kingdom, and what one turn currently yields |
-| Lands | `[ido_lands]` | Settle wilderness, raise buildings, demolish them |
-| Muster Field | `[ido_military]` | Train and disband troops |
-| War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
-| Spy Court | `[ido_covert]` | Hire an agent and send them out |
-| Market | `[ido_market]` | Post lots, buy what other rulers have posted |
-| Gazette | `[ido_gazette]` | Public news of the round |
-| Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
+| ID - Throne Room | `[ido_throne]` | The state of the kingdom, and what one turn currently yields |
+| ID - Lands | `[ido_lands]` | Settle wilderness, raise buildings, demolish them |
+| ID - Army | `[ido_military]` | Train and disband troops |
+| ID - War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
+| ID - Spy Court | `[ido_covert]` | Hire an agent and send them out |
+| ID - Market | `[ido_market]` | Post lots, buy what other rulers have posted |
+| ID - Gazette | `[ido_gazette]` | Public news of the round |
+| ID - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
 
 ---
 

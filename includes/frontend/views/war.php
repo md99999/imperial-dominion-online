@@ -68,7 +68,7 @@ $band_max  = IDO_Settings::int('target_max_percent');
                 <?php endforeach; ?>
             </div>
 
-            <p><button type="submit" class="ido-btn ido-btn-danger">Sound the horns</button></p>
+            <p><button type="submit" class="ido-btn ido-btn-danger">Sound the horns</button> <?php echo IDO_UI::turn_cost($turn_cost); ?></p>
         </form>
     <?php endif; ?>
 </div>

@@ -223,6 +223,26 @@
 /* Price guidance sits beside the Post button and wraps under it when narrow. */
 .ido-price-hint { flex: 1 1 22ch; align-self: center; line-height: 1.35; }
 
+/* What an order costs, said next to the button that gives it. */
+.ido-turn-cost {
+    color: var(--ido-dim);
+    font-size: 0.78rem;
+    white-space: nowrap;
+    margin-left: 6px;
+}
+
+/* The standing explanation of turns, under the status bar on every screen. */
+.ido-turn-help {
+    margin-top: 8px;
+    padding: 6px 8px;
+    border-left: 3px solid var(--ido-border);
+    background: rgba(79, 214, 255, 0.05);
+    color: var(--ido-dim);
+    font-size: 0.82rem;
+}
+.ido-turn-help-full { border-left-color: var(--ido-amber); color: var(--ido-amber); }
+.ido-turn-help-empty { border-left-color: var(--ido-bad); }
+
 /*
  * Form controls, forced past the theme. Themes routinely set a grey input
  * colour for their own light backgrounds, which on this dark panel leaves the

@@ -12,7 +12,7 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
         <?php if ($discount > 0) : ?>
             Your barracks trim <?php echo esc_html(number_format_i18n($discount * 100, 1)); ?>% from the gold price.
         <?php endif; ?>
-        Training an order of troops costs one turn.
+        Training an order of troops costs one turn, however many you train at once. Disbanding costs none.
     </p>
     <table class="ido-table ido-table-wide">
         <thead>

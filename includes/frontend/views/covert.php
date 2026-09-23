@@ -34,7 +34,7 @@ $has_agent = (int) $kingdom->agents > 0;
 
     <?php if ((int) $kingdom->agents < $max) : ?>
         <?php echo IDO_UI::form_open('hire_agent'); ?>
-            <button type="submit" class="ido-btn">Hire an agent</button>
+            <button type="submit" class="ido-btn">Hire an agent</button> <?php echo IDO_UI::turn_cost(1); ?>
         </form>
     <?php else : ?>
         <p class="ido-dim">You keep as many agents as the crown allows.</p>
@@ -74,7 +74,7 @@ $has_agent = (int) $kingdom->agents > 0;
                     <?php endforeach; ?>
                 </select>
             </label>
-            <p><button type="submit" class="ido-btn">Send them out</button></p>
+            <p><button type="submit" class="ido-btn">Send them out</button> <?php echo IDO_UI::turn_cost(max(1, IDO_Settings::int("op_turn_cost"))); ?></p>
         </form>
         <ul class="ido-list">
             <?php foreach ($ops as $op) : ?>
