@@ -15,3 +15,17 @@ vendor/
 
 # Test scratch output
 tests/preview.html
+
+# League play: secrets and local fixtures, never the source.
+#
+# The code for league play belongs in includes/league/ and is committed like
+# everything else. What is ignored here is the material that must never reach a
+# public repository: shared secrets, keys, and any captured packets used for
+# local testing. A league secret lives in the ido_sites table, agreed at
+# pairing, and a packet lives in a database column, never on disk.
+league-local/
+*.secret
+*.pem
+*.key
+.env
+.env.*

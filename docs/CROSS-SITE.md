@@ -78,6 +78,24 @@ The honest summary is that league play is a **federation of people who broadly t
 with mechanisms that make accidental divergence impossible and deliberate cheating visible. It is
 not, and cannot be, a system that makes a hostile host safe to play against.
 
+## Where the code and the secrets live
+
+The league code goes in `includes/league/` and is committed like the rest of the plugin. Keeping
+it out of the repository would mean no history for the most security-sensitive part of the game,
+which is exactly backwards.
+
+**No secret is ever committed, including a placeholder.** A shared secret is generated at pairing
+and stored in the `ido_sites` table; it never appears in a file, a constant or a default. A
+default secret in a public repository is the classic way a federated system is broken: every
+install shares one key and the repository tells an attacker what it is. If the pairing screen
+needs a starting value, it generates one with `wp_generate_password()` and shows it once.
+
+Packets are stored as text in `ido_packets`, not written to disk. That is a security decision
+rather than a storage preference: nothing arriving from another site should ever become a file.
+
+`.gitignore` carries entries for `league-local/`, `*.secret`, `*.key`, `*.pem` and `.env` files,
+so local fixtures and captured packets used in testing cannot be committed by accident.
+
 ## What Phase 1 already provides
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
