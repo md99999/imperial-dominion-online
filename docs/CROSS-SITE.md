@@ -37,6 +37,47 @@ battle, so the attacking kingdom's troops must be held in escrow from the moment
 until the result comes back, and released with a timeout if it never does. This is the piece that
 Phase 1 deliberately avoids by resolving everything locally and instantly.
 
+## The league owns the rules, not the sites
+
+A site that grants its rulers 200 turns a day, or founds kingdoms with ten times the starting
+gold, wins a league without ever fighting well. Every setting that affects the game has to be the
+league's to set, not each site's.
+
+**Two classes of setting.** Cosmetic ones stay local: the world name, page titles, whether new
+kingdoms may be founded. Game-affecting ones are league-governed and identical everywhere:
+
+- turns per day, the turn cap, starting turns
+- every starting resource, and the starting land
+- explore yield and cost, build cost, training costs
+- the conquest share, target bands, hits per target, truce length
+- agent cost and the agent limit
+- market tax and round length
+
+**Distribute, then verify.** The hub holds the league ruleset and sends it with the pairing
+handshake. A member site stores it and shows those settings read-only in the admin, marked as set
+by the league, so there is nothing to argue about locally.
+
+Distribution alone is not enough, because a site can change its copy back. Every packet therefore
+carries a **rules fingerprint**: a hash of the governed settings in a fixed order. The hub
+compares it against the league's own and refuses packets that do not match, naming the setting
+that differs. A site that has drifted is told why it is being ignored rather than silently losing.
+
+**The fingerprint does not stop a determined cheat**, and it is important to be honest about that.
+A site administrator owns their database and can set a kingdom's land to whatever they like without
+touching a single setting. The fingerprint catches drift and misconfiguration, which is most of
+it. Beyond that there are two defences worth having:
+
+- **Plausibility checks at the hub.** Given the ruleset, there is a ceiling on how much a kingdom
+  can grow between exchanges: so many turns, each worth so much income. A kingdom that gains more
+  than the rules allow is flagged, and the hub can hold its packets for a human to look at.
+- **Publish everything.** Every member's standings, visible to every member. Cheating that nobody
+  can see is a problem; cheating in public is a short-lived one, because leagues are voluntary and
+  a site that is obviously inflated gets dropped.
+
+The honest summary is that league play is a **federation of people who broadly trust each other**,
+with mechanisms that make accidental divergence impossible and deliberate cheating visible. It is
+not, and cannot be, a system that makes a hostile host safe to play against.
+
 ## What Phase 1 already provides
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
@@ -50,6 +91,8 @@ Phase 1 deliberately avoids by resolving everything locally and instantly.
 ## What would need adding
 
 - A `ido_sites` table: peer site URL, shared secret, sequence counters, trust status.
+- The league ruleset, stored locally, with those settings locked in the admin and a fingerprint
+  recomputed whenever they change.
 - A `ido_packets` table: UUID, direction, type, payload, status, processed timestamp.
 - An escrow table, or `away_*` columns on `ido_kingdoms`, for forces in transit.
 - A queue and a cron worker, since remote battles cannot resolve inside the request that starts
