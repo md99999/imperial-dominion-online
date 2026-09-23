@@ -135,7 +135,7 @@ class IDO_Maintenance {
         global $wpdb;
         $wpdb->query($wpdb->prepare(
             'UPDATE ' . IDO_DB::t('kingdoms')
-            . ' SET turns = LEAST(%d, turns + %d), last_turn_grant = %s'
+            . ' SET turns = GREATEST(turns, LEAST(%d, turns + %d)), last_turn_grant = %s'
             . ' WHERE id = %d AND (last_turn_grant IS NULL OR last_turn_grant <> %s)',
             $cap, $per_day, IDO_Game::today(), (int) $kingdom->id, IDO_Game::today()
         ));

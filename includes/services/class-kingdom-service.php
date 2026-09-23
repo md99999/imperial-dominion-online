@@ -257,7 +257,14 @@ class IDO_Kingdom {
         return IDO_Economy::advance(self::reload($kingdom), $turns);
     }
 
-    /** Grants the daily turn allowance, capped. Safe to call more than once a day. */
+    /**
+     * Grants the daily turn allowance, capped. Safe to call more than once a day.
+     *
+     * GREATEST keeps whatever the kingdom already holds: a game master who
+     * lowers the cap should stop the pool growing, not take turns away that
+     * were granted under the old ceiling. A kingdom above the cap simply
+     * receives nothing until it has spent back below it.
+     */
     public static function grant_daily_turns(int $round_id): int {
         global $wpdb;
         $per_day = IDO_Settings::int('turns_per_day');
@@ -265,7 +272,7 @@ class IDO_Kingdom {
         $today   = IDO_Game::today();
         $rows = $wpdb->query($wpdb->prepare(
             'UPDATE ' . IDO_DB::t('kingdoms')
-            . ' SET turns = LEAST(%d, turns + %d), last_turn_grant = %s'
+            . ' SET turns = GREATEST(turns, LEAST(%d, turns + %d)), last_turn_grant = %s'
             . ' WHERE round_id = %d AND is_defeated = 0 AND (last_turn_grant IS NULL OR last_turn_grant <> %s)',
             $cap, $per_day, $today, $round_id, $today
         ));

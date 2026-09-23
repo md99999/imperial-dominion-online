@@ -96,9 +96,15 @@ class IDO_UI {
 
         // Turns read as a pool with a ceiling, not a bare number: "7 of 30"
         // tells a ruler how much room is left before a day's grant is wasted.
+        // "7 of 30" while the pool is within its ceiling. A kingdom holding
+        // more than the cap, because the cap was lowered under it, would read
+        // as "70 of 30", so it just shows the count.
         $cap = max(1, IDO_Settings::int('turn_cap'));
+        $turns = (int) $kingdom->turns;
         $cells = [
-            'Turns'      => sprintf('%s of %s', IDO_Game::fmt($kingdom->turns), IDO_Game::fmt($cap)),
+            'Turns'      => $turns > $cap
+                ? IDO_Game::fmt($turns)
+                : sprintf('%s of %s', IDO_Game::fmt($turns), IDO_Game::fmt($cap)),
             'Land'       => IDO_Game::fmt($kingdom->land) . ' acres',
             'Gold'       => IDO_Game::fmt($kingdom->gold),
             'Grain'      => IDO_Game::fmt($kingdom->grain),
@@ -149,7 +155,13 @@ class IDO_UI {
         );
 
         $class = 'ido-turn-help';
-        if ($turns >= $cap) {
+        if ($turns > $cap) {
+            $class .= ' ido-turn-help-full';
+            $line .= sprintf(
+                ' You hold %s, above the current ceiling of %s: nothing is taken away, but no more arrive until you have spent back below it.',
+                IDO_Game::fmt($turns), IDO_Game::fmt($cap)
+            );
+        } elseif ($turns === $cap) {
             $class .= ' ido-turn-help-full';
             $line .= " Your turns are at the ceiling, so the next daily grant will be wasted unless you spend some today.";
         } elseif ($turns === 0) {
