@@ -10,6 +10,8 @@ $log = $wpdb->get_results('SELECT * FROM ' . IDO_DB::t('admin_log') . ' ORDER BY
 // cPanel's crontab needs an absolute path to a PHP binary; PHP_BINARY is the
 // one running WordPress, which is the safest thing to suggest.
 $php = PHP_BINARY ?: 'php';
+// WordPress's own cron entry point, which runs every due event including ours.
+$cron_url = site_url('wp-cron.php?doing_wp_cron');
 $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
 ?>
 <div class="wrap">
@@ -71,10 +73,44 @@ $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
         </form>
     </p>
 
-    <h2>Running from cPanel</h2>
+    <h2>Running from cPanel or any other host</h2>
     <p>
         WP-Cron only fires when somebody visits the site, which is no good for a game where turns arrive at midnight.
-        Add these two entries under <strong>cPanel &rarr; Cron Jobs</strong>. The paths are this installation's.
+        A real cron fixes that. There are two ways, and the first is simpler.
+    </p>
+
+    <h3>1. Call the site by URL (recommended)</h3>
+    <p>
+        One entry under <strong>cPanel &rarr; Cron Jobs</strong>, or any scheduler that can fetch a URL. This runs
+        every WordPress scheduled task that is due, the game's included, so it is also the only cron line the rest of
+        your site needs:
+    </p>
+    <pre><code>*/15 * * * * curl -s <?php echo esc_html($cron_url); ?> &gt;/dev/null 2&gt;&amp;1</code></pre>
+    <p class="description">
+        Or with wget: <code>wget -q -O - <?php echo esc_html($cron_url); ?> &gt;/dev/null 2&gt;&amp;1</code>
+    </p>
+    <p class="description">
+        Every fifteen minutes is a good default. WordPress only runs what is actually due, so calling it often is
+        cheap, and it means the daily tick lands within a quarter hour of midnight rather than waiting for a visitor.
+    </p>
+    <?php if (!$uses_wp_cron) : ?>
+        <div class="notice notice-warning inline" style="margin:8px 0;padding:8px 12px">
+            <p>
+                <strong>This method will not run the game while WP-Cron scheduling is off.</strong> Calling
+                <code>wp-cron.php</code> runs the events that are <em>scheduled</em>, and with that setting at 0 this
+                plugin schedules none. Either turn it back on under Settings, or use method 2 below.
+            </p>
+        </div>
+    <?php endif; ?>
+    <p class="description">
+        This route needs the site to be reachable over HTTP from the server running the cron. Behind HTTP
+        authentication, an IP allowlist or a staging password, use method 2 instead.
+    </p>
+
+    <h3>2. Call the game's own scripts</h3>
+    <p>
+        Independent of WordPress scheduling: these run the ticks directly, so they work with WP-Cron scheduling off
+        and on a site that is not publicly reachable. The paths are this installation's.
     </p>
     <pre><code>0 * * * * <?php echo esc_html($php . ' ' . $dir . '/hourly_maintenance.php'); ?> &gt;/dev/null 2&gt;&amp;1
 5 0 * * * <?php echo esc_html($php . ' ' . $dir . '/daily_maintenance.php'); ?> &gt;/dev/null 2&gt;&amp;1</code></pre>
@@ -82,9 +118,11 @@ $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
         Run the daily job a few minutes after midnight in the site's own timezone, not the server's, or turns will
         arrive on the wrong day for your players. If cPanel offers several PHP versions, use the one the site runs on.
     </p>
+
     <p>
-        Once a real cron is working, you can switch WP-Cron scheduling off under Settings. The ticks stay correct
-        either way; turning it off simply stops the duplicate attempts and the wasted page-load work.
+        Either way, running a real cron alongside WP-Cron is safe: the ticks take a database lock and check the period
+        again before doing anything, so whichever arrives second stands down. The <em>Last run</em> rows above name
+        which scheduler actually did the work, which is the quickest way to confirm a new cron entry is firing.
     </p>
 
     <h2>Audit log</h2>

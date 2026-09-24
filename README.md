@@ -136,9 +136,17 @@ second run arriving mid-way stands down instead of repeating the work. Each also
 twice in the same period, and the work underneath is idempotent. You do not need to disable
 WP-Cron, which many shared hosts will not allow anyway.
 
-Once a real cron is working you can set **Use wp cron** to 0 under Settings, which stops the
-plugin scheduling its own events. The Maintenance screen shows when each tick last ran and
-which scheduler started it. For a real cron:
+The simplest cron is one line that fetches WordPress's own cron entry point. It runs every
+scheduled task that is due, the game's included, so it covers the rest of the site too:
+
+```
+*/15 * * * * curl -s https://example.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1
+```
+
+That route needs **Use wp cron** left at 1, since it runs the events that are *scheduled*, and 0
+schedules none. It also needs the site reachable over HTTP from wherever the cron runs.
+
+Behind HTTP authentication, or with WP-Cron scheduling off, call the plugin's own scripts instead:
 
 ```
 0 * * * * php /path/to/wp-content/plugins/imperial-dominion-online/maintenance/hourly_maintenance.php

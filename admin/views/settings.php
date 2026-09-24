@@ -31,7 +31,7 @@ $help = [
     'market_tax_percent'     => 'Cut the crown takes from every sale.',
     'auto_start_next_round'  => '1 opens the next round automatically when one ends, 0 waits for you.',
     'allow_new_kingdoms'       => '1 lets players claim kingdoms, 0 closes the rolls.',
-    'use_wp_cron'            => '1 lets the plugin schedule its own WP-Cron events, 0 leaves the ticks to a real cron. Running both is safe either way: see Maintenance.',
+    'use_wp_cron'            => 'Leave at 1 unless a real cron calls the plugin scripts directly. A cron that fetches wp-cron.php by URL still needs this on, because it runs the events that are scheduled, and 0 schedules none.',
 ];
 ?>
 <div class="wrap">
