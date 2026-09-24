@@ -110,6 +110,9 @@ class IDO_Settings {
             'use_wp_cron'            => 1,
             // A theme menu location, or blank for "do not touch the site menu".
             'menu_location'          => '',
+            // The credit in the footer bar. Blank text hides it.
+            'footer_link_text'       => 'maddogproductions.online',
+            'footer_link_url'        => 'https://maddogproductions.online',
             'allow_new_kingdoms'      => 1,
             // Deleting the plugin keeps the game's data unless this is turned on.
             'delete_data_on_uninstall' => 0,
@@ -118,7 +121,7 @@ class IDO_Settings {
 
     /** Settings that are free text rather than integers. */
     public static function text_keys(): array {
-        return ['dominion_name', 'menu_location'];
+        return ['dominion_name', 'menu_location', 'footer_link_text', 'footer_link_url'];
     }
 
     public static function all(): array {
@@ -139,9 +142,16 @@ class IDO_Settings {
         $current = self::all();
         foreach (self::defaults() as $key => $default) {
             if (!array_key_exists($key, $values)) continue;
-            $current[$key] = in_array($key, self::text_keys(), true)
-                ? sanitize_text_field((string) $values[$key])
-                : max(0, (int) $values[$key]);
+            if ($key === 'footer_link_url') {
+                // A URL needs its own sanitiser: sanitize_text_field would let
+                // through a javascript: scheme that esc_url would then strip at
+                // output, leaving a setting that silently does nothing.
+                $current[$key] = esc_url_raw(trim((string) $values[$key]));
+            } elseif (in_array($key, self::text_keys(), true)) {
+                $current[$key] = sanitize_text_field((string) $values[$key]);
+            } else {
+                $current[$key] = max(0, (int) $values[$key]);
+            }
         }
         $current['turns_per_day']      = max(1, (int) $current['turns_per_day']);
         $current['turn_cap']           = max((int) $current['turns_per_day'], (int) $current['turn_cap']);

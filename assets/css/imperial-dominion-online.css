@@ -451,6 +451,8 @@
 .ido-game .ido-news-time,
 .ido-game .ido-report-head,
 .ido-game .ido-price-hint,
+.ido-game .ido-footer,
+.ido-game .ido-footer span,
 .ido-game .ido-table th { color: var(--ido-dim); -webkit-text-fill-color: var(--ido-dim); }
 .ido-game .ido-panel-title,
 .ido-game .ido-warning,
@@ -501,4 +503,33 @@
 .ido-game ::-moz-selection {
     background: var(--ido-accent);
     color: #04121b;
+}
+
+
+/* The strip along the bottom of every screen. */
+.ido-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 8px;
+    border-top: 1px solid var(--ido-border);
+    font-size: 0.78rem;
+}
+.ido-footer-version { opacity: 0.75; }
+.ido-footer-credit { margin-left: auto; }
+.ido-game .ido-footer a,
+.ido-game .ido-footer a:link,
+.ido-game .ido-footer a:visited {
+    color: var(--ido-accent);
+    -webkit-text-fill-color: var(--ido-accent);
+    text-decoration: none;
+}
+.ido-game .ido-footer a:hover,
+.ido-game .ido-footer a:focus { text-decoration: underline; }
+
+@media (max-width: 480px) {
+    .ido-footer-credit { margin-left: 0; }
 }

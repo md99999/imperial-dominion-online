@@ -94,11 +94,10 @@ class IDO_UI {
         $round = IDO_Rounds::current();
         $days_left = IDO_Rounds::days_left($round);
 
-        // Turns read as a pool with a ceiling, not a bare number: "7 of 30"
-        // tells a ruler how much room is left before a day's grant is wasted.
-        // "7 of 30" while the pool is within its ceiling. A kingdom holding
-        // more than the cap, because the cap was lowered under it, would read
-        // as "70 of 30", so it just shows the count.
+        // "7 of 30" while the pool is within its ceiling, so a ruler can see
+        // how much room is left before a day's grant is wasted. A kingdom
+        // holding more than the cap, because the cap was lowered under it,
+        // would read as "70 of 30", so that case shows the count alone.
         $cap = max(1, IDO_Settings::int('turn_cap'));
         $turns = (int) $kingdom->turns;
         $cells = [
@@ -177,6 +176,29 @@ class IDO_UI {
         return '<span class="ido-turn-cost">'
             . esc_html(sprintf(_n('Costs %d turn', 'Costs %d turns', $turns, 'imperial-dominion-online'), $turns))
             . '</span>';
+    }
+
+    /**
+     * The strip along the bottom of every game screen: what this is on the
+     * left, whose site it is on the right. The credit is a setting, so a site
+     * that is not the author's can change it or clear it away.
+     */
+    public static function footer(): string {
+        $text = trim((string) IDO_Settings::get('footer_link_text'));
+        $url  = trim((string) IDO_Settings::get('footer_link_url'));
+
+        $out = '<div class="ido-footer">';
+        $out .= '<span class="ido-footer-game">' . esc_html(IDO_Game::NAME)
+            . ' <span class="ido-footer-version">v' . esc_html(IDO_VERSION) . '</span></span>';
+
+        if ($text !== '') {
+            $out .= '<span class="ido-footer-credit">';
+            $out .= $url !== ''
+                ? '<a href="' . esc_url($url) . '" rel="noopener noreferrer" target="_blank">' . esc_html($text) . '</a>'
+                : esc_html($text);
+            $out .= '</span>';
+        }
+        return $out . '</div>';
     }
 
     public static function nav(string $current): string {

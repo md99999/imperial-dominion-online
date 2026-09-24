@@ -67,6 +67,7 @@ class IDO_Shortcodes {
             }
         }
 
+        echo IDO_UI::footer();
         echo '</div>';
         return (string) ob_get_clean();
     }
