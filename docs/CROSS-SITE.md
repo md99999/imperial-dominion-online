@@ -96,6 +96,112 @@ rather than a storage preference: nothing arriving from another site should ever
 `.gitignore` carries entries for `league-local/`, `*.secret`, `*.key`, `*.pem` and `.env` files,
 so local fixtures and captured packets used in testing cannot be committed by accident.
 
+## Packet security
+
+### Sign, do not encrypt
+
+The instinct is to encrypt a packet so it cannot be tampered with. Encryption does not do that.
+Encryption hides content; what we need is proof that a packet came from the peer and arrived
+unaltered, which is **authentication**. They are different jobs and need different primitives.
+
+Encryption without authentication is worse than none, because many ciphertexts are malleable: an
+attacker who cannot read a packet can still flip bits in it and change what it says. Any design
+that reasons "it is encrypted, therefore it cannot have been tampered with" is already broken.
+
+So: **every packet is signed; encryption is optional and, for this game, unnecessary.** There is
+nothing confidential in "Vaelmark sent 800 squires": both ends know it, and the defender is about
+to be told anyway. Signing alone buys integrity and origin, which is all the game needs.
+
+    $signature = hash_hmac('sha256', $body, $secret);         // sending
+    hash_equals($expected, $received_signature);              // verifying, timing-safe
+
+`hash_equals()` rather than `===`, so the comparison does not leak the signature a byte at a time
+through its timing.
+
+If confidentiality is ever wanted, do not reach for a cipher directly. Use authenticated
+encryption, which does both jobs in one primitive and is in PHP core:
+
+    sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($json, $header, $nonce, $key);
+
+Never AES-CBC with a hand-rolled MAC, never ECB, never a cipher without a tag.
+
+### The secret
+
+At least 32 bytes from `random_bytes()`, generated at pairing, exchanged out of band by the two
+administrators, and stored in the `ido_sites` row. Never in a file, never in the repository, never
+in a packet, and never the same for two peers.
+
+Be honest about the limit: WordPress has no secret store. A secret in the database is readable by
+anything with database access, which includes every other plugin on the site. Putting it in
+`wp-config.php` as a constant moves it out of the database but into a file the web server can
+read. Neither is a vault. This is a reason to keep the blast radius small, one secret per pairing,
+and to make rotation easy.
+
+### Verify before you parse
+
+Order matters. Check the signature against the **raw received bytes** before any parser touches
+them, so malformed input is rejected by a constant-time comparison rather than by a parser.
+
+Sign the exact bytes that travel, and transmit them base64-encoded. Signing a re-serialised
+structure invites canonicalisation bugs, where sender and receiver disagree about key order or
+whitespace and every packet fails. Base64 also survives mail transports that would otherwise
+re-wrap lines and break the signature.
+
+### Parsing, with the assumption that the sender is hostile
+
+    $data = json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
+
+- **JSON only, never `unserialize()`.** `unserialize()` on untrusted input is a remote code
+  execution vector through object injection. `json_decode()` with `true` yields arrays and scalars
+  only: no objects, nothing that can run.
+- **Size cap before parsing**, 64 KB or so, and a depth cap as above. Both stop a small packet
+  that expands into an enormous structure.
+- **Whitelist every field**: name, type, range. Reject unknown keys rather than ignoring them, so
+  a field added by an attacker is an error rather than a silent no-op.
+- **Strings from a packet get the same character rules as a kingdom name**, and are escaped at
+  output like everything else. A packet supplies names that end up in the gazette.
+- **Numbers are clamped** through `IDO_Game::clamp()`, which already exists for the overflow work.
+- Nothing from a packet is ever written to a file, used in a path or filename, included, evaluated,
+  passed to a shell, or used to build SQL by concatenation.
+
+### Replay, ordering and the deliberate delay
+
+A valid packet captured and sent twice must not sack the same kingdom twice. Each packet carries a
+UUID, a per-peer sequence number and a timestamp. The receiver records processed UUIDs and refuses
+a repeat, in the same guarded write that applies the effect, so a duplicate arriving twice at once
+cannot slip through between the check and the write.
+
+The usual advice is a tight timestamp window, and that is wrong here: the design deliberately
+delays packets three to five days in each direction, so a window has to be long, a fortnight or
+so. The UUID record is what actually prevents replay; the timestamp only discards the absurdly
+old.
+
+### If the transport is email
+
+Email is the more hazardous of the two options, and the reasons are worth stating:
+
+- **The From header is decoration.** Anyone can forge it. The signature is the identity, and the
+  envelope must never be trusted for anything.
+- **Reading a mailbox means storing mailbox credentials** in WordPress, with the same no-vault
+  problem as above, and those credentials are usually worth more than the game. Use a dedicated
+  mailbox that can reach nothing else, and an app password where the provider supports one.
+- **Anyone can email that address.** The handler must therefore treat every message as hostile
+  input: size-cap, verify, then parse, and discard anything that fails at any step without
+  attempting to be helpful about it.
+- **Attachments are never processed.** The packet is base64 text in the body. Nothing arriving by
+  mail is ever written to disk as a file.
+- **Mail is lossy and reorders freely**, so retries and idempotency are mandatory rather than
+  optional.
+
+**HTTPS is the safer default**, and the earlier argument for email does not hold up: a WordPress
+site is already a public web server, so there is no firewall rule to negotiate. A signed POST to a
+REST route gives TLS in transit, a synchronous success or failure that makes retries deterministic,
+no stored mailbox credentials, and no MIME layer to mangle a signature.
+
+The envelope should be identical either way, so the transport stays a detail. Build HTTPS first
+because it can be tested synchronously; add email afterwards as an alternative carrier if the
+slower, patchier feel is wanted for its own sake.
+
 ## What Phase 1 already provides
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
