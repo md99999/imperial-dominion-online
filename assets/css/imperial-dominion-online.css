@@ -9,7 +9,7 @@
     --ido-panel: #111823;
     --ido-border: #1f3448;
     --ido-text: #cfe3f2;
-    --ido-dim: #7d94a8;
+    --ido-dim: #a6c0d6;
     --ido-accent: #4fd6ff;
     --ido-amber: #ffc861;
     --ido-good: #57d98a;
@@ -387,4 +387,118 @@
     .ido-game { font-size: 14px; padding: 12px; }
     .ido-round { margin-left: 0; }
     .ido-text, .ido-select { min-width: 100%; }
+}
+
+
+/* ===================================================================
+ * Theme-proofing
+ *
+ * The game sets a colour on its container and lets it inherit, which works
+ * until a theme styles p, strong, h4 or td directly: an element rule beats
+ * inheritance, so the theme's colour wins and text meant to be light comes out
+ * near-black on a dark panel. Measured on a real site, an <h4> was rendering at
+ * 1.13:1, which is invisible.
+ *
+ * So every element that carries text states its colour here, and the game's own
+ * semantic classes are re-asserted afterwards at higher specificity so they
+ * still win. Anything with a coloured background states a foreground to go with
+ * it, rather than trusting whatever it inherits.
+ * =================================================================== */
+
+.ido-game,
+.ido-game p,
+.ido-game span,
+.ido-game div,
+.ido-game li,
+.ido-game dt,
+.ido-game dd,
+.ido-game td,
+.ido-game label,
+.ido-game strong,
+.ido-game b,
+.ido-game em,
+.ido-game i,
+.ido-game small,
+.ido-game code,
+.ido-game pre,
+.ido-game h1,
+.ido-game h2,
+.ido-game h3,
+.ido-game h4,
+.ido-game h5,
+.ido-game h6 {
+    color: var(--ido-text);
+    -webkit-text-fill-color: var(--ido-text);
+}
+
+/* Headings inside a panel are the game's, not the theme's. */
+.ido-game .ido-panel h4,
+.ido-game .ido-panel h5 {
+    color: var(--ido-amber);
+    -webkit-text-fill-color: var(--ido-amber);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    margin: 12px 0 6px;
+}
+
+/* The game's own tones, re-stated so they outrank the reset above. */
+.ido-game .ido-title { color: var(--ido-amber); -webkit-text-fill-color: var(--ido-amber); }
+.ido-game .ido-subtitle,
+.ido-game .ido-dim,
+.ido-game .ido-dim *,
+.ido-game .ido-stat-label,
+.ido-game .ido-turn-cost,
+.ido-game .ido-news-time,
+.ido-game .ido-report-head,
+.ido-game .ido-price-hint,
+.ido-game .ido-table th { color: var(--ido-dim); -webkit-text-fill-color: var(--ido-dim); }
+.ido-game .ido-panel-title,
+.ido-game .ido-warning,
+.ido-game .ido-warning *,
+.ido-game .ido-news-type { color: var(--ido-amber); -webkit-text-fill-color: var(--ido-amber); }
+.ido-game .ido-table thead th { color: var(--ido-accent); -webkit-text-fill-color: var(--ido-accent); }
+.ido-game .ido-kingdom { color: var(--ido-amber); -webkit-text-fill-color: var(--ido-amber); }
+.ido-game a:not(.ido-btn):not(.ido-nav-item) { color: var(--ido-accent); -webkit-text-fill-color: var(--ido-accent); }
+
+/*
+ * Anything tinted states its own foreground. The tints are deliberately dark,
+ * so the text on them stays light: a light-on-dark pairing is what the rest of
+ * the game reads as, and inverting it for a notice would be worse, not better.
+ */
+.ido-game .ido-flash,
+.ido-game .ido-flash * { color: var(--ido-text); -webkit-text-fill-color: var(--ido-text); }
+.ido-game .ido-flash-success,
+.ido-game .ido-flash-success * { color: var(--ido-good); -webkit-text-fill-color: var(--ido-good); }
+.ido-game .ido-flash-warning,
+.ido-game .ido-flash-warning * { color: var(--ido-amber); -webkit-text-fill-color: var(--ido-amber); }
+.ido-game .ido-flash-error,
+.ido-game .ido-flash-error * { color: var(--ido-bad); -webkit-text-fill-color: var(--ido-bad); }
+
+.ido-game .ido-protected,
+.ido-game .ido-protected * { color: var(--ido-good); -webkit-text-fill-color: var(--ido-good); }
+.ido-game .ido-turn-help,
+.ido-game .ido-turn-help * { color: var(--ido-dim); -webkit-text-fill-color: var(--ido-dim); }
+.ido-game .ido-turn-help-full,
+.ido-game .ido-turn-help-full * { color: var(--ido-amber); -webkit-text-fill-color: var(--ido-amber); }
+.ido-game .ido-turn-help-empty,
+.ido-game .ido-turn-help-empty * { color: var(--ido-bad); -webkit-text-fill-color: var(--ido-bad); }
+
+.ido-game .ido-row-me td,
+.ido-game .ido-row-me th { color: var(--ido-text); -webkit-text-fill-color: var(--ido-text); }
+.ido-game .ido-report-body,
+.ido-game .ido-report-body * { color: var(--ido-text); -webkit-text-fill-color: var(--ido-text); }
+
+/*
+ * Selecting text must not hide it. Some themes set a selection colour close to
+ * this one, which leaves the selected words unreadable exactly when someone is
+ * trying to copy a battle report.
+ */
+.ido-game ::selection {
+    background: var(--ido-accent);
+    color: #04121b;
+    -webkit-text-fill-color: #04121b;
+}
+.ido-game ::-moz-selection {
+    background: var(--ido-accent);
+    color: #04121b;
 }
