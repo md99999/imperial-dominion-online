@@ -245,6 +245,60 @@ The envelope should be identical either way, so the transport stays a detail. Bu
 because it can be tested synchronously; add email afterwards as an alternative carrier if the
 slower, patchier feel is wanted for its own sake.
 
+## Founding a league
+
+A league is created by one site, the **originator**, which is also the hub. It has a name, an id,
+and a ruleset. Everything about fairness follows from the originator owning that ruleset and the
+members accepting it.
+
+### What the originator sets
+
+- **Name and id.** The name is what players see: "the Westmarch League". The id is a UUID that
+  never changes, so a rename does not orphan the members.
+- **The ruleset**, which is the game-affecting settings listed earlier: turns a day, turn cap,
+  starting turns and resources, building and training costs, explore yield, combat percentages,
+  target bands, truce length, agent cost and limit, market tax.
+- **The round calendar**, which matters more than it sounds. See below.
+- **Exchange cadence and the delay range**, the three to five days, so every member waits the same.
+
+Each ruleset carries a **version number**, bumped whenever the originator changes anything, and a
+**fingerprint**, the hash that rides in every packet. A member running version 4 against a league
+on version 5 is told which setting differs rather than silently losing.
+
+### Rounds have to be synchronised, not merely the same length
+
+Giving every site a 45-day round is not enough. If the sites start their rounds on different days,
+a site whose round began last week fields mature kingdoms against a site that wiped yesterday, and
+it can keep doing so forever by timing its own resets.
+
+**The league owns the round calendar**: length *and* start date. Members wipe together and begin
+together. That also gives a league something worth having, a shared season with a shared ending,
+and makes the Hall of Fame comparable across sites.
+
+A site can still run local rounds on its own clock before joining a league. Joining means adopting
+the league's calendar at the next boundary.
+
+### Joining, and when the settings bite
+
+The originator issues an invitation carrying the league id, the hub URL and a shared secret
+exchanged out of band. The joining administrator enters it once; the hub confirms; the member
+stores the ruleset and shows those settings read-only in the admin, marked as set by the league.
+
+**League settings take effect at the start of the member's next round, not on joining.** Changing
+turns a day or training costs under players who planned around them is unfair in a way that has
+nothing to do with cheating, and a round is short enough to wait for. The exception is a setting
+that only affects league play, which can apply at once because nothing local depends on it.
+
+Leaving a league releases the settings back to local control at the next boundary, for the same
+reason.
+
+### What the hub does not get to do
+
+The hub holds the ruleset and the calendar. It does **not** resolve battles, hold kingdoms, or
+arbitrate outcomes: the defending site always computes its own. A compromised hub should be able
+to disrupt a league's schedule, which is annoying, rather than rewrite anyone's kingdom, which
+would be fatal.
+
 ## League war: how a march between sites resolves
 
 The shape, settled: a site marches on another site. Kingdoms commit forces, the packet crosses,
@@ -328,8 +382,10 @@ nothing goes negative.
 
 ## What would need adding
 
+- A `ido_leagues` table: league id and name, hub URL, ruleset version, ruleset, fingerprint, round
+  calendar, whether this site is the originator.
 - A `ido_sites` table: peer site URL, shared secret, sequence counters, trust status.
-- The league ruleset, stored locally, with those settings locked in the admin and a fingerprint
+- The league ruleset applied locally, with those settings locked in the admin and a fingerprint
   recomputed whenever they change.
 - A `ido_packets` table: UUID, direction, type, payload, status, processed timestamp.
 - An escrow table, or `away_*` columns on `ido_kingdoms`, for forces in transit.
