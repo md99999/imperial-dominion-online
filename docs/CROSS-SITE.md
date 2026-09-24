@@ -176,6 +176,49 @@ delays packets three to five days in each direction, so a window has to be long,
 so. The UUID record is what actually prevents replay; the timestamp only discards the absurdly
 old.
 
+### The receiving endpoint
+
+**A registered REST route, not a PHP file in the plugin folder.**
+
+    register_rest_route('ido/v1', '/packet', [
+        'methods'             => 'POST',
+        'callback'            => ['IDO_League_Endpoint', 'receive'],
+        'permission_callback' => '__return_true',   // the signature is the gate
+    ]);
+
+A loose `receive.php` in the plugin directory is reachable on its own, has to bootstrap WordPress
+by guessing at the path to `wp-load.php`, and runs before any of WordPress's protections exist.
+That pattern is behind a long list of plugin vulnerabilities. A route runs with WordPress already
+loaded, only answers the method it declares, and lives somewhere a reviewer can find.
+
+`permission_callback` returning true deserves a comment in the code, because it looks like the
+classic mistake. It is deliberate: the caller is another server, not a logged-in user, so there is
+no cookie and no nonce to check. **The HMAC is the authentication.** What must never happen is the
+opposite error of leaning on WordPress authentication here, which would mean a peer needed an
+account.
+
+Details that matter:
+
+- **Verify the raw body.** `$request->get_body()` gives the bytes as received; that is what the
+  signature covers. Never verify a re-serialised copy of the parsed parameters.
+- **Send it as `text/plain`**, base64 of the JSON. With `application/json` WordPress parses the
+  body into parameters before the handler runs, which is work done on unverified input.
+- **Check the length first**, before verifying and long before parsing.
+- **Do almost nothing synchronously.** Verify, record the packet as pending, return. The work
+  happens on the next cron tick. A request that only writes one row is hard to abuse, cannot time
+  out mid-battle, and leaves the packet available for inspection.
+- **Answer in generalities.** A handler that explains *why* verification failed is an oracle for
+  whoever is probing it. Log the detail locally; return a bare status.
+- **A duplicate is a success, not an error.** If the UUID has been seen, return the same accepted
+  status as the first time. Returning an error makes a sender retry forever.
+
+Useful statuses: 202 accepted, 400 malformed, 401 signature failed, 413 too large, 429 too many.
+
+One caveat worth knowing: security plugins and a few hosts disable or filter the REST API. If a
+league member hits that, the fallback is `admin-post.php` with a `nopriv` action, which is equally
+WordPress-loaded and equally unauthenticated by design. The endpoint logic should not care which
+one delivered the bytes.
+
 ### If the transport is email
 
 Email is the more hazardous of the two options, and the reasons are worth stating:
