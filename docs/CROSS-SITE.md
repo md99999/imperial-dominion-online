@@ -255,6 +255,7 @@ members accepting it.
 
 - **Name and id.** The name is what players see: "the Westmarch League". The id is a UUID that
   never changes, so a rename does not orphan the members.
+- **The member cap**, up to 20 sites. See the note on league size below.
 - **The ruleset**, which is the game-affecting settings listed earlier: turns a day, turn cap,
   starting turns and resources, building and training costs, explore yield, combat percentages,
   target bands, truce length, agent cost and limit, market tax.
@@ -360,10 +361,24 @@ a number. What can be reasoned about:
 - **Traffic is bounded by participation**, not membership, since only committed forces generate
   packets.
 
-So the cap is a judgement, not a technical ceiling. **Eight to twelve sites** is the range to start
-with: enough variety that the same two kingdoms are not fighting every exchange, small enough that
-the administrators know each other by name. Make it a setting the originator controls, enforced by
-the hub at enrolment, so a league that wants to run larger can, having decided to.
+So the cap is a judgement, not a technical ceiling.
+
+**The decision: up to 20 sites, configurable, defaulting lower.**
+
+- `league_max_sites` is set by the originator and enforced by the hub at enrolment. A league that
+  is full refuses a token with a clear reason rather than a generic failure, so an administrator
+  is not left guessing.
+- **20 is the ceiling**, not the default. A league that size is a real tournament: enough sites
+  that the same two kingdoms are not meeting every exchange, and enough standings to be worth
+  reading.
+- Somewhere around **8 to 12 is the comfortable middle**, and a first league is better small. It
+  is easy to admit another site and awkward to ask one to leave.
+
+Worth knowing before choosing 20: the limits that bite first are not technical. Secrets stay
+linear, and traffic follows participation rather than membership, so the hub is not the problem. A
+twenty-site league is hard because twenty administrators have to stay reachable, agree on a
+ruleset, keep their crons running and notice when a member's numbers look wrong. Watching is what
+keeps a league honest, and it does not scale as easily as the packets do.
 
 ## League war: how a march between sites resolves
 
@@ -449,7 +464,7 @@ nothing goes negative.
 ## What would need adding
 
 - A `ido_leagues` table: league id and name, hub URL, ruleset version, ruleset, fingerprint, round
-  calendar, whether this site is the originator.
+  calendar, the member cap, and whether this site is the originator.
 - A `ido_sites` table: peer site URL, shared secret, sequence counters, trust status.
 - The league ruleset applied locally, with those settings locked in the admin and a fingerprint
   recomputed whenever they change.
