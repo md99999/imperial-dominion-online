@@ -299,6 +299,72 @@ arbitrate outcomes: the defending site always computes its own. A compromised hu
 to disrupt a league's schedule, which is annoying, rather than rewrite anyone's kingdom, which
 would be fatal.
 
+## Invitations: how a site actually joins
+
+The naive version is to email a shared secret and have the other administrator paste it in. Do not
+do that. Email is plaintext in transit, gets forwarded, and sits in archives and backups for years.
+A long-term secret that has been through a mailbox should be considered public.
+
+**What travels by email is a one-time enrolment token, not the secret.**
+
+### The invitation
+
+The originator generates an invitation and sends it however they like, email included. It is short
+enough to paste and carries nothing worth stealing for long:
+
+    league id     a UUID, so a rename never orphans anybody
+    league name   for the joining administrator to recognise
+    hub URL       where the joining site will call
+    token         32 random bytes, single use, expiring in seven days
+
+Encoded as base64 of that small JSON object, so it survives a mail client without being mangled.
+
+A stolen token is worth little: it can be used once, expires quickly, and using it is visible. If
+the real invitee finds the token already spent, that is a detected attack rather than a silent one.
+
+### The handshake
+
+1. The joining administrator pastes the invitation into their own admin screen.
+2. Their site POSTs to the hub, presenting the token and its own site URL.
+3. **The hub calls the claimed site back** on a known route with a nonce, and expects it echoed.
+   This proves whoever is enrolling actually controls that site, so nobody can enrol
+   `maddogproductions.online` without running it.
+4. The hub marks the member **pending**, and the originator approves it in their admin. Two
+   administrators agreeing is the point; an invitation alone should not be enough.
+5. On approval the hub generates the long-term shared secret, at least 32 bytes from
+   `random_bytes()`, and returns it **over TLS in the response to the joining site's own request**.
+   It never travels by email and is never the thing a human copies.
+6. The hub returns the ruleset, its version, and the round calendar with it. The token is spent.
+
+The secret is per pairing, so a compromised member exposes its own link and nothing else.
+
+### Leaving, removing, rotating
+
+- **Rotation** is a new secret issued through the same approved channel, with a short overlap where
+  both verify, because packets take days to arrive and in-flight ones signed with the old secret
+  must still land.
+- **Removal** stops new packets being accepted but must not strip a kingdom of an army sitting in
+  escrow: in-flight results are honoured, or the escrow times out and the troops come home.
+- A member that leaves returns to local settings at the next round boundary.
+
+### How many sites in a league
+
+I do not know what the original inter-BBS games capped this at, and would rather say so than invent
+a number. What can be reasoned about:
+
+- **Secrets stay linear** under hub-and-spoke: one per member, not one per pair. Ten sites is ten
+  secrets, not forty-five.
+- **The real limits are social and legible.** A league is people who broadly trust each other and
+  who notice when a member's numbers look wrong. A standings table spanning thirty sites is noise
+  nobody reads, and nobody watching means nobody catching.
+- **Traffic is bounded by participation**, not membership, since only committed forces generate
+  packets.
+
+So the cap is a judgement, not a technical ceiling. **Eight to twelve sites** is the range to start
+with: enough variety that the same two kingdoms are not fighting every exchange, small enough that
+the administrators know each other by name. Make it a setting the originator controls, enforced by
+the hub at enrolment, so a league that wants to run larger can, having decided to.
+
 ## League war: how a march between sites resolves
 
 The shape, settled: a site marches on another site. Kingdoms commit forces, the packet crosses,
