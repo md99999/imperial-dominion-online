@@ -245,6 +245,77 @@ The envelope should be identical either way, so the transport stays a detail. Bu
 because it can be tested synchronously; add email afterwards as an alternative carrier if the
 slower, patchier feel is wanted for its own sake.
 
+## League war: how a march between sites resolves
+
+The shape, settled: a site marches on another site. Kingdoms commit forces, the packet crosses,
+the defending site resolves it, and a result packet comes home days later carrying survivors and
+spoils. Strength decides it, and a strong defence turns the outcome around on the attacker. This
+is the BRE inter-BBS idea, and the delay is the point.
+
+Three decisions inside that shape change the game entirely, and they are worth making deliberately
+rather than discovering.
+
+### 1. Compare committed forces, not whole sites
+
+Tempting to weigh site against site. It does not survive contact: a league with a fifty-kingdom
+site and a five-kingdom site would never see a fair fight, and the small site would be farmed.
+
+**The battle compares what was actually committed.** Site size only decides how much a site can
+afford to send, which is a real advantage without being an automatic win. The maths is the one
+Phase 1 already uses, `IDO_Military::attack()` over an explicit force array, with the committed
+forces of every participating kingdom summed on each side.
+
+### 2. Only what is committed is at risk
+
+"A percentage of the assets of the site attacked" needs a sharper answer to the question *whose*.
+
+Taking a slice of every kingdom on the losing site punishes players who never agreed to the war,
+for a decision their administrator made. One ruler logs in to find their army thinner because
+somebody else picked a fight. That is the fastest way to empty a league.
+
+**Kingdoms opt in by committing.** A kingdom that sends nothing neither gains nor loses. Spoils go
+to the kingdoms that contributed, in proportion to what they risked. The site is the banner; the
+kingdoms are the participants.
+
+### 3. Spoils must not snowball
+
+The obvious version, where a winner absorbs a share of the loser's army, compounds: a site that
+wins once is stronger for the next exchange, wins again, and a league is decided in a fortnight.
+A three to five day cycle makes this worse, not better, because there is no time to recover between
+blows.
+
+Two ways to keep spoils meaningful without a runaway:
+
+- **Take gold and stores, not soldiers.** Plunder is the classic reward and does not directly
+  raise the winner's military strength, so it has to be converted through the same training costs
+  everyone else pays.
+- **Captured troops become peasants, not troops.** Prisoners put to work is thematically right and
+  gives the winner growth rather than an army, which the loser can rebuild against.
+
+Whatever the mix, **cap the take against what the loser committed** rather than against everything
+they own, so a site cannot be stripped by one unlucky exchange.
+
+### The sequence
+
+1. Kingdoms commit forces. Troops leave the muster immediately and show as in transit, so the same
+   army cannot be committed twice while a packet is in flight.
+2. The packet is signed and sent, and the delay is applied at the receiving end so the sender
+   cannot shorten it.
+3. On the tick after the delay expires, the **defending site resolves the battle** against the
+   defenders standing at that moment. Not at the moment of sending: the attacker commits blind,
+   and that uncertainty is the feature.
+4. A result packet returns, itself delayed. It carries survivors, spoils and a report.
+5. The attacking site applies it on arrival, releases the escrow, and posts to the gazette. If the
+   result never arrives, the escrow times out and the troops come home, on the reasoning that
+   losing an army to a network failure is worse than the small chance of a double release.
+
+### What stays true from the local game
+
+The defender always computes their own outcome. The attacker's packet asserts only what left.
+Both sites run the same maths because the ruleset fingerprint says so. Every write that applies a
+result goes through the same guarded, clamped path as everything else, so nothing overflows and
+nothing goes negative.
+
 ## What Phase 1 already provides
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
