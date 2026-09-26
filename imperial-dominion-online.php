@@ -25,7 +25,7 @@ See the GNU General Public License for more details. A copy is included in LICEN
 if (!defined('ABSPATH')) exit;
 
 define('IDO_VERSION', '1.15.0');
-define('IDO_DB_VERSION', '9');
+define('IDO_DB_VERSION', '10');
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
 define('IDO_URL', plugin_dir_url(__FILE__));

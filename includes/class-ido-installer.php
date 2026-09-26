@@ -93,6 +93,7 @@ class IDO_Installer {
             $sql
         );
         dbDelta($sql);
+        self::drop_legacy_indexes();
         update_option('ido_db_version', IDO_DB_VERSION);
     }
 
@@ -103,6 +104,8 @@ class IDO_Installer {
      */
     private static function rename_legacy_columns(): void {
         global $wpdb;
+        self::drop_legacy_construction_columns();
+
         $table = IDO_DB::t('kingdoms');
         if (!$wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table))) return;
 
@@ -173,6 +176,57 @@ class IDO_Installer {
                 'UPDATE ' . IDO_DB::t('constructions') . ' SET building = %s WHERE building = %s',
                 'fortification', 'bastion'
             ));
+        }
+    }
+
+    /**
+     * The build queue's owner column was renamed from realm_id to kingdom_id
+     * before 1.7.0, but by adding the new column instead of changing the old
+     * one, so the two have sat side by side ever since with nothing reading
+     * realm_id. It lives in its own table, so it is handled apart from the
+     * renames above rather than behind their check for the kingdoms table.
+     */
+    private static function drop_legacy_construction_columns(): void {
+        global $wpdb;
+        $table = IDO_DB::t('constructions');
+        if (!$wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table))) return;
+
+        $columns = $wpdb->get_col('SHOW COLUMNS FROM `' . $table . '`');
+        if (!is_array($columns) || !in_array('realm_id', $columns, true)) return;
+
+        // A site that never saw the release adding kingdom_id has only the old
+        // column, and keeps its queue by having it renamed the way the rename
+        // should have gone in the first place.
+        if (!in_array('kingdom_id', $columns, true)) {
+            $wpdb->query('ALTER TABLE `' . $table . '` CHANGE `realm_id` `kingdom_id` bigint(20) unsigned NOT NULL DEFAULT 0');
+            return;
+        }
+
+        // Both columns present. The new one was added empty, so any order the
+        // site queued before that release is still owned by the old column
+        // alone; carry those across before the column holding them goes.
+        $wpdb->query('UPDATE `' . $table . '` SET kingdom_id = realm_id WHERE kingdom_id = 0 AND realm_id <> 0');
+        $wpdb->query('ALTER TABLE `' . $table . '` DROP COLUMN `realm_id`');
+    }
+
+    /**
+     * Drops keys left behind by a renamed column. dbDelta adds the key under
+     * its new name but never removes the old one, so realm_ready has sat
+     * beside kingdom_ready, and dropping realm_id reduces it to a duplicate on
+     * ready_on alone, named after a column that no longer exists. This runs
+     * after dbDelta so the replacement is certain to be in place first.
+     */
+    private static function drop_legacy_indexes(): void {
+        global $wpdb;
+        $table = IDO_DB::t('constructions');
+        if (!$wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table))) return;
+
+        // Key_name is the third column of SHOW INDEX.
+        $keys = $wpdb->get_col('SHOW INDEX FROM `' . $table . '`', 2);
+        if (!is_array($keys)) return;
+
+        if (in_array('realm_ready', $keys, true) && in_array('kingdom_ready', $keys, true)) {
+            $wpdb->query('ALTER TABLE `' . $table . '` DROP INDEX `realm_ready`');
         }
     }
 
