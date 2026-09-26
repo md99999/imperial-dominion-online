@@ -39,8 +39,16 @@ $version = trim($m[1]);
 $out_dir = $argv[1] ?? dirname($root);
 $dest = rtrim(str_replace('\\', '/', $out_dir), '/') . '/' . $name . '-' . $version . '.zip';
 
-// Repository furniture that has no business in an installed plugin.
-$skip = ['.git', '.gitignore', '.gitattributes', 'tests', 'tools'];
+// Repository furniture that has no business in an installed plugin. Anything
+// at the root whose name begins with a dot goes too, named or not: that is
+// where tooling puts its working directories, and one of them, .claude, can
+// hold an entire second checkout of this plugin in a git worktree. Listing
+// only the dotted names known at the time silently shipped that copy.
+$skip = ['tests', 'tools'];
+$is_furniture = static function (string $relative) use ($skip): bool {
+    $top = explode('/', $relative)[0];
+    return $top !== '' && ($top[0] === '.' || in_array($top, $skip, true));
+};
 
 if (file_exists($dest)) unlink($dest);
 
@@ -58,7 +66,7 @@ $files = new RecursiveIteratorIterator(
 $count = 0;
 foreach ($files as $file) {
     $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
-    if (in_array(explode('/', $relative)[0], $skip, true)) continue;
+    if ($is_furniture($relative)) continue;
 
     if ($file->isDir()) {
         $zip->addEmptyDir($name . '/' . $relative);
