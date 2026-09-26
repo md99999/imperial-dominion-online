@@ -496,6 +496,44 @@ with hardware and prisoners, and you have to invest before either becomes streng
    result never arrives, the escrow times out and the troops come home, on the reasoning that
    losing an army to a network failure is worse than the small chance of a double release.
 
+### The army that is away is really away
+
+Committing to a league march leaves the contributing empires weaker at home, for as long as the
+packet is in flight. That is not a rule anybody added: the escrow exists so the same army cannot be
+committed twice, and the exposure falls out of it. It is also the best thing about the mechanic,
+and the reason a league march should feel like a decision rather than a click.
+
+**The exposure is long.** Three to eight days out, a battle, then three to eight days back: an army
+can be away for as much as sixteen days, and an empire that sent most of its legions is a soft
+target for that whole time. Not only to other league sites, but to its own neighbours, who can see
+the standings and can work out who has just marched.
+
+Whether that is the right weight is a judgement to make after a round has been played, and there
+are three levers if it turns out to be too harsh:
+
+- **Cap the share an empire may commit**, say half its army, so nobody can strip themselves bare.
+  Simple, and it keeps the decision without the ruin.
+- **Return faster than you left.** The outbound delay is the suspense; the homeward leg does not
+  have to match it. Three to eight out and two to four back would halve the exposure while keeping
+  the wait that matters.
+- **Leave it alone**, on the grounds that a site which empties its garrison to attack deserves what
+  follows, and that neighbours punishing the over-committed is the league working as intended.
+
+The instinct here is to leave it alone and watch. It is the kind of balance that reads as broken in
+a spreadsheet and plays as tense, and the wrong fix applied early would remove the only reason
+committing is interesting.
+
+### On the wait, deliberately
+
+The days of waiting were originally an artefact: dial-up, nightly mail runs, and packets that
+moved when the modems did. Everyone who played those games remembers the wait as the best part
+anyway, because not knowing is what made the result worth reading.
+
+This design re-creates it on purpose, on hardware that could resolve the whole exchange in
+milliseconds. That is worth writing down plainly, because a future maintainer looking at a three to
+eight day sleep in a queue will reasonably assume it is a performance problem and try to fix it.
+It is the feature. Removing it would leave a game that resolves instantly and means less.
+
 ### What stays true from the local game
 
 The defender always computes their own outcome. The attacker's packet asserts only what left.
