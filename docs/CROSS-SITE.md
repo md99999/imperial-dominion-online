@@ -219,6 +219,35 @@ league member hits that, the fallback is `admin-post.php` with a `nopriv` action
 WordPress-loaded and equally unauthenticated by design. The endpoint logic should not care which
 one delivered the bytes.
 
+
+#### The routes, and what is not a service
+
+Every member site runs the same plugin and exposes the same routes. There is **no central server
+to host**: a site is both client and server, and the hub is simply one member carrying the league
+ruleset, the calendar and the standings. If the hub is down, packets between other members still
+move; only league administration pauses.
+
+    POST   ido/v1/packet      a signed packet: war orders, results, news
+    POST   ido/v1/join        enrolment, presenting a one-time invitation token
+    POST   ido/v1/hello       echoes a nonce, so the hub can prove a joining site owns its domain
+    GET    ido/v1/ruleset     the league ruleset and its version, for a member catching up
+    GET    ido/v1/standings   hub only: the league table, aggregated from what members have sent
+
+The namespace is versioned because the protocol will change. A site speaking `ido/v1` to a peer
+that only offers `ido/v2` should be told so plainly rather than failing at the parser.
+
+Outbound calls use `wp_remote_post()` with a short timeout, and failures are retried from the
+queue on the next cron tick rather than in the request. A peer being slow or briefly offline must
+never hold up a page load or lose a packet: the queue is the thing that makes the exchange robust,
+and the delay means nobody notices a retry anyway.
+
+None of this uses WordPress authentication. There are no cookies, no application passwords and no
+user accounts between sites: the HMAC is the whole of it, which is why `permission_callback`
+returns true and why that decision is commented where it sits.
+
+The envelope stays transport-agnostic. If email is ever added, it carries the same signed bytes to
+the same handler, and only the delivery differs.
+
 ### If the transport is email
 
 Email is the more hazardous of the two options, and the reasons are worth stating:
