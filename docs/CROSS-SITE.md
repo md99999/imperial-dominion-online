@@ -769,6 +769,10 @@ there may be fewer of them than contributors. They go by largest remainder too, 
 broken deterministically, by contribution and then by empire id, so the same result never depends
 on the order rows came back in.
 
+An empire reduced to nothing by a league defeat is covered in
+[RUINED-EMPIRES.md](RUINED-EMPIRES.md): zero is a hard floor, and an empire below a threshold is
+restored to the founding package once a round rather than left to grind back.
+
 ### When the contributor is not there any more
 
 An empire can be deleted, or its ruler can walk away, while its army is a week out. The escrow
