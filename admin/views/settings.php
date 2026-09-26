@@ -87,27 +87,6 @@ $help = [
             </tr>
         </table>
 
-        <h2>Footer</h2>
-        <table class="form-table" role="presentation">
-            <tr>
-                <th scope="row"><label for="ido_footer_link_text">Credit text</label></th>
-                <td>
-                    <input type="text" id="ido_footer_link_text" name="settings[footer_link_text]" class="regular-text"
-                           value="<?php echo esc_attr((string) $settings['footer_link_text']); ?>">
-                    <p class="description">Shown on the right of the bar along the bottom of every game screen. Leave blank to show nothing.</p>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><label for="ido_footer_link_url">Credit link</label></th>
-                <td>
-                    <input type="url" id="ido_footer_link_url" name="settings[footer_link_url]" class="regular-text"
-                           value="<?php echo esc_attr((string) $settings['footer_link_url']); ?>"
-                           placeholder="https://example.com">
-                    <p class="description">Where the credit points. Leave blank and the text is shown without a link.</p>
-                </td>
-            </tr>
-        </table>
-
         <h2>Site menu</h2>
         <table class="form-table" role="presentation">
             <tr>

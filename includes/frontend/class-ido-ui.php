@@ -180,24 +180,16 @@ class IDO_UI {
 
     /**
      * The strip along the bottom of every game screen: what this is on the
-     * left, whose site it is on the right. The credit is a setting, so a site
-     * that is not the author's can change it or clear it away.
+     * left, who wrote it on the right. Both are fixed, so every site running
+     * the game carries the same credit and points at the same source.
      */
     public static function footer(): string {
-        $text = trim((string) IDO_Settings::get('footer_link_text'));
-        $url  = trim((string) IDO_Settings::get('footer_link_url'));
-
         $out = '<div class="ido-footer">';
         $out .= '<span class="ido-footer-game">' . esc_html(IDO_Game::NAME)
             . ' <span class="ido-footer-version">v' . esc_html(IDO_VERSION) . '</span></span>';
-
-        if ($text !== '') {
-            $out .= '<span class="ido-footer-credit">';
-            $out .= $url !== ''
-                ? '<a href="' . esc_url($url) . '" rel="noopener noreferrer" target="_blank">' . esc_html($text) . '</a>'
-                : esc_html($text);
-            $out .= '</span>';
-        }
+        $out .= '<span class="ido-footer-credit">'
+            . '<a href="' . esc_url(IDO_Game::CREDIT_URL) . '" rel="noopener noreferrer" target="_blank">'
+            . esc_html(IDO_Game::CREDIT_TEXT) . '</a></span>';
         return $out . '</div>';
     }
 

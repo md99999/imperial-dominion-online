@@ -18,8 +18,17 @@ define('ABSPATH', __DIR__ . '/');
 define('IDO_PATH', dirname(__DIR__) . '/');
 define('IDO_DB_VERSION', 'test');
 
-function get_option($name, $default = false) { return $default; }
-function update_option($name, $value, $autoload = null) { return true; }
+/** A settings store the migration can actually write back to. */
+$GLOBALS['ido_options'] = [];
+function get_option($name, $default = false) {
+    return array_key_exists($name, $GLOBALS['ido_options']) ? $GLOBALS['ido_options'][$name] : $default;
+}
+function update_option($name, $value, $autoload = null) {
+    $GLOBALS['ido_options'][$name] = $value;
+    return true;
+}
+function wp_parse_args($args, $defaults = []) { return array_merge($defaults, (array) $args); }
+function sanitize_text_field($v) { return trim(strip_tags((string) $v)); }
 
 require IDO_PATH . 'includes/class-ido-core.php';
 require IDO_PATH . 'includes/class-ido-installer.php';
@@ -145,6 +154,39 @@ check('it declares the table under the site prefix',
     strpos($schema, 'xK7q_secure_ido_constructions') !== false);
 check('it declares kingdom_id and never realm_id',
     strpos($schema, 'kingdom_id') !== false && strpos($schema, 'realm_id') === false);
+
+echo "\n=== settings retired along the way ===\n";
+// The footer credit stopped being a setting in 1.15.2. A saved value that
+// nothing reads any more is worse than none: it reads like a dial that has
+// quietly stopped working.
+$GLOBALS['ido_options'] = [
+    'ido_db_version' => 'older',
+    IDO_Settings::OPTION => [
+        'turns_per_day'    => 7,
+        'dominion_name'    => 'Anywhere',
+        'footer_link_text' => 'someone else',
+        'footer_link_url'  => 'https://example.com',
+    ],
+];
+$GLOBALS['wpdb'] = new MigrationWPDB($modern, ['PRIMARY', 'kingdom_ready']);
+IDO_Installer::maybe_upgrade();
+$after = $GLOBALS['ido_options'][IDO_Settings::OPTION];
+check('the retired credit text is cleared away', !array_key_exists('footer_link_text', $after));
+check('the retired credit link is cleared away', !array_key_exists('footer_link_url', $after));
+check('a tuned setting is left alone', ($after['turns_per_day'] ?? null) === 7);
+check('so is one that is free text', ($after['dominion_name'] ?? null) === 'Anywhere');
+check('the version is recorded, so it runs once',
+    $GLOBALS['ido_options']['ido_db_version'] === IDO_DB_VERSION);
+
+check('the credit text is fixed', IDO_Game::CREDIT_TEXT !== '');
+check('the credit points at the source',
+    IDO_Game::CREDIT_URL === 'https://github.com/md99999/imperial-dominion-online', IDO_Game::CREDIT_URL);
+check('it is not a setting any more',
+    !array_key_exists('footer_link_text', IDO_Settings::defaults())
+    && !array_key_exists('footer_link_url', IDO_Settings::defaults()));
+check('and not a free-text key either',
+    !in_array('footer_link_text', IDO_Settings::text_keys(), true)
+    && !in_array('footer_link_url', IDO_Settings::text_keys(), true));
 
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");
 exit($fails === 0 ? 0 : 1);

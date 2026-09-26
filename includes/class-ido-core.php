@@ -124,9 +124,6 @@ class IDO_Settings {
             'use_wp_cron'            => 1,
             // A theme menu location, or blank for "do not touch the site menu".
             'menu_location'          => '',
-            // The credit in the footer bar. Blank text hides it.
-            'footer_link_text'       => 'maddogproductions.online',
-            'footer_link_url'        => 'https://maddogproductions.online',
             'allow_new_kingdoms'      => 1,
             // Deleting the plugin keeps the game's data unless this is turned on.
             'delete_data_on_uninstall' => 0,
@@ -135,7 +132,7 @@ class IDO_Settings {
 
     /** Settings that are free text rather than integers. */
     public static function text_keys(): array {
-        return ['dominion_name', 'menu_location', 'footer_link_text', 'footer_link_url'];
+        return ['dominion_name', 'menu_location'];
     }
 
     public static function all(): array {
@@ -156,12 +153,7 @@ class IDO_Settings {
         $current = self::all();
         foreach (self::defaults() as $key => $default) {
             if (!array_key_exists($key, $values)) continue;
-            if ($key === 'footer_link_url') {
-                // A URL needs its own sanitiser: sanitize_text_field would let
-                // through a javascript: scheme that esc_url would then strip at
-                // output, leaving a setting that silently does nothing.
-                $current[$key] = esc_url_raw(trim((string) $values[$key]));
-            } elseif (in_array($key, self::text_keys(), true)) {
+            if (in_array($key, self::text_keys(), true)) {
                 $current[$key] = sanitize_text_field((string) $values[$key]);
             } else {
                 $current[$key] = max(0, (int) $values[$key]);
@@ -206,6 +198,15 @@ class IDO_Log {
 class IDO_Game {
     /** The name of the game. Not a setting: there is nothing here to configure. */
     const NAME = 'Imperial Dominion Online';
+
+    /**
+     * The credit in the footer bar. Not a setting either: it says who wrote
+     * the game, which is not a fact about the site running it, and a site that
+     * could edit it could also quietly claim the work as its own. The link
+     * goes to the source, so anyone reading the footer can go and read it.
+     */
+    const CREDIT_TEXT = 'maddogproductions.online';
+    const CREDIT_URL  = 'https://github.com/md99999/imperial-dominion-online';
 
     /**
      * The ceiling on every stored number in the game: gold, land, troops, net

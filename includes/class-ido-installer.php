@@ -77,6 +77,18 @@ class IDO_Installer {
                 $changed = true;
             }
         }
+
+        // 1.15.2 made the footer credit a fixed value rather than a setting.
+        // Nothing reads these any more, and a saved value that no longer does
+        // anything is worse than no value at all: it reads like a dial that
+        // has stopped working.
+        foreach (['footer_link_text', 'footer_link_url'] as $retired) {
+            if (array_key_exists($retired, $saved)) {
+                unset($saved[$retired]);
+                $changed = true;
+            }
+        }
+
         if ($changed) update_option(IDO_Settings::OPTION, $saved);
     }
 
