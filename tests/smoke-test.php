@@ -82,7 +82,20 @@ class FakeWPDB {
         }
         return null;
     }
-    public function get_results($q) { $this->queries[] = $q; return []; }
+    public function get_results($q) {
+        $this->queries[] = $q;
+        // One rival within the net worth band, so the war room actually draws
+        // its attack form. With no targets the whole form is skipped and the
+        // page renders without the thing most worth looking at.
+        if (strpos($q, 'ido_kingdoms') !== false && strpos($q, 'networth BETWEEN') !== false) {
+            return [(object) [
+                'id' => 2, 'kingdom_name' => 'Ostia', 'ruler_name' => 'Rival',
+                'land' => 240, 'networth' => 240000,
+                'protection_until' => null, 'attacks_suffered' => 0,
+            ]];
+        }
+        return [];
+    }
     public function insert($t, $d, $f = null) { $this->queries[] = 'INSERT ' . $t; return 1; }
     public function update($t, $d, $w, $df = null, $wf = null) { $this->queries[] = 'UPDATE ' . $t; return 1; }
     public function delete($t, $w, $f = null) { $this->queries[] = 'DELETE ' . $t; return 1; }

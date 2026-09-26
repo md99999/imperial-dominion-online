@@ -128,6 +128,53 @@ $highest_title = end($titles);
 </div>
 
 <div class="ido-panel">
+    <h3 class="ido-panel-title">The siege yards</h3>
+    <p>
+        Siege engines are the third thing an empire can own, and they behave like neither of the other two.
+        They are built rather than trained, so no peasant leaves the fields for one, and they stand on no acre,
+        so they cost you nothing in land. An order costs one turn and finishes on the daily tick, the same as
+        a building does.
+    </p>
+    <table class="ido-table ido-table-wide">
+        <thead><tr><th>Engine</th><th class="ido-right">Offence</th><th class="ido-right">Defence</th><th class="ido-right">Cost each</th><th>What it does</th></tr></thead>
+        <tbody>
+        <?php foreach (IDO_Engines::all() as $engine_key => $engine) :
+            $engine_cost = IDO_Engines::cost($engine_key); ?>
+            <tr>
+                <td><?php echo esc_html($engine['plural']); ?></td>
+                <td class="ido-right"><?php echo esc_html((string) $engine['offence']); ?></td>
+                <td class="ido-right"><?php echo esc_html((string) $engine['defence']); ?></td>
+                <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($engine_cost['gold'])); ?>g
+                    <span class="ido-dim">+ <?php echo esc_html(IDO_Game::fmt($engine_cost['iron'])); ?> iron</span></td>
+                <td class="ido-dim"><?php echo esc_html($engine['note']); ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <p>
+        What an engine costs you is risk. Catapults are the only part of your strength an enemy can take
+        away and keep: everything else they destroy, these they drag home. The winner of a battle carries off
+        <strong><?php echo esc_html((string) $s['catapult_capture_percent']); ?>%</strong> of whatever the loser
+        had at stake, and a further <strong><?php echo esc_html((string) $s['catapult_destroy_percent']); ?>%</strong>
+        is smashed on the field, so losing a fight costs
+        <strong><?php echo esc_html((string) ((int) $s['catapult_capture_percent'] + (int) $s['catapult_destroy_percent'])); ?>%</strong>
+        of what was committed to it.
+    </p>
+    <ul class="ido-list">
+        <li>When you <strong>attack</strong>, your stake is the train you send and nothing else. Engines left
+            at home are not in the wager.</li>
+        <li>When you are <strong>attacked</strong>, your stake is every engine you own, because every engine
+            you own is on the wall.</li>
+        <li>So a large train wins fights you would otherwise lose, and hands a rival a siege park if it does not.
+            That is the whole decision, and there is no safe answer to it.</li>
+    </ul>
+    <p class="ido-dim">
+        Scrapping an engine returns <?php echo esc_html((string) $s['demolish_refund_percent']); ?>% of its cost,
+        the same as demolishing a building.
+    </p>
+</div>
+
+<div class="ido-panel">
     <h3 class="ido-panel-title">People and food</h3>
     <p>
         Peasants pay your taxes, and every soldier you train is a peasant taken out of the fields. Homesteads set how
@@ -196,6 +243,8 @@ $highest_title = end($titles);
             march on somebody, so you cannot raid from behind it.</li>
         <li>Losses are permanent on both sides. Winning a battle still costs you soldiers.</li>
         <li>Fortifications lift your defence; ballistae legions are built to break through them.</li>
+        <li>Catapults are lost to the winner rather than merely killed. Whatever kind of attack it was,
+            the engines at stake change hands on the result.</li>
     </ul>
 </div>
 

@@ -328,25 +328,42 @@ class IDO_Military {
     }
 
     /**
+     * How a stake of siege engines is divided after a battle is lost.
+     *
+     * The winner drags home catapult_capture_percent of it and
+     * catapult_destroy_percent is smashed where it stands, so a defeat costs
+     * the two added together. Where rounding would claim more than was at
+     * stake, the wrecked share gives way first: an engine cannot be both
+     * captured and splinters. Kept separate from the battle so the arithmetic
+     * can be read, and tested, without a database behind it.
+     *
+     * @return array ['captured' => int, 'wrecked' => int]
+     */
+    public static function engine_spoils(int $stake): array {
+        $stake = max(0, $stake);
+        if ($stake < 1) return ['captured' => 0, 'wrecked' => 0];
+
+        $capture = max(0, min(100, IDO_Settings::int('catapult_capture_percent')));
+        $destroy = max(0, min(100, IDO_Settings::int('catapult_destroy_percent')));
+
+        $captured = min($stake, (int) round($stake * $capture / 100));
+        $wrecked  = min($stake - $captured, (int) round($stake * $destroy / 100));
+        return ['captured' => $captured, 'wrecked' => $wrecked];
+    }
+
+    /**
      * Moves siege engines from the losing side to the winning one, and smashes
      * a further share where it stands.
      *
      * Only what was at stake counts. The attacker stakes the train they sent
      * and nothing they left at home; the defender stakes everything standing,
-     * because everything standing was in the fight. The winner drags home
-     * catapult_capture_percent of the loser's stake and
-     * catapult_destroy_percent is wrecked, so a defeat costs the two added
-     * together. When rounding would take more than was at stake, the wrecked
-     * share gives way first: an engine cannot be both captured and splinters.
+     * because everything standing was in the fight.
      *
      * @return array ['taken' => int, 'wrecked' => int]
      */
     private static function resolve_engine_spoils(object $kingdom, object $target, array $sent, bool $attacker_won): array {
         $winner = $attacker_won ? $kingdom : $target;
         $loser  = $attacker_won ? $target : $kingdom;
-
-        $capture = max(0, min(100, IDO_Settings::int('catapult_capture_percent')));
-        $destroy = max(0, min(100, IDO_Settings::int('catapult_destroy_percent')));
 
         $taken = 0;
         $wrecked = 0;
@@ -356,20 +373,17 @@ class IDO_Military {
                 ? (int) $target->{$column}          // everything the defender had on the walls
                 : (int) ($sent[$key] ?? 0);         // only the train the attacker marched out with
             $stake = max(0, min($stake, (int) $loser->{$column}));
-            if ($stake < 1) continue;
 
-            $captured = (int) round($stake * $capture / 100);
-            $smashed  = (int) round($stake * $destroy / 100);
-            $captured = min($captured, $stake);
-            $smashed  = min($smashed, $stake - $captured);
-            if ($captured + $smashed < 1) continue;
+            $split = self::engine_spoils($stake);
+            $lost = $split['captured'] + $split['wrecked'];
+            if ($lost < 1) continue;
 
-            IDO_Kingdom::pay($loser, [$column => -($captured + $smashed)], 'Those engines were no longer there to lose.');
-            if ($captured > 0) {
-                IDO_Kingdom::pay($winner, [$column => $captured]);
+            IDO_Kingdom::pay($loser, [$column => -$lost], 'Those engines were no longer there to lose.');
+            if ($split['captured'] > 0) {
+                IDO_Kingdom::pay($winner, [$column => $split['captured']]);
             }
-            $taken += $captured;
-            $wrecked += $smashed;
+            $taken += $split['captured'];
+            $wrecked += $split['wrecked'];
         }
         return ['taken' => $taken, 'wrecked' => $wrecked];
     }
