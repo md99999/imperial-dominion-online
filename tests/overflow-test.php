@@ -93,5 +93,48 @@ check('weapon defence is not negative', IDO_Weapons::defence_power($monster) >= 
 check('weapon upkeep is not negative', IDO_Weapons::upkeep($monster) >= 0);
 check('title lookup survives the cap', IDO_Game::title(IDO_Game::MAX_VALUE) !== '');
 
+echo "
+=== the title ladder ===
+";
+// title() walks the list and keeps the last threshold it is at or above, so
+// the list being in ascending order is not presentation, it is the algorithm.
+// A pair entered out of order would make a title unreachable, silently.
+$thresholds = array_keys(IDO_Game::TITLES);
+$sorted = $thresholds;
+sort($sorted, SORT_NUMERIC);
+check('the ladder ascends', $thresholds === $sorted);
+check('it starts at nothing', $thresholds[0] === 0);
+check('no two rungs share a threshold', count($thresholds) === count(array_unique($thresholds)));
+
+// Every title has to be reachable: standing exactly on a rung earns it, and a
+// penny short earns the one below.
+$previous = null;
+foreach (IDO_Game::TITLES as $threshold => $name) {
+    check(sprintf('%s is earned at %s', $name, IDO_Game::fmt($threshold)),
+        IDO_Game::title($threshold) === $name, 'got ' . IDO_Game::title($threshold));
+    if ($previous !== null) {
+        check(sprintf('one short of %s is still %s', $name, $previous),
+            IDO_Game::title($threshold - 1) === $previous, 'got ' . IDO_Game::title($threshold - 1));
+    }
+    $previous = $name;
+}
+$names = array_values(IDO_Game::TITLES);
+check('below the bottom rung is still the bottom title',
+    IDO_Game::title(-1) === $names[0], 'got ' . IDO_Game::title(-1));
+
+// 1.16.0 put the summit out of easy reach. Duke and above are the rungs that
+// moved, and they moved by exactly three.
+$expected = ['Duke' => 36000000, 'Archduke' => 75000000, 'Prince' => 150000000,
+             'High King' => 300000000, 'Emperor' => 600000000];
+foreach ($expected as $name => $want) {
+    $got = array_search($name, IDO_Game::TITLES, true);
+    check(sprintf('%s stands at %s', $name, IDO_Game::fmt($want)), $got === $want,
+        'got ' . ($got === false ? 'no such title' : IDO_Game::fmt($got)));
+}
+check('Marquess and below are untouched',
+    array_search('Marquess', IDO_Game::TITLES, true) === 6000000
+    && array_search('Earl', IDO_Game::TITLES, true) === 3000000
+    && array_search('Freeholder', IDO_Game::TITLES, true) === 0);
+
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");
 exit($fails === 0 ? 0 : 1);

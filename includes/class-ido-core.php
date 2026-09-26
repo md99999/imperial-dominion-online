@@ -248,11 +248,23 @@ class IDO_Game {
         'iron'       => 'Iron',
     ];
 
-    /** Net worth thresholds and titles, lowest first. */
+    /**
+     * Net worth thresholds and titles, lowest first.
+     *
+     * The lower half is a ladder a builder climbs on their own. From Duke up
+     * it is meant to be an achievement, and it was not: a ruler who went to
+     * war could reach the top of it comfortably inside a round, because taking
+     * land takes it from someone who had already paid to build on it, so a
+     * conqueror's net worth climbs far faster than a builder's. Those five
+     * thresholds were tripled in 1.16.0 to put the summit back out of easy
+     * reach. Titles already recorded in the hall of fame are left as they were
+     * won, since a round is scored against the ladder that was standing at
+     * the time.
+     */
     const TITLES = [
         0 => 'Freeholder', 250000 => 'Thane', 750000 => 'Baron', 1500000 => 'Viscount',
-        3000000 => 'Earl', 6000000 => 'Marquess', 12000000 => 'Duke', 25000000 => 'Archduke',
-        50000000 => 'Prince', 100000000 => 'High King', 200000000 => 'Emperor',
+        3000000 => 'Earl', 6000000 => 'Marquess', 36000000 => 'Duke', 75000000 => 'Archduke',
+        150000000 => 'Prince', 300000000 => 'High King', 600000000 => 'Emperor',
     ];
 
     public static function title(int $networth): string {
