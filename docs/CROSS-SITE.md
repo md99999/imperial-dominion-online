@@ -796,8 +796,9 @@ This is the consequence that changes the calendar. A round trip is three to eigh
 same back, so an army can be away for sixteen days. A round is forty-five. A march begun on day
 forty cannot possibly resolve before the wipe.
 
-So a league **closes marching before the round ends**, by the worst-case round trip: no new march
-may be committed inside the last sixteen days unless the delay range is narrower. The last stretch
+So a league **closes marching before the round ends**, by the worst-case round trip, calculated as
+twice the maximum delay rather than written down as a fixed number. With a three to eight day
+range that is the last sixteen days; narrow the range and the cutoff narrows with it. The last stretch
 of a round becomes what it should be anyway, the part where sites consolidate and the standings
 settle, rather than a window where armies are committed and then deleted mid-flight.
 
@@ -805,6 +806,57 @@ Anything still in flight when the round does end is resolved if it can be, and o
 to the contributing empires immediately before the wipe, so nobody loses an army to the calendar.
 That matters more than it sounds: the alternative is a player whose last act of the round was to
 contribute, and whose reward was to watch it disappear.
+
+## League rounds need to be longer
+
+A local round of 45 days works because a local march resolves instantly: a ruler can fight on the
+last afternoon of the round. A league march cannot. Three to eight days out, a battle, three to
+eight days home, and marching has to close a full round trip before the wipe or armies are deleted
+in flight.
+
+The arithmetic is unkind:
+
+| Round | Marching closes | Marching window | Sequential exchanges at ~11 days |
+| --- | --- | --- | --- |
+| 45 days | day 29 | 29 days | about 2 to 3 |
+| 60 days | day 44 | 44 days | about 4 |
+| 90 days | day 74 | 74 days | about 6 to 7 |
+
+Two or three exchanges is not a season. It is barely a conversation: one march, one reply, and the
+round is over before anyone has answered the reply. The wasted tail is worse in proportion too, at
+sixteen of forty-five days, better than a third of the round, against under a fifth of ninety.
+
+**The recommendation is 90 days for a league round**, set by the originator with the rest of the
+calendar, while a site playing alone keeps 45.
+
+### Why a longer round is safer in league mode, not riskier
+
+The usual objection to long rounds is that a latecomer walks into a world of entrenched empires
+and gets farmed by neighbours who have had six weeks to grow.
+
+**League mode removes that objection**, because it removes local war. Nobody on your own site can
+attack you, so joining late means building quietly and contributing to the next march rather than
+being somebody's target practice. The thing that made long rounds punishing is exactly the thing
+league play switches off.
+
+What remains is that a latecomer will finish lower in the standings, which is true of any round of
+any length and is what the next one is for.
+
+### Derive the cutoff, do not hardcode it
+
+The sixteen day close is two times the maximum delay, and it should be calculated that way rather
+than written down. A league that narrows its range to three to five days gets a ten day cutoff for
+free, and one that widens it to a fortnight gets a twenty-eight day cutoff without anyone having to
+remember to change a second number.
+
+    $cutoff_days = 2 * $league['delay_max_days'];
+
+### The one that still needs deciding
+
+Whether a site can change round length while a league is running. The honest answer is no: the
+league owns the calendar, members wipe together, and a member running a different length is a
+member playing a different game. Changing it should take effect at the next boundary, like every
+other league setting, and should be the originator's to change.
 
 ## Threat model
 
