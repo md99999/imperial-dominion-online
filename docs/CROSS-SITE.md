@@ -530,6 +530,60 @@ unlikely, and the row is written in the same guarded statement that applies the 
 A staged packet is readable in the admin before it fires. That is worth having: it lets an
 administrator see an incoming march, and it makes a disputed result reviewable afterwards.
 
+### Computing the delay
+
+**Whole days, drawn by the receiver, stored as an absolute instant.**
+
+    $days = random_int(3, 6);                       // CSPRNG, not rand()
+    $process_after = gmdate('Y-m-d H:i:s', time() + $days * DAY_IN_SECONDS);
+
+Three decisions sit in those two lines.
+
+**The receiver draws it, not the sender.** A sender that chooses its own delay chooses when the
+battle resolves, and therefore what the defender will have standing when it lands. That is the one
+piece of the fight an attacker must not control. It also must not be derived from anything in the
+packet, or a sender can grind UUIDs until the delay suits them: `random_int()`, seeded by the
+system, nothing else.
+
+**Store UTC, display local.** The delay is a duration, and durations have no timezone. Keeping
+`process_after` as an absolute instant means it survives a site changing timezone, a member in
+another country, and daylight saving, none of which should move a battle. The timezone belongs at
+the point of display, where a player reads "expected within the week" and an administrator reads a
+local date.
+
+That separation is the lesson from the local game: the daily grant broke precisely because an
+absolute cron instant and a local calendar day were treated as the same thing.
+
+**Whole days, not hours.** Because packets are processed by the daily tick, a delay of three days
+and seven hours and a delay of three days both resolve at the same moment: the next daily run.
+Storing the hours would suggest a precision the game does not have.
+
+### Which tick processes it
+
+**The daily one.** Results landing at one predictable moment each day is the BRE ritual: you log
+in, and the dispatches from three days ago are waiting. Spreading them across the hourly tick
+would make them arrive whenever, which is more responsive and less of an event.
+
+The hourly tick stays a safety net: if a daily run is missed, anything overdue is picked up rather
+than waiting another full day.
+
+With the daily tick at local midnight, a league result lands overnight and is there when a player
+next logs in, which is exactly the feel worth having.
+
+### What each side is allowed to know
+
+The attacker knows the range, three to six days, and never the draw. Waiting without knowing is
+the mechanic, not an absence of one.
+
+The defender should know less still, and this is worth stating because the staging table makes it
+easy to get wrong: **a staged war packet must not show the defending side what is coming**. An
+administrator who is also a player would otherwise read the force composition out of the admin
+screen and reinforce against it, which is not a cheat so much as an invitation.
+
+So the admin view of an inbound war packet shows that one exists, which peer sent it and roughly
+when it is due, and nothing about its contents until it has been processed. Results and news
+packets carry no such advantage and can be read freely.
+
 ### What comes home
 
 Losses follow the local rules, applied to what was committed. Send ten ballistae legions and a
