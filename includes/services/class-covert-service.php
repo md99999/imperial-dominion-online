@@ -208,6 +208,23 @@ class IDO_Covert {
             $army[] = sprintf('%s %s', IDO_Game::fmt($target->{IDO_Units::column($key)}), strtolower(IDO_Units::plural($key)));
         }
         $lines[] = 'Under arms: ' . implode(', ', $army) . '.';
+
+        $manned = IDO_Weapons::crewed($target);
+        $yards = [];
+        foreach (IDO_Weapons::keys() as $key) {
+            $standing = (int) $target->{IDO_Weapons::column($key)};
+            if ($standing < 1) continue;
+            $worked = (int) ($manned[$key] ?? 0);
+            $yards[] = $worked < $standing
+                ? sprintf('%s %s, only %s of them manned',
+                    IDO_Game::fmt($standing), strtolower(IDO_Weapons::plural($key)), IDO_Game::fmt($worked))
+                : sprintf('%s %s, all manned',
+                    IDO_Game::fmt($standing), strtolower(IDO_Weapons::plural($key)));
+        }
+        $lines[] = $yards
+            ? 'Siege weapons: ' . implode('; ', $yards) . '.'
+            : 'Siege weapons: none standing.';
+
         $lines[] = sprintf('Defence rating %s, with %s fortifications standing.',
             IDO_Game::fmt(round(IDO_Military::defence_power($target))), IDO_Game::fmt($target->b_fortification));
         return $lines;
