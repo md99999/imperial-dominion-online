@@ -480,6 +480,72 @@ Both sites run the same maths because the ruleset fingerprint says so. Every wri
 result goes through the same guarded, clamped path as everything else, so nothing overflows and
 nothing goes negative.
 
+## One march a day, and staging tables
+
+### The rate limit
+
+A site may send **one war packet every 24 hours**. Not one per target: one, full stop. It makes a
+league march a considered act rather than a tactic to spam, and it caps the damage a compromised
+or hostile member can do to everyone else in a day.
+
+Two things have to be right for this not to deadlock the league.
+
+**It is enforced by the receiver, not the sender.** A sending site that has been compromised will
+ignore its own limit, so the check that matters is the defending site refusing a second war packet
+from the same peer inside the window. The sending side enforces it too, but that is courtesy to
+the player, not a control.
+
+**Only war packets count.** Results, news, ruleset syncs and enrolment traffic are exempt and must
+be, or a site attacked by three peers in one day could not answer any of them, and the league
+would jam within a week. The limit is on *starting* a fight, never on finishing one.
+
+The window is 24 hours from the last accepted war packet, per peer pair, recorded on the receiving
+side. A packet refused for the limit gets a distinct, honest response so the sender can tell it
+apart from a signature failure, because this one is not an attack and the administrator needs to
+know why the march did not land.
+
+### Staging tables
+
+Nothing arriving from another site is acted on when it arrives. It is verified, staged, and
+processed later by cron, which is both how the delay is implemented and how the endpoint is kept
+cheap and hard to abuse.
+
+    ido_packets_in    id, league_id, peer_id, uuid, type, sequence, received_at,
+                      process_after, status, payload, result_note
+    ido_packets_out   id, league_id, peer_id, uuid, type, created_at, send_after,
+                      attempts, last_attempt_at, status, payload
+
+`status` on the inbound side moves through `staged`, `processed`, `rejected` and `expired`.
+`process_after` carries the delay, three to five days, **set by the receiver on arrival**. A sender
+cannot shorten its own attack by lying about when it sent, because the clock that matters is the
+defender's and it starts when the packet lands.
+
+The outbound table is the retry queue: a peer that is slow or briefly down does not lose a packet
+and does not hold up a page load. `attempts` and `last_attempt_at` back off; `send_after` carries
+the outbound half of the delay.
+
+The unique index is on `(peer_id, uuid)`, which is what makes replay impossible rather than merely
+unlikely, and the row is written in the same guarded statement that applies the effect.
+
+A staged packet is readable in the admin before it fires. That is worth having: it lets an
+administrator see an incoming march, and it makes a disputed result reviewable afterwards.
+
+### What comes home
+
+Losses follow the local rules, applied to what was committed. Send ten ballistae legions and a
+hundred legionnaires and pawns, lose the battle, and what returns is what survived at the losing
+side rate, not the force that set out. Win, and the lighter winning rate applies. The same maths
+as a local march, over a force assembled from several empires instead of one.
+
+Spoils are a share of the loser's committed force, not of everything the losing site owns. The
+distinction matters: a share of everything lets one bad exchange strip a site that had barely
+joined the fight, and it rewards attacking the largest site rather than the best target. A share of
+what was actually risked keeps the decision proportionate, and keeps a site's home economy out of
+reach of a single packet.
+
+Whatever the share, it is capped against the committed force on both sides, and every number a
+result packet asserts is clamped to what the receiving site independently believes possible.
+
 ## Threat model
 
 Written for review rather than reassurance. Where something cannot be defended, it says so.
@@ -597,7 +663,8 @@ most likely to be wrong and least likely to be exercised.
 - A `ido_sites` table: peer site URL, shared secret, sequence counters, trust status.
 - The league ruleset applied locally, with those settings locked in the admin and a fingerprint
   recomputed whenever they change.
-- A `ido_packets` table: UUID, direction, type, payload, status, processed timestamp.
+- `ido_packets_in` and `ido_packets_out`: the inbound staging table and the outbound retry
+  queue, each keyed by (peer, UUID), carrying the delay as process_after and send_after.
 - An escrow table, or `away_*` columns on `ido_kingdoms`, for forces in transit.
 - A queue and a cron worker, since remote battles cannot resolve inside the request that starts
   them. This is where the queued combat path from the original design question comes back.
