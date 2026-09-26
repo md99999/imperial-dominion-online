@@ -736,6 +736,72 @@ else, since everything else arrives with it.
 The screen carries the same protections as the rest of the admin: `manage_options`, a nonce on
 every form, and no secret ever rendered after the moment it is created.
 
+## Tracking what each empire contributed
+
+A march is assembled from several empires and resolved days later, so the site has to remember
+exactly who put in what. Without that record there is no way to return the right survivors to the
+right ruler, no way to split spoils fairly, and no way to show who carried the effort.
+
+    ido_league_marches        id, league_id, peer_id, direction, status, packet_uuid,
+                              committed_at, sent_at, resolved_at, outcome, spoils_json
+    ido_league_contributions  id, march_id, kingdom_id, committed_json, returned_json,
+                              spoils_gold, spoils_grain, spoils_iron, spoils_equipment
+
+`committed_json` is the force as it left, by unit type. `returned_json` is what came home, written
+when the result lands. Until then the difference is the escrow, and it is the reason an empire
+shows fewer troops at home.
+
+### Splitting the result
+
+Survivors, casualties and spoils are all shared **in proportion to what each empire risked**, which
+is the only split that cannot be argued with: contribute a tenth of the army, carry a tenth of the
+losses, take a tenth of the plunder.
+
+The awkward part is that proportions are fractional and troops are not. Splitting 97 surviving
+legionnaires between three empires by naive rounding either invents a soldier or loses one, and
+doing that every march, on every unit type, on gold and grain and iron as well, drifts into real
+money. So the distribution uses largest-remainder allocation and **the total distributed is
+asserted to equal the total received**, per unit type and per resource. A march that cannot
+reconcile is held for an administrator rather than applied approximately.
+
+Equipment is the same problem with sharper edges, because captured siege weapons come in ones and
+there may be fewer of them than contributors. They go by largest remainder too, and the tie is
+broken deterministically, by contribution and then by empire id, so the same result never depends
+on the order rows came back in.
+
+### When the contributor is not there any more
+
+An empire can be deleted, or its ruler can walk away, while its army is a week out. The escrow
+still exists and something has to happen to it.
+
+Survivors belonging to an empire that no longer exists are disbanded and its share of the spoils is
+forfeit, announced in the gazette. The alternative, redistributing to the remaining contributors,
+quietly rewards the site when a player quits, and anything that pays a site for losing a player is
+worth refusing on principle.
+
+### What a player sees
+
+A ruler whose legions are away must be told so, plainly, on the Army screen: what is committed,
+where it went, and that it is expected back within the window. An army that silently vanishes from
+the muster for a fortnight is indistinguishable from a bug, and it is the first thing anyone will
+report.
+
+## Marches and the end of a round
+
+This is the consequence that changes the calendar. A round trip is three to eight days out and the
+same back, so an army can be away for sixteen days. A round is forty-five. A march begun on day
+forty cannot possibly resolve before the wipe.
+
+So a league **closes marching before the round ends**, by the worst-case round trip: no new march
+may be committed inside the last sixteen days unless the delay range is narrower. The last stretch
+of a round becomes what it should be anyway, the part where sites consolidate and the standings
+settle, rather than a window where armies are committed and then deleted mid-flight.
+
+Anything still in flight when the round does end is resolved if it can be, and otherwise returned
+to the contributing empires immediately before the wipe, so nobody loses an army to the calendar.
+That matters more than it sounds: the alternative is a player whose last act of the round was to
+contribute, and whose reward was to watch it disappear.
+
 ## Threat model
 
 Written for review rather than reassurance. Where something cannot be defended, it says so.
@@ -855,7 +921,8 @@ most likely to be wrong and least likely to be exercised.
   recomputed whenever they change.
 - `ido_packets_in` and `ido_packets_out`: the inbound staging table and the outbound retry
   queue, each keyed by (peer, UUID), carrying the delay as process_after and send_after.
-- An escrow table, or `away_*` columns on `ido_kingdoms`, for forces in transit.
+- `ido_league_marches` and `ido_league_contributions`: what each empire committed, what came
+  home, and its share of the spoils.
 - A queue and a cron worker, since remote battles cannot resolve inside the request that starts
   them. This is where the queued combat path from the original design question comes back.
 - An admin screen for pairing with another site, which must require an explicit confirmation from
