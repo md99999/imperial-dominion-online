@@ -121,8 +121,25 @@ check('an unknown weapon adds nothing', IDO_Weapons::offence_power(['trebuchet' 
 check('a negative count adds nothing', IDO_Weapons::offence_power(['catapult' => -50]) === 0.0);
 
 echo "\n=== a catapult needs men to work it ===\n";
+$GLOBALS['ido_test_settings'] = [];
 check('catapults are crewed by legionnaires', IDO_Weapons::crew_unit('catapult') === 'legionnaire');
-check('the crew is a positive number', IDO_Weapons::crew_each('catapult') > 0);
+check('the crew defaults to five', IDO_Weapons::crew_each('catapult') === 5,
+    'got ' . IDO_Weapons::crew_each('catapult'));
+
+// The crew size is a dial, so turning it has to change the rule rather than
+// merely the wording. Zero and below are refused: a weapon that needs nobody
+// would work itself, which is the thing the rule exists to prevent.
+foreach ([1 => 1, 3 => 3, 12 => 12, 0 => 1, -4 => 1] as $set => $expected) {
+    $GLOBALS['ido_test_settings'] = ['catapult_crew' => $set];
+    check(sprintf('a crew setting of %d gives %d', $set, $expected),
+        IDO_Weapons::crew_each('catapult') === $expected, 'got ' . IDO_Weapons::crew_each('catapult'));
+}
+
+$GLOBALS['ido_test_settings'] = ['catapult_crew' => 3];
+$needed = IDO_Weapons::crew_needed(['catapult' => 10]);
+check('the setting drives what a train asks for', ($needed['legionnaire'] ?? 0) === 30,
+    'got ' . var_export($needed, true));
+$GLOBALS['ido_test_settings'] = [];
 
 $per = IDO_Weapons::crew_each('catapult');
 $needed = IDO_Weapons::crew_needed(['catapult' => 20]);

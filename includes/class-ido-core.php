@@ -95,6 +95,9 @@ class IDO_Settings {
             // gold: a wall that never leaves, or a weapon that can.
             'catapult_gold_cost'     => 300,
             'catapult_iron_cost'     => 15,
+            // Legionnaires needed to work one catapult, both to haul it out on
+            // an attack and to man it on the wall at home.
+            'catapult_crew'          => 5,
             // War
             'target_min_percent'     => 40,
             'target_max_percent'     => 250,

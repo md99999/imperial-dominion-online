@@ -30,11 +30,10 @@ class IDO_Weapons {
                 // the one troop that is useless on an attack something to do
                 // there without making it good at fighting.
                 'crew_unit' => 'legionnaire',
-                'crew'      => 5,
                 'upkeep'    => 0.8, // grain per turn, for the draught teams
-                'effect'  => 'Worked by legionnaires, five to a catapult. Adds to your attack when you haul it out '
-                           . 'and to your walls when you do not. Whichever side loses a battle gives up a share of '
-                           . 'the catapults that were in it.',
+                'effect'  => 'Worked by legionnaires. Adds to your attack when you haul it out and to your walls '
+                           . 'when you do not. Whichever side loses a battle gives up a share of the catapults '
+                           . 'that were in it.',
                 'note'    => 'Built, not trained: no peasants leave the fields for it and it stands on no acre. '
                            . 'It needs legionnaires to work it, so send them with it, and risk handing both to the '
                            . 'enemy if the day goes badly.',
@@ -73,9 +72,16 @@ class IDO_Weapons {
         return (string) self::get($key)['crew_unit'];
     }
 
-    /** How many of those troops one of these weapons needs. */
+    /**
+     * How many of those troops one of these weapons needs.
+     *
+     * A setting, so a game master can make weapons cheaper or dearer in men
+     * without touching the code. Never below one: a weapon that needs nobody
+     * would work itself, which is the thing this rule exists to prevent.
+     */
     public static function crew_each(string $key): int {
-        return max(1, (int) self::get($key)['crew']);
+        self::get($key);
+        return max(1, IDO_Settings::int($key . '_crew'));
     }
 
     /**
