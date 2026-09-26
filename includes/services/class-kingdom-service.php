@@ -271,8 +271,11 @@ class IDO_Kingdom {
      */
     public static function grant_daily_turns(int $round_id): int {
         global $wpdb;
-        $per_day = IDO_Settings::int('turns_per_day');
-        $cap     = IDO_Settings::int('turn_cap');
+        $per_day = max(1, IDO_Settings::int('turns_per_day'));
+        // The cap can never sit below a single day's grant: a misconfigured
+        // ceiling would otherwise stamp the date, grant nothing, and freeze
+        // every empire at whatever it held, silently and for good.
+        $cap     = max(IDO_Settings::int('turn_cap'), $per_day);
         $today   = IDO_Game::today();
         $rows = $wpdb->query($wpdb->prepare(
             'UPDATE ' . IDO_DB::t('kingdoms')

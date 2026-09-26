@@ -165,10 +165,46 @@ class IDO_UI {
             $line .= " Your turns are at the ceiling, so the next daily grant will be wasted unless you spend some today.";
         } elseif ($turns === 0) {
             $class .= ' ido-turn-help-empty';
-            $line .= ' You have none left; more arrive on the daily tick.';
+            $line .= ' You have none left.';
         }
 
+        // When the next grant lands, in the site's own time. Without this a
+        // ruler has no way to tell whether turns are late or simply not due:
+        // the day rolls at midnight in the site's timezone, which for a player
+        // in another timezone is the middle of their afternoon.
+        $line .= ' ' . self::next_grant_sentence($per_day);
+
         return '<div class="' . esc_attr($class) . '">' . esc_html($line) . '</div>';
+    }
+
+    /** "The next 10 turns arrive at midnight, about 5 hours from now." */
+    public static function next_grant_sentence(int $per_day): string {
+        $now  = current_datetime();
+        $next = $now->modify('tomorrow midnight');
+        if (!$next) return '';
+
+        $hours = (int) floor(($next->getTimestamp() - $now->getTimestamp()) / HOUR_IN_SECONDS);
+        $when  = $hours >= 2
+            ? sprintf('about %d hours from now', $hours)
+            : 'within the hour';
+
+        return sprintf(
+            'The next %s arrive at midnight %s, %s.',
+            IDO_Game::fmt($per_day),
+            self::timezone_label(),
+            $when
+        );
+    }
+
+    /**
+     * A readable name for the site's timezone. A site with no timezone set
+     * reports "+00:00", which tells a player nothing, so that becomes UTC.
+     */
+    public static function timezone_label(): string {
+        $name = wp_timezone()->getName();
+        if ($name === '+00:00' || $name === 'UTC' || $name === 'Z') return 'UTC';
+        if (strpos($name, '/') !== false) return str_replace('_', ' ', $name);
+        return 'UTC' . $name;
     }
 
     /** A short note on what an order costs, shown beside the button that gives it. */

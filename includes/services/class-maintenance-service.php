@@ -93,6 +93,11 @@ class IDO_Maintenance {
                 return 'Daily upkeep skipped: it already ran today at ' . get_option('ido_last_daily') . '.';
             }
 
+            global $wpdb;
+            $eligible = (int) $wpdb->get_var($wpdb->prepare(
+                'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms') . ' WHERE round_id = %d AND is_defeated = 0',
+                (int) $round->id
+            ));
             $granted = IDO_Kingdom::grant_daily_turns((int) $round->id);
             $built   = IDO_Construction::complete_due((int) $round->id);
             IDO_Market::expire((int) $round->id);
@@ -103,9 +108,17 @@ class IDO_Maintenance {
             $rollover = IDO_Rounds::maybe_roll_over();
 
             self::record('daily', $source);
+            // Saying how many were skipped matters: pressing Run now after the
+            // tick has already run reports "0 granted", which reads as a fault
+            // when the truth is that everyone already holds today's turns.
+            $skipped = max(0, $eligible - $granted);
             return sprintf(
-                'Daily upkeep: turns granted to %d empires, %d buildings finished.%s',
-                $granted, $built, $rollover ? ' ' . $rollover : ''
+                'Daily upkeep: turns granted to %d %s%s, %d buildings finished.%s',
+                $granted,
+                $granted === 1 ? 'empire' : 'empires',
+                $skipped > 0 ? sprintf(' (%d already had today, so received nothing)', $skipped) : '',
+                $built,
+                $rollover ? ' ' . $rollover : ''
             );
         } finally {
             IDO_Lock::release('maintenance_daily');
@@ -130,8 +143,11 @@ class IDO_Maintenance {
      */
     public static function catch_up(object $kingdom): void {
         if ($kingdom->last_turn_grant === IDO_Game::today() || (int) $kingdom->is_defeated === 1) return;
-        $per_day = IDO_Settings::int('turns_per_day');
-        $cap     = IDO_Settings::int('turn_cap');
+        $per_day = max(1, IDO_Settings::int('turns_per_day'));
+        // The cap can never sit below a single day's grant: a misconfigured
+        // ceiling would otherwise stamp the date, grant nothing, and freeze
+        // every empire at whatever it held, silently and for good.
+        $cap     = max(IDO_Settings::int('turn_cap'), $per_day);
         global $wpdb;
         $wpdb->query($wpdb->prepare(
             'UPDATE ' . IDO_DB::t('kingdoms')

@@ -49,6 +49,26 @@ $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
                     <br><span class="description">Change this under Settings &rarr; Rounds and housekeeping.</span>
                 </td>
             </tr>
+            <tr>
+                <th>Game day and timezone</th>
+                <td>
+                    Today is <strong><?php echo esc_html(IDO_Game::today()); ?></strong> in
+                    <strong><?php echo esc_html(wp_timezone()->getName()); ?></strong>,
+                    and turns arrive at midnight in that zone.
+                    <?php $tz_name = get_option('timezone_string'); ?>
+                    <?php if (!$tz_name) : ?>
+                        <br><span class="description" style="color:#996800">
+                            <strong>This site has no timezone set</strong>, so WordPress is using
+                            <?php echo esc_html(wp_timezone()->getName()); ?>. The game day then rolls at
+                            midnight there, which for players elsewhere lands in the middle of their
+                            afternoon or evening: they spend an evening's turns, and the next lot are not due
+                            until the following afternoon. Set the real timezone under
+                            <a href="<?php echo esc_url(admin_url('options-general.php')); ?>">Settings &rarr; General</a>
+                            and the reset lands at local midnight instead.
+                        </span>
+                    <?php endif; ?>
+                </td>
+            </tr>
             <tr><th>Next hourly run</th><td><?php echo $hourly_next ? esc_html(date_i18n('Y-m-d H:i', $hourly_next)) : 'not scheduled'; ?></td></tr>
             <tr><th>Next daily run</th><td><?php echo $daily_next ? esc_html(date_i18n('Y-m-d H:i', $daily_next)) : 'not scheduled'; ?></td></tr>
             <tr>
@@ -72,6 +92,62 @@ $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
             <button type="submit" class="button">Run daily upkeep now</button>
         </form>
     </p>
+
+
+    <h2>Turn grants</h2>
+    <p>
+        What each empire holds, when it last received turns, and what the next tick will do for it.
+        If an empire shows today's date under <em>Last granted</em>, it has already had today's turns
+        and spent them: that is not a fault, and pressing <em>Run daily upkeep now</em> will correctly
+        give it nothing more until the game day rolls over.
+    </p>
+    <?php
+    $round_now = IDO_Rounds::current();
+    $per_day_now = max(1, IDO_Settings::int('turns_per_day'));
+    $cap_now = max(IDO_Settings::int('turn_cap'), $per_day_now);
+    $today_now = IDO_Game::today();
+    $empires = $round_now ? $wpdb->get_results($wpdb->prepare(
+        'SELECT id, kingdom_name, ruler_name, turns, last_turn_grant, is_defeated FROM ' . IDO_DB::t('kingdoms')
+        . ' WHERE round_id = %d ORDER BY kingdom_name ASC LIMIT 100', (int) $round_now->id
+    )) : [];
+    ?>
+    <?php if (!$empires) : ?>
+        <p><em>No empires in the current round.</em></p>
+    <?php else : ?>
+        <table class="widefat striped" style="max-width:900px">
+            <thead>
+                <tr><th>Empire</th><th>Ruler</th><th>Turns</th><th>Last granted</th><th>Next tick</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($empires as $e) :
+                $turns_now = (int) $e->turns;
+                if ((int) $e->is_defeated === 1) {
+                    $verdict = 'skipped: defeated';
+                } elseif ($e->last_turn_grant === $today_now) {
+                    $verdict = 'already granted today, nothing more due';
+                } elseif ($turns_now >= $cap_now) {
+                    $verdict = sprintf('at or above the ceiling of %s, will receive nothing', IDO_Game::fmt($cap_now));
+                } else {
+                    $verdict = sprintf('will receive %s, up to %s',
+                        IDO_Game::fmt(min($per_day_now, $cap_now - $turns_now)), IDO_Game::fmt($cap_now));
+                }
+                $stale = $e->last_turn_grant && $e->last_turn_grant !== $today_now && $turns_now === 0;
+                ?>
+                <tr<?php echo $stale ? ' style="background:#fcf2f2"' : ''; ?>>
+                    <td><?php echo esc_html($e->kingdom_name); ?></td>
+                    <td><?php echo esc_html($e->ruler_name); ?></td>
+                    <td><?php echo esc_html(IDO_Game::fmt($turns_now)); ?></td>
+                    <td><?php echo esc_html($e->last_turn_grant ?: 'never'); ?></td>
+                    <td><?php echo esc_html($verdict); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        <p class="description">
+            A row highlighted in red holds no turns and has not been granted today: that one is owed
+            turns and has not had them, which would be a genuine fault rather than a timezone effect.
+        </p>
+    <?php endif; ?>
 
     <h2>Running from cPanel or any other host</h2>
     <p>

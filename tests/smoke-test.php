@@ -26,6 +26,7 @@ function sanitize_text_field($s) { return trim(strip_tags((string) $s)); }
 function sanitize_key($s) { return preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $s)); }
 function current_time($type) { return $type === 'timestamp' ? time() : date($type === 'mysql' ? 'Y-m-d H:i:s' : $type); }
 function wp_timezone() { return new DateTimeZone('UTC'); }
+function current_datetime() { return new DateTimeImmutable('now', wp_timezone()); }
 function wp_next_scheduled($h) { return false; }
 function wp_schedule_event($t, $r, $h) { return true; }
 function wp_clear_scheduled_hook($h) { return true; }
