@@ -21,7 +21,7 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
                 <th class="ido-right">Offence</th>
                 <th class="ido-right">Defence</th>
                 <th class="ido-right">Cost each</th>
-                <th class="ido-right">Standing</th>
+                <th class="ido-right">Owned</th>
                 <th>Train</th>
                 <th>Disband</th>
             </tr>

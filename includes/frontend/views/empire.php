@@ -62,7 +62,7 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
 <div class="ido-panel">
     <h3 class="ido-panel-title">Standing buildings</h3>
     <table class="ido-table ido-table-wide">
-        <thead><tr><th>Building</th><th class="ido-right">Standing</th><th>What it does</th></tr></thead>
+        <thead><tr><th>Building</th><th class="ido-right">Owned</th><th>What it does</th></tr></thead>
         <tbody>
         <?php foreach (IDO_Buildings::all() as $key => $building) : ?>
             <tr>

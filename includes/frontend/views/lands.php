@@ -44,7 +44,7 @@ $build_days = IDO_Settings::int('build_days');
         <?php endif; ?>
     </p>
     <table class="ido-table ido-table-wide">
-        <thead><tr><th>Building</th><th class="ido-right">Standing</th><th>What it does</th><th>Order</th><th>Demolish</th></tr></thead>
+        <thead><tr><th>Building</th><th class="ido-right">Owned</th><th>What it does</th><th>Order</th><th>Demolish</th></tr></thead>
         <tbody>
         <?php foreach (IDO_Buildings::all() as $key => $building) : ?>
             <tr>
@@ -85,7 +85,7 @@ $build_days = IDO_Settings::int('build_days');
         or on your wall. The losing side of a battle gives up a share of whatever was being worked.
     </p>
     <table class="ido-table ido-table-wide">
-        <thead><tr><th>Weapon</th><th class="ido-right">Standing</th><th class="ido-right">Manned</th><th class="ido-right">In the yards</th><th class="ido-right">Cost each</th><th>What it does</th><th>Build</th><th>Scrap</th></tr></thead>
+        <thead><tr><th>Weapon</th><th class="ido-right">Owned</th><th class="ido-right">Manned</th><th class="ido-right">In the yards</th><th class="ido-right">Cost each</th><th>What it does</th><th>Build</th><th>Scrap</th></tr></thead>
         <tbody>
         <?php $manned = IDO_Weapons::crewed($kingdom); ?>
         <?php foreach (IDO_Weapons::all() as $key => $weapon) :
