@@ -441,23 +441,46 @@ somebody else picked a fight. That is the fastest way to empty a league.
 to the empires that contributed, in proportion to what they risked. The site is the banner; the
 empires are the participants.
 
-### 3. Spoils must not snowball
+### 3. Spoils: the local tables, minus land
 
-The obvious version, where a winner absorbs a share of the loser's army, compounds: a site that
-wins once is stronger for the next exchange, wins again, and a league is decided in a fortnight.
-A three to eight day cycle makes this worse, not better, because there is no time to recover between
-blows.
+**A league march uses the same percentages as a local raid**, applied to the defending side rather
+than to a single empire, with the same casualty rates on both armies:
 
-Two ways to keep spoils meaningful without a runaway:
+| | Base | With the strength modifier |
+| --- | --- | --- |
+| Gold | 9% | 5.4 to 12.6% |
+| Grain and iron | 7% each | 4.2 to 9.8% |
+| Attacker losses | 7% winning, 18% losing | of the committed force |
+| Defender losses | 6% losing, 3% repelling | of what stood in defence |
 
-- **Take gold and stores, not soldiers.** Plunder is the classic reward and does not directly
-  raise the winner's military strength, so it has to be converted through the same training costs
-  everyone else pays.
-- **Captured troops become peasants, not troops.** Prisoners put to work is thematically right and
-  gives the winner growth rather than an army, which the loser can rebuild against.
+No separate league percentage, and in particular not a thirty percent take. One exchange should be
+worth the wait without being able to gut a site, and a number matched to local play is one fewer
+thing to balance twice.
 
-Whatever the mix, **cap the take against what the loser committed** rather than against everything
-they own, so a site cannot be stripped by one unlucky exchange.
+**Land never moves between sites.** There is no coherent way to hand acres from an empire on one
+WordPress install to an empire on another, and no need: the hardship lands anyway. A site that has
+lost soldiers and peasants still holds all its acres and now has fewer people to work them, which
+is a slower, more interesting punishment than losing the ground.
+
+### What is actually captured
+
+Gold, grain and iron transfer as plunder, exactly as locally.
+
+**Siege weapons transfer as equipment**, and this is the prize that makes a league march worth
+mounting. It also carries its own brake, because of a rule the local game already has: a siege
+weapon needs a crew, five legionnaires each, and an unmanned weapon counts for nothing on attack or
+defence. Captured ballistae therefore arrive as hardware, not as power. A site that wins a haul of
+them still has to find the men, which costs gold, iron and population it may not have. The spoil is
+real, the advantage is delayed, and nothing compounds the way an absorbed army would.
+
+**Captured soldiers become peasants, not soldiers.** Prisoners put to work is the older and better
+answer: the winner gets growth, which has to be trained into an army through the same costs
+everyone else pays, and the loser can rebuild against it. Letting a winning side absorb the losing
+side's legions directly is what turns a three-exchange league into a decided one, and the wide
+delay makes that worse rather than better, since there is no time to recover between blows.
+
+The net effect is the one worth having: you march for the engines and the treasury, you come home
+with hardware and prisoners, and you have to invest before either becomes strength.
 
 ### The sequence
 
@@ -595,14 +618,10 @@ hundred legionnaires and pawns, lose the battle, and what returns is what surviv
 side rate, not the force that set out. Win, and the lighter winning rate applies. The same maths
 as a local march, over a force assembled from several empires instead of one.
 
-Spoils are a share of the loser's committed force, not of everything the losing site owns. The
-distinction matters: a share of everything lets one bad exchange strip a site that had barely
-joined the fight, and it rewards attacking the largest site rather than the best target. A share of
-what was actually risked keeps the decision proportionate, and keeps a site's home economy out of
-reach of a single packet.
-
-Whatever the share, it is capped against the committed force on both sides, and every number a
-result packet asserts is clamped to what the receiving site independently believes possible.
+Spoils use the local raid percentages, listed under the war section: gold, grain and iron from the
+defending side, siege weapons as captured equipment, and prisoners who become peasants. Land never
+moves. Every number a result packet asserts is clamped to what the receiving site independently
+believes possible.
 
 ## Threat model
 
