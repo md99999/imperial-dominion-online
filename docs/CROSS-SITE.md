@@ -480,6 +480,106 @@ Both sites run the same maths because the ruleset fingerprint says so. Every wri
 result goes through the same guarded, clamped path as everything else, so nothing overflows and
 nothing goes negative.
 
+## Threat model
+
+Written for review rather than reassurance. Where something cannot be defended, it says so.
+
+### What we are protecting
+
+The WordPress installation first: remote code execution or database access through this endpoint
+would be far worse than any amount of cheating. Then the shared secrets, then game state, then
+availability. A league is a game; the site may not be.
+
+### Trust boundaries
+
+1. **Internet to endpoint.** Unauthenticated by design. Anyone can send bytes.
+2. **Peer to game logic.** Authenticated, but a peer can be hostile or compromised.
+3. **Hub to member.** The hub sets rules; it must not be able to reach further than that.
+4. **Player to their own site.** Ordinary WordPress surface, unchanged by league play.
+
+### Risks and what answers them
+
+**Unauthenticated request handling.** The route is public, so every defence before the signature
+check runs on attacker-controlled input.
+
+- Reject on length before anything else, from `Content-Length` and again from the actual body.
+- Order of operations is a security property: length, peer lookup, HMAC, parse, schema, apply.
+- **Write nothing before the signature verifies.** Logging raw bodies to the database ahead of
+  verification hands an anonymous attacker a write primitive, and a disk-filling one at that.
+  Counters may increment; content may not be stored.
+- `hash_equals()` only. Generic responses: a handler that distinguishes "unknown peer" from "bad
+  signature" is an oracle.
+- Rate limit per IP and per peer, and cap queue depth per peer.
+- Register the routes **only when the site has joined a league**. A site not playing should not
+  have the surface at all.
+
+**Server-side request forgery.** The sharpest risk in the design, and it is not in the packet path
+at all: it is in enrolment and in sending. Our site takes a URL from a remote party and fetches it.
+
+- Peer URLs must be HTTPS and must resolve to public addresses. Refuse loopback, link-local
+  (169.254.0.0/16, and cloud metadata at 169.254.169.254 in particular), RFC1918, CGNAT, and the
+  IPv6 equivalents.
+- Re-check after DNS resolution rather than on the string, and disallow redirects, or re-validate
+  every hop. DNS rebinding is the obvious follow-up attack.
+- Use `wp_safe_remote_post()` rather than `wp_remote_post()`, since it applies WordPress's own host
+  validation, and never disable `sslverify`.
+- An administrator approves every peer before anything is fetched in anger, which is the real
+  control; the rest is defence in depth.
+
+**Signature scope.** A MAC over the wrong bytes is worse than none, because it looks correct.
+
+- Everything security-relevant sits inside the signed payload: sending site, **receiving** site,
+  league id, packet UUID, sequence, timestamp, packet type, ruleset fingerprint, body. A packet
+  signed for one peer must not verify at another, and a war order must not be replayable as a
+  result.
+- The algorithm is hard-coded. No `alg` field, ever: letting a packet name its own algorithm is how
+  JWT implementations were broken.
+- Keys from `random_bytes()`, one per pairing, rotated with an overlap window.
+
+**Parsing.** `json_decode` with depth and size caps, associative mode, never `unserialize()`.
+Whitelist every field and reject unknown keys. Nothing from a packet becomes a filename, a path, a
+shell argument, a SQL fragment or an included file. If compression is ever accepted, cap the
+decompressed size, because a compression bomb is trivial otherwise.
+
+**Second-order injection.** Packet strings become empire names in the gazette and in reports.
+Validate on the way in against the same character rules a local name gets, and escape at output.
+The dangerous version is a name that is harmless in a battle report and hostile in an admin screen.
+
+**Business logic, which is where the real exploits will be.**
+
+- *Replay*: recorded UUID, and the record written in the same guarded statement that applies the
+  effect, not before it and not after it.
+- *Concurrency*: two packets for one escrow arriving together. The named lock plus a guarded
+  `UPDATE ... WHERE` is what makes double release impossible; an idempotency key alone is not
+  enough under a race.
+- *Forged results*: a hostile defender reports that the attacker lost everything. The attacking
+  site clamps any result to what it actually escrowed and to what the ruleset makes possible. Never
+  apply a number a packet asserts; apply the smaller of the asserted number and the local ceiling.
+- *Timeout gaming*: force a result to be late, collect the escrow on timeout, then have the result
+  land anyway. Escrow release is idempotent and keyed by escrow id, so the second one is a no-op.
+- *Malicious hub*: ruleset values are range-checked on arrival. A hub that pushes a million turns a
+  day is refused by the member, not obeyed.
+
+**Denial of service.** Per-peer rate limits, queue caps, a maximum stored packet age, and a kill
+switch: one setting that stops accepting and sending without deactivating the plugin.
+
+### Residual risk, stated plainly
+
+- **A compromised member site owns its own game state.** No protocol fixes that. Detection is the
+  plausibility checks and public standings, not prevention.
+- **WordPress has no secret store.** A shared secret is readable by anything with database access,
+  which includes every other plugin on the site. Rotation and per-pairing keys limit the blast
+  radius; they do not eliminate it.
+- **The endpoint is a public attack surface** that would not otherwise exist. The mitigation with
+  the best ratio is simply not registering it unless the site is in a league.
+
+### Before it ships
+
+Fuzz the handler with malformed, truncated, oversized and deeply nested bodies, and with valid JSON
+carrying hostile values. Review the order of operations specifically. Confirm that no write of any
+kind happens before verification. Test key rotation with packets in flight, since that is the path
+most likely to be wrong and least likely to be exercised.
+
 ## What Phase 1 already provides
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
