@@ -203,7 +203,11 @@ class IDO_UI {
     public static function timezone_label(): string {
         $name = wp_timezone()->getName();
         if ($name === '+00:00' || $name === 'UTC' || $name === 'Z') return 'UTC';
-        if (strpos($name, '/') !== false) return str_replace('_', ' ', $name);
+        if (strpos($name, '/') !== false) {
+            // "America/New_York" is a database key, not something to read aloud.
+            $city = substr($name, strrpos($name, '/') + 1);
+            return str_replace('_', ' ', $city) . ' time';
+        }
         return 'UTC' . $name;
     }
 

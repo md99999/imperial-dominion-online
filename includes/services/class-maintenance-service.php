@@ -22,6 +22,27 @@ class IDO_Maintenance {
     const HOURLY_HOOK = 'ido_hourly_maintenance';
     const DAILY_HOOK  = 'ido_daily_maintenance';
 
+    /**
+     * Re-aims the daily event at local midnight when the site timezone changes.
+     *
+     * WP-Cron stores an absolute instant, so an event scheduled while the site
+     * was on UTC keeps firing at that instant afterwards: on a New York site
+     * that is eight in the evening, and turns would arrive mid-evening for
+     * good. Nobody is stranded meanwhile, because the catch-up on page load
+     * grants as soon as the date rolls, but the hour should still be right.
+     */
+    public static function sync_timezone(): void {
+        $now = wp_timezone()->getName();
+        if ((string) get_option('ido_cron_timezone', '') === $now) return;
+
+        update_option('ido_cron_timezone', $now, true);
+        if (!IDO_Settings::int('use_wp_cron')) return;
+
+        wp_clear_scheduled_hook(self::DAILY_HOOK);
+        $midnight = new DateTime('tomorrow', wp_timezone());
+        wp_schedule_event($midnight->getTimestamp(), 'daily', self::DAILY_HOOK);
+    }
+
     /** Schedules or clears the WP-Cron events to match the setting. */
     public static function apply_schedule(): void {
         if (IDO_Settings::int('use_wp_cron')) {

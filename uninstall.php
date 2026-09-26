@@ -31,6 +31,6 @@ $tables = ['rounds', 'kingdoms', 'constructions', 'listings', 'battles', 'ops', 
 foreach ($tables as $table) {
     $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'ido_' . $table);
 }
-foreach (['ido_settings', 'ido_db_version', 'ido_page_ids', 'ido_last_hourly', 'ido_last_daily', 'ido_activation_error'] as $option) {
+foreach (['ido_settings', 'ido_db_version', 'ido_page_ids', 'ido_last_hourly', 'ido_last_daily', 'ido_activation_error', 'ido_cron_timezone'] as $option) {
     delete_option($option);
 }

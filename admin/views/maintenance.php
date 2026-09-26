@@ -69,17 +69,29 @@ $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
                     <?php endif; ?>
                 </td>
             </tr>
-            <tr><th>Next hourly run</th><td><?php echo $hourly_next ? esc_html(date_i18n('Y-m-d H:i', $hourly_next)) : 'not scheduled'; ?></td></tr>
-            <tr><th>Next daily run</th><td><?php echo $daily_next ? esc_html(date_i18n('Y-m-d H:i', $daily_next)) : 'not scheduled'; ?></td></tr>
+            <tr><th>Next hourly run</th><td><?php echo $hourly_next ? esc_html(wp_date('Y-m-d H:i T', $hourly_next)) : 'not scheduled'; ?></td></tr>
             <tr>
-                <th>Last hourly run</th>
-                <td><?php echo esc_html((string) get_option('ido_last_hourly', 'never')); ?>
-                    <span class="description">(started by <?php echo esc_html(IDO_Maintenance::last_source('hourly')); ?>)</span></td>
-            </tr>
-            <tr>
-                <th>Last daily run</th>
-                <td><?php echo esc_html((string) get_option('ido_last_daily', 'never')); ?>
-                    <span class="description">(started by <?php echo esc_html(IDO_Maintenance::last_source('daily')); ?>)</span></td>
+                <th>Next daily run</th>
+                <td>
+                    <?php echo $daily_next ? esc_html(wp_date('Y-m-d H:i T', $daily_next)) : 'not scheduled'; ?>
+                    <?php
+                    // A daily run that is not near local midnight means turns arrive at an odd
+                    // hour, which is what a timezone change leaves behind until the event is
+                    // rescheduled.
+                    $drift = 0;
+                    if ($daily_next) {
+                        $midnight = (new DateTime('tomorrow', wp_timezone()))->getTimestamp();
+                        $drift = min(abs($daily_next - $midnight), abs($daily_next - ($midnight - DAY_IN_SECONDS)));
+                    }
+                    ?>
+                    <?php if ($drift > 2 * HOUR_IN_SECONDS) : ?>
+                        <br><span class="description" style="color:#996800">
+                            That is about <?php echo esc_html((string) (int) round($drift / HOUR_IN_SECONDS)); ?> hours
+                            from local midnight, which happens when the site timezone changes after the event was
+                            scheduled. It corrects itself on the next page load.
+                        </span>
+                    <?php endif; ?>
+                </td>
             </tr>
         </tbody>
     </table>
