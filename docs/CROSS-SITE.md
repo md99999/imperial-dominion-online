@@ -172,8 +172,8 @@ a repeat, in the same guarded write that applies the effect, so a duplicate arri
 cannot slip through between the check and the write.
 
 The usual advice is a tight timestamp window, and that is wrong here: the design deliberately
-delays packets three to five days in each direction, so a window has to be long, a fortnight or
-so. The UUID record is what actually prevents replay; the timestamp only discards the absurdly
+delays packets three to eight days in each direction, so a window has to be long, three weeks
+or so. The UUID record is what actually prevents replay; the timestamp only discards the absurdly
 old.
 
 ### The receiving endpoint
@@ -289,7 +289,7 @@ members accepting it.
   starting turns and resources, building and training costs, explore yield, combat percentages,
   target bands, truce length, agent cost and limit, market tax.
 - **The round calendar**, which matters more than it sounds. See below.
-- **Exchange cadence and the delay range**, the three to five days, so every member waits the same.
+- **Exchange cadence and the delay range**, the three to eight days, so every member waits the same.
 
 Each ruleset carries a **version number**, bumped whenever the originator changes anything, and a
 **fingerprint**, the hash that rides in every packet. A member running version 4 against a league
@@ -445,7 +445,7 @@ empires are the participants.
 
 The obvious version, where a winner absorbs a share of the loser's army, compounds: a site that
 wins once is stronger for the next exchange, wins again, and a league is decided in a fortnight.
-A three to five day cycle makes this worse, not better, because there is no time to recover between
+A three to eight day cycle makes this worse, not better, because there is no time to recover between
 blows.
 
 Two ways to keep spoils meaningful without a runaway:
@@ -516,7 +516,7 @@ cheap and hard to abuse.
                       attempts, last_attempt_at, status, payload
 
 `status` on the inbound side moves through `staged`, `processed`, `rejected` and `expired`.
-`process_after` carries the delay, three to five days, **set by the receiver on arrival**. A sender
+`process_after` carries the delay, three to eight days, **set by the receiver on arrival**. A sender
 cannot shorten its own attack by lying about when it sent, because the clock that matters is the
 defender's and it starts when the packet lands.
 
@@ -534,7 +534,7 @@ administrator see an incoming march, and it makes a disputed result reviewable a
 
 **Whole days, drawn by the receiver, stored as an absolute instant.**
 
-    $days = random_int(3, 6);                       // CSPRNG, not rand()
+    $days = random_int(3, 8);                       // CSPRNG, not rand()
     $process_after = gmdate('Y-m-d H:i:s', time() + $days * DAY_IN_SECONDS);
 
 Three decisions sit in those two lines.
@@ -572,7 +572,11 @@ next logs in, which is exactly the feel worth having.
 
 ### What each side is allowed to know
 
-The attacker knows the range, three to six days, and never the draw. Waiting without knowing is
+A round trip is therefore six to sixteen days: the march out, the battle, and the result coming
+home. Against a 45-day round that is a handful of league exchanges at most, which is the intended
+weight. A league that wants more per round shortens the range rather than the round.
+
+The attacker knows the range, three to eight days, and never the draw. Waiting without knowing is
 the mechanic, not an absence of one.
 
 The defender should know less still, and this is worth stating because the staging table makes it
