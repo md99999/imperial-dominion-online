@@ -90,11 +90,12 @@ class IDO_Settings {
             'build_iron_per_acre'    => 15,
             'build_days'             => 1,
             'demolish_refund_percent'    => 20,
-            // Siege weapons. Priced like a fortification, because that is what
-            // a ruler is choosing between when they spend the acre's worth of
-            // gold: a wall that never leaves, or a weapon that can.
-            'catapult_gold_cost'     => 300,
-            'catapult_iron_cost'     => 15,
+            // Siege weapons. Priced well above a fortification: a weapon that
+            // can march, take land and change hands is not the same purchase
+            // as a wall that only ever stands where it was built, and pricing
+            // the two alike made the catapult the obvious buy every time.
+            'catapult_gold_cost'     => 5000,
+            'catapult_iron_cost'     => 500,
             // Legionnaires needed to work one catapult, both to haul it out on
             // an attack and to man it on the wall at home.
             'catapult_crew'          => 5,

@@ -32,6 +32,7 @@ function sanitize_text_field($v) { return trim(strip_tags((string) $v)); }
 
 require IDO_PATH . 'includes/class-ido-core.php';
 require IDO_PATH . 'includes/class-ido-installer.php';
+require IDO_PATH . 'includes/data/class-ido-weapons.php';
 
 $fails = 0;
 function check(string $label, bool $ok, string $detail = ''): void {
@@ -177,6 +178,29 @@ check('a tuned setting is left alone', ($after['turns_per_day'] ?? null) === 7);
 check('so is one that is free text', ($after['dominion_name'] ?? null) === 'Anywhere');
 check('the version is recorded, so it runs once',
     $GLOBALS['ido_options']['ido_db_version'] === IDO_DB_VERSION);
+
+// 1.16.1 raised the price of a catapult, in gold and in iron. It is a setting,
+// so this reaches new installs only: a site already running keeps whatever its
+// options row holds, and a game master who wants the new price sets it.
+$GLOBALS['ido_options'] = [];
+check('the new defaults are the new prices',
+    IDO_Settings::defaults()['catapult_gold_cost'] === 5000
+    && IDO_Settings::defaults()['catapult_iron_cost'] === 500,
+    sprintf('gold %s, iron %s', IDO_Settings::defaults()['catapult_gold_cost'],
+        IDO_Settings::defaults()['catapult_iron_cost']));
+// The gold price drives what a captured weapon is worth, so it must not lag.
+check('a fresh site builds at the new prices',
+    IDO_Weapons::cost('catapult') === ['gold' => 5000, 'iron' => 500],
+    var_export(IDO_Weapons::cost('catapult'), true));
+check('a pair of catapults costs double',
+    IDO_Weapons::cost('catapult', 2) === ['gold' => 10000, 'iron' => 1000]);
+// A site that already chose a price is not touched by any of this.
+$GLOBALS['ido_options'] = [IDO_Settings::OPTION => ['catapult_gold_cost' => 300, 'catapult_iron_cost' => 15]];
+check('a running site keeps the price in its options row',
+    IDO_Weapons::cost('catapult') === ['gold' => 300, 'iron' => 15],
+    var_export(IDO_Weapons::cost('catapult'), true));
+
+$GLOBALS['ido_options'] = [];
 
 check('the credit text is fixed', IDO_Game::CREDIT_TEXT !== '');
 check('the credit points at the source',
