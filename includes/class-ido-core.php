@@ -29,7 +29,7 @@ class IDO_DB {
 /**
  * Named advisory lock around the multi-row reads and writes that must not
  * interleave (combat, market purchases). wpdb has no transaction helper and a
- * site may be running storage engines without them, so the critical section is
+ * site may be running storage weapons without them, so the critical section is
  * serialised explicitly.
  */
 class IDO_Lock {
@@ -90,9 +90,9 @@ class IDO_Settings {
             'build_iron_per_acre'    => 15,
             'build_days'             => 1,
             'demolish_refund_percent'    => 20,
-            // Siege engines. Priced like a fortification, because that is what
+            // Siege weapons. Priced like a fortification, because that is what
             // a ruler is choosing between when they spend the acre's worth of
-            // gold: a wall that never leaves, or an engine that can.
+            // gold: a wall that never leaves, or a weapon that can.
             'catapult_gold_cost'     => 300,
             'catapult_iron_cost'     => 15,
             // War
@@ -102,7 +102,7 @@ class IDO_Settings {
             'conquest_land_percent'  => 6,
             // What happens to the catapults the losing side had at stake: the
             // winner drags this share home, and a further share is smashed
-            // where it stands. Together they are what a defeat costs in engines,
+            // where it stands. Together they are what a defeat costs in weapons,
             // so 30 and 10 means the loser is out 40% of what they committed.
             'catapult_capture_percent' => 30,
             'catapult_destroy_percent' => 10,

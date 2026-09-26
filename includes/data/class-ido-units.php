@@ -113,9 +113,9 @@ class IDO_Units {
      * Defensive strength of the troops standing at home, before fortifications.
      * Ballistae legions left behind still count, at their poor defence value.
      *
-     * The fortification bonus is deliberately not applied here. Siege engines
+     * The fortification bonus is deliberately not applied here. Siege weapons
      * man the same walls, so the multiplier is applied once by
-     * IDO_Military::defence_power() over the troops and the engines together.
+     * IDO_Military::defence_power() over the troops and the weapons together.
      */
     public static function defence_power(object $kingdom): float {
         $power = 0.0;

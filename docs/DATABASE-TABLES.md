@@ -6,8 +6,8 @@ All tables use the site's `$wpdb->prefix` followed by `ido_`. They are created b
 | Table | Holds |
 | --- | --- |
 | `ido_rounds` | One row per round: name, status (`active`, `completed`), start and end dates |
-| `ido_kingdoms` | One row per player per round. Resources, buildings (`b_*`), troops (`u_*`), siege engines (`catapults`), turns, net worth, truce, war record |
-| `ido_constructions` | Outstanding build orders, completed on the daily tick. `kind` says whether a row is a building or a siege engine |
+| `ido_kingdoms` | One row per player per round. Resources, buildings (`b_*`), troops (`u_*`), siege weapons (`catapults`), turns, net worth, truce, war record |
+| `ido_constructions` | Outstanding build orders, completed on the daily tick. `kind` says whether a row is a building or a siege weapon |
 | `ido_listings` | Market lots. Goods are escrowed out of the seller's empire while a lot is open |
 | `ido_battles` | Every resolved battle, with the report each side reads |
 | `ido_ops` | Every covert mission, with the report each side reads |

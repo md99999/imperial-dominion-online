@@ -68,22 +68,31 @@ $destroy_pct = IDO_Settings::int('catapult_destroy_percent');
                         <?php echo IDO_UI::number_field('force_' . $key, 0, 0); ?>
                     </label>
                 <?php endforeach; ?>
-                <?php foreach (IDO_Engines::all() as $key => $engine) : ?>
+                <?php foreach (IDO_Weapons::all() as $key => $weapon) : ?>
                     <label class="ido-field ido-field-small">
-                        <span><?php echo esc_html($engine['plural']); ?>
-                            <span class="ido-dim">(<?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Engines::column($key)})); ?> standing, offence <?php echo esc_html((string) $engine['offence']); ?>, at stake)</span>
+                        <span><?php echo esc_html($weapon['plural']); ?>
+                            <span class="ido-dim">(<?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Weapons::column($key)})); ?> standing,
+                                offence <?php echo esc_html((string) $weapon['offence']); ?>,
+                                needs <?php echo esc_html((string) IDO_Weapons::crew_each($key)); ?>
+                                <?php echo esc_html(strtolower(IDO_Units::plural(IDO_Weapons::crew_unit($key)))); ?> each, at stake)</span>
                         </span>
-                        <?php echo IDO_UI::number_field('engine_' . $key, 0, 0); ?>
+                        <?php echo IDO_UI::number_field('weapon_' . $key, 0, 0); ?>
                     </label>
                 <?php endforeach; ?>
             </div>
 
             <p class="ido-dim">
-                Every engine you send marches with the army and is in the wager. Win and you drag
-                <?php echo esc_html((string) $capture_pct); ?>% of the defender's engines home; lose and the
+                A weapon has to be hauled out and worked, so the men to crew it must be in the force
+                you send: <?php echo esc_html(sprintf('%d %s to a catapult',
+                    IDO_Weapons::crew_each('catapult'),
+                    strtolower(IDO_Units::plural(IDO_Weapons::crew_unit('catapult'))))); ?>.
+                Send too few and the order is refused.
+                Every weapon you do send is in the wager. Win and you drag
+                <?php echo esc_html((string) $capture_pct); ?>% of the defender's worked weapons home; lose and the
                 defender takes <?php echo esc_html((string) $capture_pct); ?>% of the train you sent while a
-                further <?php echo esc_html((string) $destroy_pct); ?>% burns on the field. Engines left at
-                home are never at stake when you attack, but all of them are when you are attacked.
+                further <?php echo esc_html((string) $destroy_pct); ?>% burns on the field. Weapons left at
+                home are never at stake when you attack, and every weapon you have men for is at stake
+                when you are attacked.
             </p>
 
             <p><button type="submit" class="ido-btn ido-btn-danger">Sound the horns</button> <?php echo IDO_UI::turn_cost($turn_cost); ?></p>

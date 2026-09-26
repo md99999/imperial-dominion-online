@@ -33,7 +33,7 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
                 <tr><th>Wilderness</th><td><?php echo esc_html(IDO_Game::fmt($wilderness)); ?></td></tr>
                 <tr><th>Peasants</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->peasants)); ?> of <?php echo esc_html(IDO_Game::fmt($rate['capacity'])); ?> housed</td></tr>
                 <tr><th>Under arms</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Units::total($kingdom))); ?></td></tr>
-                <tr><th>Siege engines</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Engines::total($kingdom))); ?></td></tr>
+                <tr><th>Siege weapons</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Weapons::total($kingdom))); ?></td></tr>
                 <tr><th>Defence rating</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Military::defence_power($kingdom)))); ?></td></tr>
                 <tr><th>Agents</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->agents)); ?></td></tr>
             </tbody>
@@ -82,10 +82,10 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
             <thead><tr><th>Under way</th><th class="ido-right">Ordered</th><th>Ready on</th></tr></thead>
             <tbody>
             <?php foreach ($pending as $order) :
-                $is_engine = isset($order->kind) && $order->kind === 'engine'; ?>
+                $is_weapon = IDO_Construction::is_weapon_order($order); ?>
                 <tr>
-                    <td><?php echo esc_html($is_engine
-                        ? IDO_Engines::plural($order->building)
+                    <td><?php echo esc_html($is_weapon
+                        ? IDO_Weapons::plural($order->building)
                         : IDO_Buildings::plural($order->building)); ?></td>
                     <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($order->qty)); ?></td>
                     <td><?php echo esc_html(date_i18n(get_option('date_format'), strtotime($order->ready_on))); ?></td>

@@ -54,7 +54,7 @@ endorsed by its creators or rights holders.
 | Page | Shortcode | What it is |
 | --- | --- | --- |
 | ID - Empire | `[ido_empire]` | The state of the empire, and what one turn currently yields |
-| ID - Lands | `[ido_lands]` | Settle wilderness, raise buildings, build siege engines |
+| ID - Lands | `[ido_lands]` | Settle wilderness, raise buildings, build siege weapons |
 | ID - Army | `[ido_military]` | Train and disband troops |
 | ID - War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
 | ID - Spy Court | `[ido_covert]` | Hire an agent and send them out |
@@ -97,20 +97,25 @@ army built for one job is nearly useless at the other.
 | Centurions | 9 | 1 | Officers who lead from the front, worthless at home |
 | Ballistae Legions | 18 | 4 | The only reliable answer to fortifications |
 
-**Siege engines.** Catapults are built in the siege yards on the Lands page, not mustered with the
+**Siege weapons.** Catapults are built in the siege yards on the Lands page, not mustered with the
 army. They are neither a building nor a troop: they stand on no acre and take no peasant out of
 the fields, they cost what a fortification costs, and they finish on the same daily tick a building
-does. What they cost instead is risk.
+does. What they cost instead is troops and risk.
 
-| Engine | Offence | Defence | Notes |
-| --- | --- | --- | --- |
-| Catapults | 5 | 3 | Fight on attack and defence, and change hands when a battle is lost |
+| Weapon | Offence | Defence | Crew | Notes |
+| --- | --- | --- | --- | --- |
+| Catapults | 5 | 3 | 5 legionnaires | Fight on attack and defence, and change hands when a battle is lost |
 
-A catapult is the only part of your strength a beaten enemy can take from you. Send a train with
-your army and it hits harder, but every engine you send is in the wager; engines left at home are
-never at stake when you attack, and all of them are at stake when you are attacked. Whichever side
-loses, the winner drags home **30%** of the loser's stake and a further **10%** is smashed on the
-field, so a defeat costs 40% of what was committed. Both shares are settings.
+A catapult is not an army. It goes nowhere and does nothing until legionnaires haul it and work it,
+five to a catapult, and the rule bites both ways: a catapult nobody is manning adds nothing to your
+walls, and a siege train sent without its crews in the same force is refused. This is the one thing
+that makes a legionnaire worth taking on an attack, since on its own it carries an offence of 1.
+
+A catapult is also the only part of your strength a beaten enemy can take from you rather than
+merely destroy. Every weapon you haul out is in the wager: weapons left at home are never at stake
+when you attack, and every weapon you have men for is at stake when you are attacked. Whichever
+side loses, the winner drags home **30%** of the loser's stake and a further **10%** is smashed on
+the field, so a defeat costs 40% of what was in the fight. Both shares are settings.
 
 **War.** A march costs 2 turns and resolves the moment you commit, against whatever the defender
 has standing at that instant. Both sides get a written report. You may only attack empires worth

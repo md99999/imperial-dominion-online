@@ -35,7 +35,7 @@ require_once IDO_PATH . 'includes/class-ido-installer.php';
 require_once IDO_PATH . 'includes/class-ido-menu.php';
 require_once IDO_PATH . 'includes/data/class-ido-buildings.php';
 require_once IDO_PATH . 'includes/data/class-ido-units.php';
-require_once IDO_PATH . 'includes/data/class-ido-engines.php';
+require_once IDO_PATH . 'includes/data/class-ido-weapons.php';
 require_once IDO_PATH . 'includes/services/class-round-service.php';
 require_once IDO_PATH . 'includes/services/class-kingdom-service.php';
 require_once IDO_PATH . 'includes/services/class-economy-service.php';

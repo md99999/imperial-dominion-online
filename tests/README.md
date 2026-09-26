@@ -13,7 +13,7 @@ action looks like it is not doing anything.
 ## Running them
 
     php tests/overflow-test.php     # scoring cannot overflow or go negative
-    php tests/catapult-test.php     # siege engines divide correctly after a battle
+    php tests/catapult-test.php     # siege weapons divide correctly after a battle
     php tests/smoke-test.php        # plugin loads, activates, and every page renders
     php tests/uninstall-test.php    # deleting the plugin keeps data unless told otherwise
 
@@ -34,7 +34,7 @@ If PHP is not on your PATH, the binary bundled with Local works:
 | File | Purpose |
 | --- | --- |
 | `overflow-test.php` | Drives net worth with maximum values and asserts it saturates at the ceiling instead of wrapping negative |
-| `catapult-test.php` | Divides a stake of siege engines after a battle, and proves no setting or rounding can take more engines than were there |
+| `catapult-test.php` | Divides a stake of siege weapons after a battle, and proves no setting or rounding can take more weapons than were there |
 | `smoke-test.php` | Loads the plugin, runs the activation path, renders all nine pages signed in and logged out, and checks the SQL guards |
 | `uninstall-test.php` | Runs `uninstall.php` with the setting off and on, proving the default keeps every table and the opt-in really drops them |
 | `integration-explore.php` | Boots a real WordPress, explores with a throwaway empire, and checks the database actually changed. Deletes the empire afterwards |

@@ -237,9 +237,9 @@ class IDO_Kingdom {
             'land_taken', 'land_lost'];
         foreach (IDO_Buildings::keys() as $key) $columns[] = IDO_Buildings::column($key);
         foreach (IDO_Units::keys() as $key)     $columns[] = IDO_Units::column($key);
-        foreach (IDO_Engines::keys() as $key) {
-            $columns[] = IDO_Engines::column($key);
-            $columns[] = IDO_Engines::progress_column($key);
+        foreach (IDO_Weapons::keys() as $key) {
+            $columns[] = IDO_Weapons::column($key);
+            $columns[] = IDO_Weapons::progress_column($key);
         }
         return $columns;
     }
@@ -299,7 +299,7 @@ class IDO_Kingdom {
         $worth += (float) IDO_Buildings::total($kingdom) * IDO_Buildings::NETWORTH_PER_BUILDING;
         $worth += (float) $kingdom->peasants * 25;
         $worth += (float) IDO_Units::networth($kingdom);
-        $worth += (float) IDO_Engines::networth($kingdom);
+        $worth += (float) IDO_Weapons::networth($kingdom);
         $worth += (float) $kingdom->gold / 50;
         $worth += (float) $kingdom->grain / 200;
         $worth += (float) $kingdom->iron / 20;

@@ -116,7 +116,7 @@ echo "--- settings and data ---\n";
 echo 'turns_per_day: ' . IDO_Settings::int('turns_per_day') . "\n";
 echo 'buildings: ' . implode(', ', IDO_Buildings::keys()) . "\n";
 echo 'units: ' . implode(', ', IDO_Units::keys()) . "\n";
-echo 'engines: ' . implode(', ', IDO_Engines::keys()) . "\n";
+echo 'weapons: ' . implode(', ', IDO_Weapons::keys()) . "\n";
 echo "OK\n";
 
 echo "--- rendering the pages ---\n";

@@ -78,40 +78,52 @@ $build_days = IDO_Settings::int('build_days');
 <div class="ido-panel">
     <h3 class="ido-panel-title">The siege yards</h3>
     <p class="ido-dim">
-        Engines are built, not trained: they stand on no acre and take no peasant out of the fields.
-        An order costs one turn, however many engines it covers, and the yards finish on the same
-        daily tick your builders do. What they cost you instead is risk, because engines march with
-        the army and the losing side of a battle gives a share of them up.
+        Weapons are built, not trained: they stand on no acre and take no peasant out of the fields.
+        An order costs one turn, however many weapons it covers, and the yards finish on the same
+        daily tick your builders do. What they cost you instead is troops and risk. Every weapon
+        needs men to work it, and a weapon nobody is working is timber, whether it sits in the yards
+        or on your wall. The losing side of a battle gives up a share of whatever was being worked.
     </p>
     <table class="ido-table ido-table-wide">
-        <thead><tr><th>Engine</th><th class="ido-right">Standing</th><th class="ido-right">In the yards</th><th class="ido-right">Cost each</th><th>What it does</th><th>Build</th><th>Scrap</th></tr></thead>
+        <thead><tr><th>Weapon</th><th class="ido-right">Standing</th><th class="ido-right">Manned</th><th class="ido-right">In the yards</th><th class="ido-right">Cost each</th><th>What it does</th><th>Build</th><th>Scrap</th></tr></thead>
         <tbody>
-        <?php foreach (IDO_Engines::all() as $key => $engine) :
-            $cost = IDO_Engines::cost($key); ?>
+        <?php $manned = IDO_Weapons::crewed($kingdom); ?>
+        <?php foreach (IDO_Weapons::all() as $key => $weapon) :
+            $cost = IDO_Weapons::cost($key);
+            $standing = (int) $kingdom->{IDO_Weapons::column($key)};
+            $worked = (int) ($manned[$key] ?? 0); ?>
             <tr>
                 <td>
-                    <?php echo esc_html($engine['plural']); ?>
-                    <div class="ido-dim">Offence <?php echo esc_html((string) $engine['offence']); ?>,
-                        defence <?php echo esc_html((string) $engine['defence']); ?>,
-                        <?php echo esc_html(number_format_i18n($engine['upkeep'], 1)); ?> grain a turn</div>
+                    <?php echo esc_html($weapon['plural']); ?>
+                    <div class="ido-dim">Offence <?php echo esc_html((string) $weapon['offence']); ?>,
+                        defence <?php echo esc_html((string) $weapon['defence']); ?>,
+                        <?php echo esc_html(number_format_i18n($weapon['upkeep'], 1)); ?> grain a turn</div>
+                    <div class="ido-dim">Crewed by <?php echo esc_html((string) IDO_Weapons::crew_each($key)); ?>
+                        <?php echo esc_html(strtolower(IDO_Units::plural(IDO_Weapons::crew_unit($key)))); ?> each</div>
                 </td>
-                <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Engines::column($key)})); ?></td>
-                <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Engines::progress_column($key)})); ?></td>
+                <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($standing)); ?></td>
+                <td class="ido-right">
+                    <?php echo esc_html(IDO_Game::fmt($worked)); ?>
+                    <?php if ($worked < $standing) : ?>
+                        <div class="ido-warning"><?php echo esc_html(IDO_Game::fmt($standing - $worked)); ?> idle</div>
+                    <?php endif; ?>
+                </td>
+                <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Weapons::progress_column($key)})); ?></td>
                 <td class="ido-right">
                     <?php echo esc_html(IDO_Game::fmt($cost['gold'])); ?>g<br>
                     <span class="ido-dim"><?php echo esc_html(IDO_Game::fmt($cost['iron'])); ?> iron</span>
                 </td>
-                <td class="ido-dim"><?php echo esc_html($engine['effect']); ?></td>
+                <td class="ido-dim"><?php echo esc_html($weapon['effect']); ?></td>
                 <td>
-                    <?php echo IDO_UI::form_open('build_engine', 'ido-form-inline'); ?>
-                        <input type="hidden" name="engine" value="<?php echo esc_attr($key); ?>">
+                    <?php echo IDO_UI::form_open('build_weapon', 'ido-form-inline'); ?>
+                        <input type="hidden" name="weapon" value="<?php echo esc_attr($key); ?>">
                         <?php echo IDO_UI::number_field('qty', 0, 0); ?>
                         <button type="submit" class="ido-btn ido-btn-small">Build</button>
                     </form>
                 </td>
                 <td>
-                    <?php echo IDO_UI::form_open('scrap_engine', 'ido-form-inline'); ?>
-                        <input type="hidden" name="engine" value="<?php echo esc_attr($key); ?>">
+                    <?php echo IDO_UI::form_open('scrap_weapon', 'ido-form-inline'); ?>
+                        <input type="hidden" name="weapon" value="<?php echo esc_attr($key); ?>">
                         <?php echo IDO_UI::number_field('qty', 0, 0); ?>
                         <button type="submit" class="ido-btn ido-btn-alt ido-btn-small">Scrap</button>
                     </form>
@@ -122,8 +134,9 @@ $build_days = IDO_Settings::int('build_days');
     </table>
     <p class="ido-dim">
         A battle hands <?php echo esc_html((string) IDO_Settings::int('catapult_capture_percent')); ?>% of the losing side's
-        engines to the winner and smashes a further <?php echo esc_html((string) IDO_Settings::int('catapult_destroy_percent')); ?>%,
-        so losing one costs <?php echo esc_html((string) (IDO_Settings::int('catapult_capture_percent') + IDO_Settings::int('catapult_destroy_percent'))); ?>% of what was at stake.
+        worked weapons to the winner and smashes a further <?php echo esc_html((string) IDO_Settings::int('catapult_destroy_percent')); ?>%,
+        so losing one costs <?php echo esc_html((string) (IDO_Settings::int('catapult_capture_percent') + IDO_Settings::int('catapult_destroy_percent'))); ?>% of what was in the fight.
+        Idle weapons take no part and so are never lost, and never help either.
         Scrapping returns <?php echo esc_html((string) IDO_Settings::int('demolish_refund_percent')); ?>% of the build cost.
     </p>
 </div>

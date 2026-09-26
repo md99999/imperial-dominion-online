@@ -5,7 +5,7 @@
 define('ABSPATH', __DIR__ . '/');
 function number_format_i18n($n, $d = 0) { return number_format((float) $n, $d); }
 function esc_html($s) { return $s; }
-// Engine prices are settings, so scoring an engine reads the options table.
+// Weapon prices are settings, so scoring a weapon reads the options table.
 // There is no WordPress here: the stock defaults are the honest answer.
 function get_option($name, $default = false) { return $default; }
 function wp_parse_args($args, $defaults = []) { return array_merge($defaults, (array) $args); }
@@ -14,7 +14,7 @@ $base = __DIR__ . '/../includes/';
 require $base . 'class-ido-core.php';
 require $base . 'data/class-ido-buildings.php';
 require $base . 'data/class-ido-units.php';
-require $base . 'data/class-ido-engines.php';
+require $base . 'data/class-ido-weapons.php';
 
 $fails = 0;
 function check(string $label, bool $ok, string $detail = '') {
@@ -53,9 +53,9 @@ $army = IDO_Units::networth($monster);
 check('army worth never goes negative', $army >= 0, 'got ' . $army);
 check('army worth saturates at the cap', $army === IDO_Game::MAX_VALUE);
 
-$engines = IDO_Engines::networth($monster);
-check('engine worth never goes negative', $engines >= 0, 'got ' . $engines);
-check('engine worth saturates at the cap', $engines === IDO_Game::MAX_VALUE);
+$weapons = IDO_Weapons::networth($monster);
+check('weapon worth never goes negative', $weapons >= 0, 'got ' . $weapons);
+check('weapon worth saturates at the cap', $weapons === IDO_Game::MAX_VALUE);
 
 // The same sum recalc_networth performs, without needing the database.
 $worth = 0.0;
@@ -63,7 +63,7 @@ $worth += (float) $monster->land * 500;
 $worth += (float) IDO_Buildings::total($monster) * IDO_Buildings::NETWORTH_PER_BUILDING;
 $worth += (float) $monster->peasants * 25;
 $worth += (float) IDO_Units::networth($monster);
-$worth += (float) IDO_Engines::networth($monster);
+$worth += (float) IDO_Weapons::networth($monster);
 $worth += (float) $monster->gold / 50;
 $worth += (float) $monster->grain / 200;
 $worth += (float) $monster->iron / 20;
@@ -87,10 +87,10 @@ check('buildings total saturates', IDO_Buildings::total($monster) === IDO_Game::
     || IDO_Buildings::total($monster) > 0, 'got ' . IDO_Buildings::total($monster));
 check('defence power is not negative', IDO_Units::defence_power($monster) >= 0);
 check('unit upkeep is not negative', IDO_Units::upkeep($monster) >= 0);
-check('engines total saturates', IDO_Engines::total($monster) === IDO_Game::MAX_VALUE,
-    'got ' . IDO_Engines::total($monster));
-check('engine defence is not negative', IDO_Engines::defence_power($monster) >= 0);
-check('engine upkeep is not negative', IDO_Engines::upkeep($monster) >= 0);
+check('weapons total saturates', IDO_Weapons::total($monster) === IDO_Game::MAX_VALUE,
+    'got ' . IDO_Weapons::total($monster));
+check('weapon defence is not negative', IDO_Weapons::defence_power($monster) >= 0);
+check('weapon upkeep is not negative', IDO_Weapons::upkeep($monster) >= 0);
 check('title lookup survives the cap', IDO_Game::title(IDO_Game::MAX_VALUE) !== '');
 
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");

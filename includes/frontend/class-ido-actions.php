@@ -105,12 +105,12 @@ class IDO_Actions {
         return $force;
     }
 
-    /** The siege engines sent with it, read from one field per engine type. */
+    /** The siege weapons sent with it, read from one field per weapon type. */
     private static function train(): array {
         $train = [];
-        foreach (IDO_Engines::keys() as $engine_key) {
-            $qty = (int) self::field('engine_' . $engine_key, '0');
-            if ($qty > 0) $train[$engine_key] = $qty;
+        foreach (IDO_Weapons::keys() as $weapon_key) {
+            $qty = (int) self::field('weapon_' . $weapon_key, '0');
+            if ($qty > 0) $train[$weapon_key] = $qty;
         }
         return $train;
     }
@@ -132,11 +132,11 @@ class IDO_Actions {
             case 'demolish':
                 return [[IDO_Construction::demolish($kingdom, self::key('building'), self::int('qty'))], null];
 
-            // Siege engines
-            case 'build_engine':
-                return [IDO_Construction::order_engine($kingdom, self::key('engine'), self::int('qty')), null];
-            case 'scrap_engine':
-                return [[IDO_Construction::scrap_engine($kingdom, self::key('engine'), self::int('qty'))], null];
+            // Siege weapons
+            case 'build_weapon':
+                return [IDO_Construction::order_weapon($kingdom, self::key('weapon'), self::int('qty')), null];
+            case 'scrap_weapon':
+                return [[IDO_Construction::scrap_weapon($kingdom, self::key('weapon'), self::int('qty'))], null];
 
             // The army
             case 'train':

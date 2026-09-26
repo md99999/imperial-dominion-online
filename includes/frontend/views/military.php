@@ -68,10 +68,14 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
         <table class="ido-table">
             <tbody>
                 <tr><th>Defence rating</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Military::defence_power($kingdom)))); ?></td></tr>
-                <tr><th>Siege engines on the walls</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Engines::total($kingdom))); ?></td></tr>
+                <?php $manned_total = array_sum(IDO_Weapons::crewed($kingdom)); ?>
+                <tr><th>Siege weapons on the walls</th><td><?php echo esc_html(IDO_Game::fmt($manned_total)); ?> manned
+                    <?php if (IDO_Weapons::total($kingdom) > $manned_total) : ?>
+                        <span class="ido-dim">(<?php echo esc_html(IDO_Game::fmt(IDO_Weapons::total($kingdom) - $manned_total)); ?> idle for want of crew)</span>
+                    <?php endif; ?></td></tr>
                 <tr><th>Fortifications</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->b_fortification)); ?>
                     <span class="ido-dim">(+<?php echo esc_html(number_format_i18n((IDO_Buildings::fortification_bonus($kingdom) - 1) * 100, 1)); ?>%)</span></td></tr>
-                <tr><th>Grain eaten each turn</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Units::upkeep($kingdom) + IDO_Engines::upkeep($kingdom)))); ?></td></tr>
+                <tr><th>Grain eaten each turn</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Units::upkeep($kingdom) + IDO_Weapons::upkeep($kingdom)))); ?></td></tr>
             </tbody>
         </table>
     </div>
@@ -82,8 +86,12 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
             <li>Legionnaires hold ground. An empire with no legionnaires is a larder with the door open.</li>
             <li>Centurions take ground. They are worth almost nothing at home, so never leave them idle.</li>
             <li>Ballistae legions break fortifications. They cost a fortune and eat like three men each.</li>
-            <li>Catapults are built in the siege yards, not mustered here. They fight on both attack and
-                defence, and they are the only part of your strength a beaten enemy can take from you.</li>
+            <li>Catapults are built in the siege yards, not mustered here, and legionnaires work them,
+                <?php echo esc_html((string) IDO_Weapons::crew_each('catapult')); ?> to a catapult. That is
+                the one thing that makes a legionnaire worth taking on an attack, and it means a wall of
+                catapults with no one to man them is worth nothing.</li>
+            <li>Catapults fight on both attack and defence, and they are the only part of your strength
+                a beaten enemy can take from you rather than merely destroy.</li>
         </ul>
     </div>
 </div>

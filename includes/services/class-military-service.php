@@ -28,14 +28,14 @@ class IDO_Military {
 
     /**
      * Everything an empire can put on its walls: the troops standing at home
-     * and the siege engines beside them, lifted by the fortification bonus.
+     * and the siege weapons beside them, lifted by the fortification bonus.
      *
      * This is the one definition of a defence rating. The battle resolver works
      * from the same two sums, so what a ruler reads on their own screen and
      * what an attacker runs into are the same number.
      */
     public static function defence_power(object $kingdom): float {
-        $raw = IDO_Units::defence_power($kingdom) + IDO_Engines::defence_power($kingdom);
+        $raw = IDO_Units::defence_power($kingdom) + IDO_Weapons::defence_power($kingdom);
         return $raw * IDO_Buildings::fortification_bonus($kingdom);
     }
 
@@ -142,7 +142,7 @@ class IDO_Military {
      * Marches on another empire and resolves the battle at once.
      *
      * @param array $force unit key => quantity committed
-     * @param array $train engine key => quantity committed
+     * @param array $train weapon key => quantity committed
      * @return string[] report lines for the attacker
      */
     public static function attack(object $kingdom, int $target_id, string $type, array $force, array $train = []): array {
@@ -174,24 +174,38 @@ class IDO_Military {
             throw new IDO_Game_Exception('Send at least one soldier.');
         }
 
-        // The engine train rides with the army. Every engine sent is also every
-        // engine at stake, which is the whole decision: a bigger train hits
+        // The weapon train is hauled out by the army, and every weapon in it is
+        // also at stake, which is the whole decision: a bigger train hits
         // harder and is a bigger prize for the enemy if the day goes badly.
-        $engines = [];
+        $weapons = [];
         foreach ($train as $key => $qty) {
-            if (!IDO_Engines::exists($key)) continue;
+            if (!IDO_Weapons::exists($key)) continue;
             $qty = IDO_Game::qty($qty);
             if ($qty < 1) continue;
-            if ($qty > (int) $kingdom->{IDO_Engines::column($key)}) {
+            if ($qty > (int) $kingdom->{IDO_Weapons::column($key)}) {
                 throw new IDO_Game_Exception(sprintf(
                     'You have only %s %s standing.',
-                    IDO_Game::fmt($kingdom->{IDO_Engines::column($key)}), strtolower(IDO_Engines::plural($key))
+                    IDO_Game::fmt($kingdom->{IDO_Weapons::column($key)}), strtolower(IDO_Weapons::plural($key))
                 ));
             }
-            $engines[$key] = $qty;
+            $weapons[$key] = $qty;
         }
 
-        $offence_base = IDO_Units::offence_power($committed) + IDO_Engines::offence_power($engines);
+        // A weapon goes nowhere on its own. The men to work it have to be in
+        // the force you are sending, not merely somewhere in the empire, and
+        // the order is refused rather than quietly sending a train that cannot
+        // be worked when it arrives.
+        foreach (IDO_Weapons::crew_needed($weapons) as $unit => $required) {
+            $sending = (int) ($committed[$unit] ?? 0);
+            if ($sending >= $required) continue;
+            throw new IDO_Game_Exception(sprintf(
+                'Your siege train needs %s %s to work it and you are sending %s. Add %s more, or send fewer weapons.',
+                IDO_Game::fmt($required), strtolower(IDO_Units::plural($unit)),
+                IDO_Game::fmt($sending), IDO_Game::fmt($required - $sending)
+            ));
+        }
+
+        $offence_base = IDO_Units::offence_power($committed) + IDO_Weapons::offence_power($weapons);
         if ($offence_base <= 0) {
             throw new IDO_Game_Exception('None of those troops can carry an attack. Send centurions or ballistae legions.');
         }
@@ -240,9 +254,9 @@ class IDO_Military {
                 : 0.0;
             $offence = $offence_base * self::swing();
 
-            // Engines at home man the walls beside the troops, and so are part
+            // Weapons at home man the walls beside the troops, and so are part
             // of what the attacker has to break through.
-            $raw_defence = IDO_Units::defence_power($target) + IDO_Engines::defence_power($target);
+            $raw_defence = IDO_Units::defence_power($target) + IDO_Weapons::defence_power($target);
             // Ballistae blunt the fortification bonus rather than the troops behind it.
             $fortification = IDO_Buildings::fortification_bonus($target);
             $effective_fortification = 1.0 + ($fortification - 1.0) * (1 - 0.75 * $ballista_share);
@@ -253,7 +267,7 @@ class IDO_Military {
 
             $result = [
                 'land' => 0, 'gold' => 0, 'grain' => 0, 'iron' => 0, 'demolished' => 0,
-                'engines_taken' => 0, 'engines_wrecked' => 0,
+                'weapons_taken' => 0, 'weapons_wrecked' => 0,
             ];
             if ($won) {
                 switch ($type) {
@@ -269,13 +283,13 @@ class IDO_Military {
                 }
             }
 
-            // Engines change hands before the casualty rolls, so the counts the
+            // Weapons change hands before the casualty rolls, so the counts the
             // spoils are worked out from are the ones both sides marched with.
             // The loser's stake is what they had in the fight: for the attacker
             // that is the train they sent, for the defender everything standing.
-            $spoils = self::resolve_engine_spoils($kingdom, $target, $engines, $won);
-            $result['engines_taken'] = $spoils['taken'];
-            $result['engines_wrecked'] = $spoils['wrecked'];
+            $spoils = self::resolve_weapon_spoils($kingdom, $target, $weapons, $won);
+            $result['weapons_taken'] = $spoils['taken'];
+            $result['weapons_wrecked'] = $spoils['wrecked'];
 
             $attacker_losses = self::apply_losses($kingdom, $committed, $won ? 0.07 : 0.18);
             $defender_home = [];
@@ -309,8 +323,8 @@ class IDO_Military {
                 // The column keeps its original name: renaming it would cost a
                 // migration, and the word never reaches a player.
                 'buildings_razed'   => (int) $result['demolished'],
-                'catapults_captured' => (int) $result['engines_taken'],
-                'catapults_destroyed' => (int) $result['engines_wrecked'],
+                'catapults_captured' => (int) $result['weapons_taken'],
+                'catapults_destroyed' => (int) $result['weapons_wrecked'],
                 'attacker_report'   => implode("\n", $attacker_report),
                 'defender_report'   => implode("\n", $defender_report),
                 'created_at'        => IDO_Game::now(),
@@ -328,18 +342,18 @@ class IDO_Military {
     }
 
     /**
-     * How a stake of siege engines is divided after a battle is lost.
+     * How a stake of siege weapons is divided after a battle is lost.
      *
      * The winner drags home catapult_capture_percent of it and
      * catapult_destroy_percent is smashed where it stands, so a defeat costs
      * the two added together. Where rounding would claim more than was at
-     * stake, the wrecked share gives way first: an engine cannot be both
+     * stake, the wrecked share gives way first: a weapon cannot be both
      * captured and splinters. Kept separate from the battle so the arithmetic
      * can be read, and tested, without a database behind it.
      *
      * @return array ['captured' => int, 'wrecked' => int]
      */
-    public static function engine_spoils(int $stake): array {
+    public static function weapon_spoils(int $stake): array {
         $stake = max(0, $stake);
         if ($stake < 1) return ['captured' => 0, 'wrecked' => 0];
 
@@ -352,33 +366,36 @@ class IDO_Military {
     }
 
     /**
-     * Moves siege engines from the losing side to the winning one, and smashes
+     * Moves siege weapons from the losing side to the winning one, and smashes
      * a further share where it stands.
      *
-     * Only what was at stake counts. The attacker stakes the train they sent
-     * and nothing they left at home; the defender stakes everything standing,
-     * because everything standing was in the fight.
+     * Only what was in the fight is at stake. The attacker stakes the train
+     * they hauled out and nothing they left at home; the defender stakes the
+     * weapons they had crews for, because an unmanned catapult took no part in
+     * the battle and so is neither a prize nor a casualty.
      *
      * @return array ['taken' => int, 'wrecked' => int]
      */
-    private static function resolve_engine_spoils(object $kingdom, object $target, array $sent, bool $attacker_won): array {
+    private static function resolve_weapon_spoils(object $kingdom, object $target, array $sent, bool $attacker_won): array {
         $winner = $attacker_won ? $kingdom : $target;
         $loser  = $attacker_won ? $target : $kingdom;
 
+        $manned = IDO_Weapons::crewed($target);
+
         $taken = 0;
         $wrecked = 0;
-        foreach (IDO_Engines::keys() as $key) {
-            $column = IDO_Engines::column($key);
+        foreach (IDO_Weapons::keys() as $key) {
+            $column = IDO_Weapons::column($key);
             $stake = $attacker_won
-                ? (int) $target->{$column}          // everything the defender had on the walls
-                : (int) ($sent[$key] ?? 0);         // only the train the attacker marched out with
+                ? (int) ($manned[$key] ?? 0)        // only what the defender had men to work
+                : (int) ($sent[$key] ?? 0);         // only the train the attacker hauled out
             $stake = max(0, min($stake, (int) $loser->{$column}));
 
-            $split = self::engine_spoils($stake);
+            $split = self::weapon_spoils($stake);
             $lost = $split['captured'] + $split['wrecked'];
             if ($lost < 1) continue;
 
-            IDO_Kingdom::pay($loser, [$column => -$lost], 'Those engines were no longer there to lose.');
+            IDO_Kingdom::pay($loser, [$column => -$lost], 'Those weapons were no longer there to lose.');
             if ($split['captured'] > 0) {
                 IDO_Kingdom::pay($winner, [$column => $split['captured']]);
             }
@@ -528,19 +545,19 @@ class IDO_Military {
             }
         }
 
-        // The engine spoils read the same way whichever side won, so they are
+        // The weapon spoils read the same way whichever side won, so they are
         // written once, outside the branch that only covers an attacker's win.
-        if ($result['engines_taken'] > 0 || $result['engines_wrecked'] > 0) {
+        if ($result['weapons_taken'] > 0 || $result['weapons_wrecked'] > 0) {
             $kept_them = $for_attacker === $attacker_won;
             $lines[] = $kept_them
                 ? sprintf(
                     'You haul off %s enemy catapults and leave %s burning on the field.',
-                    IDO_Game::fmt($result['engines_taken']), IDO_Game::fmt($result['engines_wrecked'])
+                    IDO_Game::fmt($result['weapons_taken']), IDO_Game::fmt($result['weapons_wrecked'])
                 )
                 : sprintf(
                     'You lose %s catapults: %s are dragged away by the enemy and %s are smashed where they stand.',
-                    IDO_Game::fmt($result['engines_taken'] + $result['engines_wrecked']),
-                    IDO_Game::fmt($result['engines_taken']), IDO_Game::fmt($result['engines_wrecked'])
+                    IDO_Game::fmt($result['weapons_taken'] + $result['weapons_wrecked']),
+                    IDO_Game::fmt($result['weapons_taken']), IDO_Game::fmt($result['weapons_wrecked'])
                 );
         }
 

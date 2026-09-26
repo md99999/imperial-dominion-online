@@ -33,7 +33,7 @@ class IDO_Economy {
         $gold_out   = $buildings * self::GOLD_UPKEEP_PER_BUILDING;
         $grain_in   = (int) $kingdom->b_farmstead * 85;
         $grain_out  = $peasants * self::GRAIN_PER_PEASANT + IDO_Units::upkeep($kingdom)
-            + IDO_Engines::upkeep($kingdom);
+            + IDO_Weapons::upkeep($kingdom);
 
         $capacity = self::peasant_capacity($kingdom);
         if ($peasants < $capacity) {

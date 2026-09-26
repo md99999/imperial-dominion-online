@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) exit;
  * up front, and finish on the daily tick: what you order today defends you
  * tomorrow, never tonight.
  *
- * Siege engines go through the same queue. They take no acre, so they are
+ * Siege weapons go through the same queue. They take no acre, so they are
  * booked against their own in-progress counter rather than against the land
  * ledger, and the order row says which of the two kinds it is.
  */
@@ -94,20 +94,20 @@ class IDO_Construction {
     }
 
     /**
-     * Orders $qty of a siege engine. Costs one turn plus the engine's own gold
+     * Orders $qty of a siege weapon. Costs one turn plus the weapon's own gold
      * and iron price, and finishes on the same daily tick a building would.
      * No acre is taken and no peasant leaves the fields.
      */
-    public static function order_engine(object $kingdom, string $engine, int $qty): array {
+    public static function order_weapon(object $kingdom, string $weapon, int $qty): array {
         global $wpdb;
 
-        IDO_Engines::get($engine);
+        IDO_Weapons::get($weapon);
         $qty = IDO_Game::qty($qty, 1000000);
         if ($qty < 1) {
-            throw new IDO_Game_Exception('Order at least one engine.');
+            throw new IDO_Game_Exception('Order at least one weapon.');
         }
 
-        $cost = IDO_Engines::cost($engine, $qty);
+        $cost = IDO_Weapons::cost($weapon, $qty);
         if ((int) $kingdom->gold < $cost['gold'] || (int) $kingdom->iron < $cost['iron']) {
             throw new IDO_Game_Exception(sprintf(
                 'That order costs %s gold and %s iron. You have %s gold and %s iron.',
@@ -121,7 +121,7 @@ class IDO_Construction {
         IDO_Kingdom::pay($kingdom, [
             'gold' => -$cost['gold'],
             'iron' => -$cost['iron'],
-            IDO_Engines::progress_column($engine) => $qty,
+            IDO_Weapons::progress_column($weapon) => $qty,
         ], 'Your treasury and forges cannot cover that order.');
 
         $days = max(0, IDO_Settings::int('build_days'));
@@ -129,8 +129,8 @@ class IDO_Construction {
         $wpdb->insert(IDO_DB::t('constructions'), [
             'round_id'   => (int) $kingdom->round_id,
             'kingdom_id' => (int) $kingdom->id,
-            'kind'       => 'engine',
-            'building'   => $engine,
+            'kind'       => 'weapon',
+            'building'   => $weapon,
             'qty'        => $qty,
             'ready_on'   => $ready,
             'created_at' => IDO_Game::now(),
@@ -139,17 +139,17 @@ class IDO_Construction {
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
         $messages[] = sprintf(
             'The yards begin work on %s %s, at a cost of %s gold and %s iron. They roll out on %s.',
-            IDO_Game::fmt($qty), strtolower(IDO_Engines::plural($engine)),
+            IDO_Game::fmt($qty), strtolower(IDO_Weapons::plural($weapon)),
             IDO_Game::fmt($cost['gold']), IDO_Game::fmt($cost['iron']),
             date_i18n(get_option('date_format'), strtotime($ready))
         );
         return $messages;
     }
 
-    /** Breaks up standing siege engines for salvage. */
-    public static function scrap_engine(object $kingdom, string $engine, int $qty): string {
-        IDO_Engines::get($engine);
-        $column = IDO_Engines::column($engine);
+    /** Breaks up standing siege weapons for salvage. */
+    public static function scrap_weapon(object $kingdom, string $weapon, int $qty): string {
+        IDO_Weapons::get($weapon);
+        $column = IDO_Weapons::column($weapon);
         $standing = (int) $kingdom->{$column};
         $qty = IDO_Game::qty($qty, $standing);
         if ($qty < 1) {
@@ -157,14 +157,14 @@ class IDO_Construction {
         }
 
         $refund = (int) round(
-            IDO_Engines::cost($engine, $qty)['gold'] * IDO_Settings::int('demolish_refund_percent') / 100
+            IDO_Weapons::cost($weapon, $qty)['gold'] * IDO_Settings::int('demolish_refund_percent') / 100
         );
-        IDO_Kingdom::pay($kingdom, [$column => -$qty, 'gold' => $refund], 'Those engines are no longer standing.');
+        IDO_Kingdom::pay($kingdom, [$column => -$qty, 'gold' => $refund], 'Those weapons are no longer standing.');
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
         return sprintf(
             '%s %s are broken up. The timber and iron fetch %s gold.',
-            IDO_Game::fmt($qty), strtolower(IDO_Engines::plural($engine)), IDO_Game::fmt($refund)
+            IDO_Game::fmt($qty), strtolower(IDO_Weapons::plural($weapon)), IDO_Game::fmt($refund)
         );
     }
 
@@ -191,8 +191,8 @@ class IDO_Construction {
         ));
         $finished = 0;
         foreach ($due as $order) {
-            $is_engine = self::is_engine_order($order);
-            $known = $is_engine ? IDO_Engines::exists($order->building) : IDO_Buildings::exists($order->building);
+            $is_weapon = self::is_weapon_order($order);
+            $known = $is_weapon ? IDO_Weapons::exists($order->building) : IDO_Buildings::exists($order->building);
             $kingdom = $known ? IDO_Kingdom::find((int) $order->kingdom_id) : null;
             if (!$kingdom) {
                 $wpdb->delete(IDO_DB::t('constructions'), ['id' => (int) $order->id], ['%d']);
@@ -201,11 +201,11 @@ class IDO_Construction {
 
             // The reservation is the ceiling on what an order can deliver, so a
             // queue trimmed by a lost war never hands back more than is booked.
-            $standing_column = $is_engine
-                ? IDO_Engines::column($order->building)
+            $standing_column = $is_weapon
+                ? IDO_Weapons::column($order->building)
                 : IDO_Buildings::column($order->building);
-            $progress_column = $is_engine
-                ? IDO_Engines::progress_column($order->building)
+            $progress_column = $is_weapon
+                ? IDO_Weapons::progress_column($order->building)
                 : 'land_in_progress';
 
             $qty = min((int) $order->qty, (int) $kingdom->{$progress_column});
@@ -224,13 +224,13 @@ class IDO_Construction {
     }
 
     /**
-     * Whether an order row is for a siege engine rather than a building.
+     * Whether an order row is for a siege weapon rather than a building.
      *
-     * Rows written before engines existed carry no kind at all, so an empty
+     * Rows written before weapons existed carry no kind at all, so an empty
      * kind reads as a building: that is what every one of them is.
      */
-    private static function is_engine_order(object $order): bool {
-        return isset($order->kind) && $order->kind === 'engine';
+    public static function is_weapon_order(object $order): bool {
+        return isset($order->kind) && $order->kind === 'weapon';
     }
 
     /**
@@ -249,8 +249,8 @@ class IDO_Construction {
         ));
         foreach ($orders as $order) {
             if ($over <= 0) break;
-            // Engines stand on no acre, so losing land never cancels one.
-            if (self::is_engine_order($order)) continue;
+            // Weapons stand on no acre, so losing land never cancels one.
+            if (self::is_weapon_order($order)) continue;
             $cut = min($over, (int) $order->qty);
             if ($cut >= (int) $order->qty) {
                 $wpdb->delete(IDO_DB::t('constructions'), ['id' => (int) $order->id], ['%d']);
