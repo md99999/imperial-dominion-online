@@ -661,6 +661,81 @@ defending side, siege weapons as captured equipment, and prisoners who become pe
 moves. Every number a result packet asserts is clamped to what the receiving site independently
 believes possible.
 
+## League mode changes the local game
+
+**When a site joins a league, empires on that site stop warring with each other.** All war becomes
+league war: the site is a team, and the enemy is another site. Local marches, local raids and local
+sieges are simply unavailable while the league is enabled.
+
+This is the right call, and it is worth being clear that it is a different game rather than the
+same game with an extra feature. Two empires that were rivals on Monday are contributing to the
+same army on Tuesday, and most of the local design has to be read again in that light.
+
+### What follows from it
+
+**The War Room becomes a mustering hall.** Instead of choosing a neighbour and committing a force
+against them, a ruler commits a force to the site's next march. The same force array, the same
+maths, a different target and a shared outcome.
+
+**Land only grows by settling.** Conquest was the answer to the exploration curve: past a certain
+size, taking acres from a neighbour is cheaper than finding them. With local war gone, exploring is
+the only source of land, and it gets steadily more expensive. Nobody loses land either, so the
+whole site grows slower and more evenly. That is probably fine, and possibly better, but it wants
+watching in a round: if land stalls entirely, the fix is the explore curve, not reinstating local
+war.
+
+**The target band, the crown truce and the hits-per-day limit go quiet.** They govern who may
+attack whom locally, and locally nobody may. They stay in the settings because leaving a league
+brings them back, but they should not be shown as if they applied.
+
+**The market matters more, not less.** Trading with people who are now allies is straightforwardly
+good, and it is the main way a site can concentrate resources into the empires best placed to field
+an army. It stays exactly as it is.
+
+**Rankings keep net worth and gain a contribution column.** Net worth still measures how well
+somebody plays; it stops being a target list. What a ruler contributed to the site's marches is the
+other thing worth seeing, and it is the honest measure of whether somebody is carrying the team or
+riding it.
+
+### Covert work, which is the interesting one
+
+Spying on an ally makes no sense, so agents should not operate inside the site while the league is
+on. Spying on a *rival site* makes a great deal of sense, and the packet design already supports
+it: reconnaissance is a small signed packet with a small signed answer, and it fits the same
+staging, delay and rate limiting as everything else.
+
+That would make an agent a scout for the league march rather than a weapon against a neighbour, and
+it gives the enormous cost of one a clear purpose: knowing what is waiting on the other side before
+a site commits an army for a fortnight. Recommended, but a decision rather than a given.
+
+### Turning it on and off
+
+Enabling league play changes the rules under players who planned around the old ones, so it takes
+effect the same way league settings do: **at the next round boundary**. Leaving a league restores
+local war the same way. A site does not flip between the two games mid-round.
+
+## The League screen
+
+A single admin page under Imperial Dominion, and the one place a game master manages all of this.
+
+**When no league exists**, it offers two things: found a league, or join one with an invitation.
+Founding asks for a name, a member cap defaulting well below the 20 maximum, the ruleset it will
+publish, the round calendar and the delay range. Joining asks for the invitation blob and nothing
+else, since everything else arrives with it.
+
+**Once in a league**, the page shows what a game master actually needs:
+
+- the league name, whether this site is the originator, and the ruleset version in force
+- the member list with each site's URL, status, last contact and rules fingerprint match
+- pending enrolments awaiting approval, for an originator
+- the invitation generator, showing a token once and never again
+- the packet queues, inbound and outbound, with what is due and when
+- the next march: what has been committed so far, by whom, and against which site
+- a kill switch that stops sending and accepting without deactivating the plugin
+
+The screen carries the same protections as the rest of the admin: `manage_options`, a nonce on
+every form, and no secret ever rendered after the moment it is created.
+
 ## Threat model
 
 Written for review rather than reassurance. Where something cannot be defended, it says so.
