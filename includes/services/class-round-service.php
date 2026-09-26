@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * Rounds. A round runs for a fixed number of days; when it ends the standings
- * are copied into the Hall of Fame, every kingdom is retired, and (optionally) a
+ * are copied into the Hall of Fame, every empire is retired, and (optionally) a
  * fresh round begins at once so latecomers always have a clean slate to join.
  */
 class IDO_Rounds {
@@ -88,7 +88,7 @@ class IDO_Rounds {
             throw new IDO_Game_Exception('The round could not be created. Check that the game tables exist.');
         }
         delete_option('ido_activation_error');
-        IDO_Log::news('round', sprintf('%s has begun in %s. The land is unclaimed and every throne is empty.', $name, IDO_Game::dominion()), (int) $round->id);
+        IDO_Log::news('round', sprintf('%s has begun in %s. The land is unclaimed and every empire is unclaimed.', $name, IDO_Game::dominion()), (int) $round->id);
         IDO_Log::admin('round_start', sprintf('Started %s, ending %s.', $name, $round->ends_at));
         return $round;
     }
@@ -102,7 +102,7 @@ class IDO_Rounds {
 
     /**
      * Closes a round: archives the standings, marks it completed and retires its
-     * kingdoms. Returns a short summary line for the log.
+     * empires. Returns a short summary line for the log.
      */
     public static function conclude(object $round): string {
         global $wpdb;
@@ -145,7 +145,7 @@ class IDO_Rounds {
         }
 
         self::flush_cache();
-        return sprintf('%s concluded with %d kingdoms archived.', $round->round_name, count($kingdoms));
+        return sprintf('%s concluded with %d empires archived.', $round->round_name, count($kingdoms));
     }
 
     /**

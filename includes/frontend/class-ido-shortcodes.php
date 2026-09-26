@@ -2,14 +2,30 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Registers the eight game shortcodes. Each renders the shared frame (status
+ * Registers the nine game shortcodes, plus the older names some of
+ * them used to answer to. Each renders the shared frame (status
  * bar, navigation, notices) around a view from includes/frontend/views.
  */
 class IDO_Shortcodes {
 
+    /**
+     * Shortcodes that have since been renamed. A site running an older version
+     * still has the old tag sitting in its page content, and a page that stops
+     * rendering is worse than a tag whose name has aged, so the old names keep
+     * working for good.
+     */
+    const LEGACY = [
+        'ido_throne' => 'empire',
+    ];
+
     public static function register(): void {
         foreach (IDO_UI::PAGES as $key => $def) {
             add_shortcode($def[2], static function () use ($key) {
+                return IDO_Shortcodes::render($key);
+            });
+        }
+        foreach (self::LEGACY as $tag => $key) {
+            add_shortcode($tag, static function () use ($key) {
                 return IDO_Shortcodes::render($key);
             });
         }

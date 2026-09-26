@@ -1,7 +1,7 @@
 # Phase 2: inter-site war (design notes, not implemented)
 
-The goal is to let the kingdoms of one WordPress site combine their forces and march on a game
-hosted by a *different* WordPress site, with each site keeping authority over its own kingdoms.
+The goal is to let the empires of one WordPress site combine their forces and march on a game
+hosted by a *different* WordPress site, with each site keeping authority over its own empires.
 
 Nothing here is built yet. These are the questions that have to be answered first, written down
 while the Phase 1 design is fresh.
@@ -19,32 +19,32 @@ a shared secret established once, out of band, by the two administrators. Sign t
 body with HMAC-SHA256 and reject anything whose signature does not verify, before parsing the
 body any further. Never accept a packet whose secret arrived in the packet itself.
 
-**2. Replay.** A valid packet captured and sent twice must not sack the same kingdom twice. Every
+**2. Replay.** A valid packet captured and sent twice must not sack the same empire twice. Every
 packet carries a UUID, a timestamp and a monotonically increasing sequence number per sending
 site. The receiver stores processed UUIDs, rejects anything older than a short window (say 15
 minutes), and rejects a sequence number it has already seen. Processing must be idempotent even
 if the same packet is somehow delivered twice at once, so record the UUID in the same guarded
 write that applies the effect.
 
-**3. Authority.** A sending site may only speak for its own kingdoms, and may only assert that a
+**3. Authority.** A sending site may only speak for its own empires, and may only assert that a
 force *left*. The receiving site decides what that force accomplishes: it owns the defender's
 numbers and runs the combat maths. A packet that says "you lost 400 acres" is never trusted; a
-packet that says "Vaelmark sent 800 squires and 40 rooks" is. The result travels back as a
+packet that says "Vaelmark sent 800 centurions and 40 ballistae legions" is. The result travels back as a
 second packet, and the sending site applies casualties only when it arrives.
 
 **4. Settlement.** Losses on the attacking side are only known after the defender resolves the
-battle, so the attacking kingdom's troops must be held in escrow from the moment the packet is sent
+battle, so the attacking empire's troops must be held in escrow from the moment the packet is sent
 until the result comes back, and released with a timeout if it never does. This is the piece that
 Phase 1 deliberately avoids by resolving everything locally and instantly.
 
 ## The league owns the rules, not the sites
 
-A site that grants its rulers 200 turns a day, or founds kingdoms with ten times the starting
+A site that grants its rulers 200 turns a day, or founds empires with ten times the starting
 gold, wins a league without ever fighting well. Every setting that affects the game has to be the
 league's to set, not each site's.
 
 **Two classes of setting.** Cosmetic ones stay local: the world name, page titles, whether new
-kingdoms may be founded. Game-affecting ones are league-governed and identical everywhere:
+empires may be founded. Game-affecting ones are league-governed and identical everywhere:
 
 - turns per day, the turn cap, starting turns
 - every starting resource, and the starting land
@@ -63,12 +63,12 @@ compares it against the league's own and refuses packets that do not match, nami
 that differs. A site that has drifted is told why it is being ignored rather than silently losing.
 
 **The fingerprint does not stop a determined cheat**, and it is important to be honest about that.
-A site administrator owns their database and can set a kingdom's land to whatever they like without
+A site administrator owns their database and can set an empire's land to whatever they like without
 touching a single setting. The fingerprint catches drift and misconfiguration, which is most of
 it. Beyond that there are two defences worth having:
 
-- **Plausibility checks at the hub.** Given the ruleset, there is a ceiling on how much a kingdom
-  can grow between exchanges: so many turns, each worth so much income. A kingdom that gains more
+- **Plausibility checks at the hub.** Given the ruleset, there is a ceiling on how much an empire
+  can grow between exchanges: so many turns, each worth so much income. An empire that gains more
   than the rules allow is flagged, and the hub can hold its packets for a human to look at.
 - **Publish everything.** Every member's standings, visible to every member. Cheating that nobody
   can see is a problem; cheating in public is a short-lived one, because leagues are voluntary and
@@ -109,7 +109,7 @@ attacker who cannot read a packet can still flip bits in it and change what it s
 that reasons "it is encrypted, therefore it cannot have been tampered with" is already broken.
 
 So: **every packet is signed; encryption is optional and, for this game, unnecessary.** There is
-nothing confidential in "Vaelmark sent 800 squires": both ends know it, and the defender is about
+nothing confidential in "Vaelmark sent 800 centurions": both ends know it, and the defender is about
 to be told anyway. Signing alone buys integrity and origin, which is all the game needs.
 
     $signature = hash_hmac('sha256', $body, $secret);         // sending
@@ -158,7 +158,7 @@ re-wrap lines and break the signature.
   that expands into an enormous structure.
 - **Whitelist every field**: name, type, range. Reject unknown keys rather than ignoring them, so
   a field added by an attacker is an error rather than a silent no-op.
-- **Strings from a packet get the same character rules as a kingdom name**, and are escaped at
+- **Strings from a packet get the same character rules as an empire name**, and are escaped at
   output like everything else. A packet supplies names that end up in the gazette.
 - **Numbers are clamped** through `IDO_Game::clamp()`, which already exists for the overflow work.
 - Nothing from a packet is ever written to a file, used in a path or filename, included, evaluated,
@@ -166,7 +166,7 @@ re-wrap lines and break the signature.
 
 ### Replay, ordering and the deliberate delay
 
-A valid packet captured and sent twice must not sack the same kingdom twice. Each packet carries a
+A valid packet captured and sent twice must not sack the same empire twice. Each packet carries a
 UUID, a per-peer sequence number and a timestamp. The receiver records processed UUIDs and refuses
 a repeat, in the same guarded write that applies the effect, so a duplicate arriving twice at once
 cannot slip through between the check and the write.
@@ -269,7 +269,7 @@ on version 5 is told which setting differs rather than silently losing.
 ### Rounds have to be synchronised, not merely the same length
 
 Giving every site a 45-day round is not enough. If the sites start their rounds on different days,
-a site whose round began last week fields mature kingdoms against a site that wiped yesterday, and
+a site whose round began last week fields mature empires against a site that wiped yesterday, and
 it can keep doing so forever by timing its own resets.
 
 **The league owns the round calendar**: length *and* start date. Members wipe together and begin
@@ -295,9 +295,9 @@ reason.
 
 ### What the hub does not get to do
 
-The hub holds the ruleset and the calendar. It does **not** resolve battles, hold kingdoms, or
+The hub holds the ruleset and the calendar. It does **not** resolve battles, hold empires, or
 arbitrate outcomes: the defending site always computes its own. A compromised hub should be able
-to disrupt a league's schedule, which is annoying, rather than rewrite anyone's kingdom, which
+to disrupt a league's schedule, which is annoying, rather than rewrite anyone's empire, which
 would be fatal.
 
 ## Invitations: how a site actually joins
@@ -344,7 +344,7 @@ The secret is per pairing, so a compromised member exposes its own link and noth
 - **Rotation** is a new secret issued through the same approved channel, with a short overlap where
   both verify, because packets take days to arrive and in-flight ones signed with the old secret
   must still land.
-- **Removal** stops new packets being accepted but must not strip a kingdom of an army sitting in
+- **Removal** stops new packets being accepted but must not strip an empire of an army sitting in
   escrow: in-flight results are honoured, or the escrow times out and the troops come home.
 - A member that leaves returns to local settings at the next round boundary.
 
@@ -369,7 +369,7 @@ So the cap is a judgement, not a technical ceiling.
   is full refuses a token with a clear reason rather than a generic failure, so an administrator
   is not left guessing.
 - **20 is the ceiling**, not the default. A league that size is a real tournament: enough sites
-  that the same two kingdoms are not meeting every exchange, and enough standings to be worth
+  that the same two empires are not meeting every exchange, and enough standings to be worth
   reading.
 - Somewhere around **8 to 12 is the comfortable middle**, and a first league is better small. It
   is easy to admit another site and awkward to ask one to leave.
@@ -382,7 +382,7 @@ keeps a league honest, and it does not scale as easily as the packets do.
 
 ## League war: how a march between sites resolves
 
-The shape, settled: a site marches on another site. Kingdoms commit forces, the packet crosses,
+The shape, settled: a site marches on another site. Empires commit forces, the packet crosses,
 the defending site resolves it, and a result packet comes home days later carrying survivors and
 spoils. Strength decides it, and a strong defence turns the outcome around on the attacker. This
 is the BRE inter-BBS idea, and the delay is the point.
@@ -392,25 +392,25 @@ rather than discovering.
 
 ### 1. Compare committed forces, not whole sites
 
-Tempting to weigh site against site. It does not survive contact: a league with a fifty-kingdom
-site and a five-kingdom site would never see a fair fight, and the small site would be farmed.
+Tempting to weigh site against site. It does not survive contact: a league with a fifty-empire
+site and a five-empire site would never see a fair fight, and the small site would be farmed.
 
 **The battle compares what was actually committed.** Site size only decides how much a site can
 afford to send, which is a real advantage without being an automatic win. The maths is the one
 Phase 1 already uses, `IDO_Military::attack()` over an explicit force array, with the committed
-forces of every participating kingdom summed on each side.
+forces of every participating empire summed on each side.
 
 ### 2. Only what is committed is at risk
 
 "A percentage of the assets of the site attacked" needs a sharper answer to the question *whose*.
 
-Taking a slice of every kingdom on the losing site punishes players who never agreed to the war,
+Taking a slice of every empire on the losing site punishes players who never agreed to the war,
 for a decision their administrator made. One ruler logs in to find their army thinner because
 somebody else picked a fight. That is the fastest way to empty a league.
 
-**Kingdoms opt in by committing.** A kingdom that sends nothing neither gains nor loses. Spoils go
-to the kingdoms that contributed, in proportion to what they risked. The site is the banner; the
-kingdoms are the participants.
+**Empires opt in by committing.** An empire that sends nothing neither gains nor loses. Spoils go
+to the empires that contributed, in proportion to what they risked. The site is the banner; the
+empires are the participants.
 
 ### 3. Spoils must not snowball
 
@@ -432,7 +432,7 @@ they own, so a site cannot be stripped by one unlucky exchange.
 
 ### The sequence
 
-1. Kingdoms commit forces. Troops leave the muster immediately and show as in transit, so the same
+1. Empires commit forces. Troops leave the muster immediately and show as in transit, so the same
    army cannot be committed twice while a packet is in flight.
 2. The packet is signed and sent, and the delay is applied at the receiving end so the sender
    cannot shorten it.

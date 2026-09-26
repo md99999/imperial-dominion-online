@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) exit;
  */
 class IDO_Rankings {
 
-    /** Kingdoms in a round, strongest first. */
+    /** Empires in a round, strongest first. */
     public static function standings(int $round_id, int $limit = 50): array {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
@@ -17,7 +17,7 @@ class IDO_Rankings {
         ));
     }
 
-    /** Where a kingdom sits in the standings, counting from one. */
+    /** Where an empire sits in the standings, counting from one. */
     public static function position(object $kingdom): int {
         global $wpdb;
         $above = (int) $wpdb->get_var($wpdb->prepare(

@@ -10,11 +10,11 @@ $rounds = $wpdb->get_results('SELECT * FROM ' . IDO_DB::t('rounds') . ' ORDER BY
 
     <p>
         A round runs for a fixed number of days. When it ends, the standings are copied into the Hall of Fame,
-        every kingdom is retired and, if the setting allows, the next round opens at once.
+        every empire is retired and, if the setting allows, the next round opens at once.
     </p>
 
     <h2>Open a new round</h2>
-    <p><strong>This retires every kingdom in the round currently running.</strong></p>
+    <p><strong>This retires every empire in the round currently running.</strong></p>
     <?php echo IDO_Admin::form_open('start_round', 'ido_rounds'); ?>
         <table class="form-table" role="presentation">
             <tr>

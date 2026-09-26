@@ -26,7 +26,7 @@ class IDO_Actions {
 
         try {
             if (!$kingdom && $action !== 'found_kingdom') {
-                throw new IDO_Game_Exception('Claim a kingdom before you give orders.');
+                throw new IDO_Game_Exception('Claim an empire before you give orders.');
             }
             if ($kingdom) {
                 IDO_Maintenance::catch_up($kingdom);
@@ -55,7 +55,7 @@ class IDO_Actions {
      *
      * Not wp_get_referer(). Every game form posts to its own page, and
      * wp_get_referer() deliberately returns false when the referer matches the
-     * current request, so relying on it sent every order back to the Throne
+     * current request, so relying on it sent every order back to the Empire
      * Room instead of leaving the ruler where they were working.
      *
      * The queried page is the reliable answer, since each game screen is an
@@ -65,11 +65,11 @@ class IDO_Actions {
         $page_id = get_queried_object_id();
         $url = $page_id ? get_permalink($page_id) : '';
         if (!$url) {
-            $url = wp_get_referer() ?: IDO_UI::url('throne');
+            $url = wp_get_referer() ?: IDO_UI::url('empire');
         }
 
         // Carry the view the ruler was looking at, so buying from a filtered
-        // market or targeting a kingdom does not reset the screen.
+        // market or targeting an empire does not reset the screen.
         $carry = [];
         foreach (['item', 'target'] as $key) {
             if (!empty($_GET[$key])) {
@@ -105,6 +105,16 @@ class IDO_Actions {
         return $force;
     }
 
+    /** The siege engines sent with it, read from one field per engine type. */
+    private static function train(): array {
+        $train = [];
+        foreach (IDO_Engines::keys() as $engine_key) {
+            $qty = (int) self::field('engine_' . $engine_key, '0');
+            if ($qty > 0) $train[$engine_key] = $qty;
+        }
+        return $train;
+    }
+
     /**
      * @return array [flash messages, page key to redirect to or null to stay put]
      */
@@ -112,7 +122,7 @@ class IDO_Actions {
         switch ($action) {
             case 'found_kingdom':
                 IDO_Kingdom::create(get_current_user_id(), self::text('kingdom_name'), self::text('ruler_name'));
-                return [['Your banner is raised. The kingdom is yours to rule.'], 'throne'];
+                return [['Your banner is raised. The empire is yours to rule.'], 'empire'];
 
             // Land and building
             case 'explore':
@@ -122,6 +132,12 @@ class IDO_Actions {
             case 'demolish':
                 return [[IDO_Construction::demolish($kingdom, self::key('building'), self::int('qty'))], null];
 
+            // Siege engines
+            case 'build_engine':
+                return [IDO_Construction::order_engine($kingdom, self::key('engine'), self::int('qty')), null];
+            case 'scrap_engine':
+                return [[IDO_Construction::scrap_engine($kingdom, self::key('engine'), self::int('qty'))], null];
+
             // The army
             case 'train':
                 return [IDO_Military::train($kingdom, self::key('unit'), self::int('qty')), null];
@@ -130,7 +146,7 @@ class IDO_Actions {
 
             // War
             case 'attack':
-                return [IDO_Military::attack($kingdom, self::int('target_id'), self::key('attack_type'), self::force()), 'war'];
+                return [IDO_Military::attack($kingdom, self::int('target_id'), self::key('attack_type'), self::force(), self::train()), 'war'];
 
             // The spy court
             case 'hire_agent':

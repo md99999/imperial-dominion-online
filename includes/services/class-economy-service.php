@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * The economy runs on turns, not on the clock: a turn spent is a day of your
- * kingdom's life, and it pays out the moment you spend it. Sitting on turns earns
+ * empire's life, and it pays out the moment you spend it. Sitting on turns earns
  * a ruler nothing, which is what keeps everyone playing rather than hoarding.
  */
 class IDO_Economy {
@@ -23,16 +23,17 @@ class IDO_Economy {
 
     /**
      * What one turn would produce right now, before it is spent. Used for the
-     * projection shown on the throne room screen and by advance().
+     * projection shown on the empire screen and by advance().
      */
     public static function per_turn(object $kingdom): array {
         $buildings = IDO_Buildings::total($kingdom);
         $peasants  = (int) $kingdom->peasants;
 
-        $gold_in    = $peasants * self::TAX_PER_PEASANT + (int) $kingdom->b_counting_house * 60;
+        $gold_in    = $peasants * self::TAX_PER_PEASANT + (int) $kingdom->b_mint * 60;
         $gold_out   = $buildings * self::GOLD_UPKEEP_PER_BUILDING;
         $grain_in   = (int) $kingdom->b_farmstead * 85;
-        $grain_out  = $peasants * self::GRAIN_PER_PEASANT + IDO_Units::upkeep($kingdom);
+        $grain_out  = $peasants * self::GRAIN_PER_PEASANT + IDO_Units::upkeep($kingdom)
+            + IDO_Engines::upkeep($kingdom);
 
         $capacity = self::peasant_capacity($kingdom);
         if ($peasants < $capacity) {
@@ -125,7 +126,7 @@ class IDO_Economy {
 
         $lines = [];
         $lines[] = sprintf(
-            '%d %s spent. Your kingdom produced %s gold, %s grain and %s iron.',
+            '%d %s spent. Your empire produced %s gold, %s grain and %s iron.',
             $turns, $turns === 1 ? 'turn' : 'turns',
             IDO_Game::fmt($totals['gold']), IDO_Game::fmt($totals['grain']),
             IDO_Game::fmt($totals['iron'])
@@ -140,7 +141,7 @@ class IDO_Economy {
     }
 
     /**
-     * Explore for new land. The bigger the kingdom, the fewer acres a scouting
+     * Explore for new land. The bigger the empire, the fewer acres a scouting
      * party finds and the more the crown has to pay for them.
      */
     public static function explore(object $kingdom): array {
@@ -169,7 +170,7 @@ class IDO_Economy {
             // The running total matters: the acres a party finds barely changes
             // between one exploration and the next, so without it the screen
             // looks as though nothing happened.
-            'Your settlers claim %s acres of wilderness for %s gold. Your kingdom now holds %s acres, %s of them wilderness.',
+            'Your settlers claim %s acres of wilderness for %s gold. Your empire now holds %s acres, %s of them wilderness.',
             IDO_Game::fmt($acres), IDO_Game::fmt($cost),
             IDO_Game::fmt($kingdom->land), IDO_Game::fmt(IDO_Buildings::wilderness($kingdom))
         );

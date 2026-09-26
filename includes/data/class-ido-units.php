@@ -1,10 +1,10 @@
 <?php
 /**
- * The troops a kingdom can raise. Offence counts only when attacking, defence
+ * The troops an empire can raise. Offence counts only when attacking, defence
  * only when defending, so an army built for one job is nearly useless at the
  * other: that trade-off is the heart of the war game.
  *
- * As with buildings, each key is also a column on the kingdoms table (prefixed
+ * As with buildings, each key is also a column on the ido_kingdoms table (prefixed
  * u_) and must not change without a migration.
  */
 if (!defined('ABSPATH')) exit;
@@ -24,31 +24,31 @@ class IDO_Units {
                 'upkeep'  => 0.3,   // grain per turn
                 'note'    => 'Cheap conscripts. They hold a wall and nothing more.',
             ],
-            'knight' => [
-                'label'   => 'Knight',
-                'plural'  => 'Knights',
+            'legionnaire' => [
+                'label'   => 'Legionnaire',
+                'plural'  => 'Legionnaires',
                 'offence' => 1,
                 'defence' => 9,
                 'gold'    => 340,
                 'iron'    => 25,
                 'peasants'=> 1,
                 'upkeep'  => 0.5,
-                'note'    => 'Professional defenders, and the backbone of any kingdom that expects to be hit.',
+                'note'    => 'Professional defenders, and the backbone of any empire that expects to be hit.',
             ],
-            'squire' => [
-                'label'   => 'Squire',
-                'plural'  => 'Squires',
+            'centurion' => [
+                'label'   => 'Centurion',
+                'plural'  => 'Centurions',
                 'offence' => 9,
                 'defence' => 1,
                 'gold'    => 380,
                 'iron'    => 30,
                 'peasants'=> 1,
                 'upkeep'  => 0.5,
-                'note'    => 'Raiders bred for the attack. At home they are little better than pawns.',
+                'note'    => 'Officers who lead from the front. At home they are little better than pawns.',
             ],
-            'rook' => [
-                'label'   => 'Rook',
-                'plural'  => 'Rooks',
+            'ballista_legion' => [
+                'label'   => 'Ballista Legion',
+                'plural'  => 'Ballistae Legions',
                 'offence' => 18,
                 'defence' => 4,
                 'gold'    => 1400,
@@ -86,12 +86,12 @@ class IDO_Units {
         return $all[$key]['plural'] ?? self::label($key);
     }
 
-    /** The kingdoms table column holding the standing count of a unit. */
+    /** The empires table column holding the standing count of a unit. */
     public static function column(string $key): string {
         return 'u_' . $key;
     }
 
-    /** Total standing troops on a kingdom row, summed safely and clamped. */
+    /** Total standing troops on an empire row, summed safely and clamped. */
     public static function total(object $kingdom): int {
         $total = 0.0;
         foreach (self::keys() as $key) {
@@ -110,18 +110,22 @@ class IDO_Units {
     }
 
     /**
-     * Defensive strength of everything standing at home.
-     * Rooks left behind still count, at their poor defence value.
+     * Defensive strength of the troops standing at home, before fortifications.
+     * Ballistae legions left behind still count, at their poor defence value.
+     *
+     * The fortification bonus is deliberately not applied here. Siege engines
+     * man the same walls, so the multiplier is applied once by
+     * IDO_Military::defence_power() over the troops and the engines together.
      */
     public static function defence_power(object $kingdom): float {
         $power = 0.0;
         foreach (self::all() as $key => $unit) {
             $power += $unit['defence'] * (int) $kingdom->{self::column($key)};
         }
-        return $power * IDO_Buildings::fortification_bonus($kingdom);
+        return $power;
     }
 
-    /** Offensive strength of a named force, e.g. ['squire' => 500]. */
+    /** Offensive strength of a named force, e.g. ['centurion' => 500]. */
     public static function offence_power(array $force): float {
         $power = 0.0;
         foreach ($force as $key => $qty) {

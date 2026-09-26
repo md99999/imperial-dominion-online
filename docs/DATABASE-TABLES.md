@@ -8,7 +8,7 @@ All tables use the site's `$wpdb->prefix` followed by `ido_`. They are created b
 | `ido_rounds` | One row per round: name, status (`active`, `completed`), start and end dates |
 | `ido_kingdoms` | One row per player per round. Resources, buildings (`b_*`), troops (`u_*`), turns, net worth, truce, war record |
 | `ido_constructions` | Outstanding building orders, completed on the daily tick |
-| `ido_listings` | Market lots. Goods are escrowed out of the seller's kingdom while a lot is open |
+| `ido_listings` | Market lots. Goods are escrowed out of the seller's empire while a lot is open |
 | `ido_battles` | Every resolved battle, with the report each side reads |
 | `ido_ops` | Every covert mission, with the report each side reads |
 | `ido_news` | Public gazette items for a round |
@@ -34,7 +34,7 @@ ruler attacks somebody.
 
 ## Indexes
 
-`ido_kingdoms` carries a unique key on `(round_id, user_id)`: one kingdom per player per round,
+`ido_kingdoms` carries a unique key on `(round_id, user_id)`: one empire per player per round,
 enforced by the database rather than by application logic. `(round_id, networth)` backs the
-standings query, and the battle and op tables are indexed on both kingdom columns so a ruler's
+standings query, and the battle and op tables are indexed on both empire columns so a ruler's
 dispatches load with one index scan each.

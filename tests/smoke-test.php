@@ -103,6 +103,7 @@ echo "--- settings and data ---\n";
 echo 'turns_per_day: ' . IDO_Settings::int('turns_per_day') . "\n";
 echo 'buildings: ' . implode(', ', IDO_Buildings::keys()) . "\n";
 echo 'units: ' . implode(', ', IDO_Units::keys()) . "\n";
+echo 'engines: ' . implode(', ', IDO_Engines::keys()) . "\n";
 echo "OK\n";
 
 echo "--- rendering the pages ---\n";
@@ -122,9 +123,10 @@ $kingdom_row = (object) [
     'turns' => 30, 'turns_spent' => 0, 'last_turn_grant' => date('Y-m-d'),
     'land' => 250, 'land_in_progress' => 0,
     'gold' => 75000, 'grain' => 40000, 'iron' => 5000, 'peasants' => 1500,
-    'b_homestead' => 60, 'b_farmstead' => 60, 'b_counting_house' => 30, 'b_foundry' => 25,
+    'b_homestead' => 60, 'b_farmstead' => 60, 'b_mint' => 30, 'b_foundry' => 25,
     'b_barracks' => 13, 'b_fortification' => 13,
-    'u_pawn' => 200, 'u_knight' => 50, 'u_squire' => 0, 'u_rook' => 0,
+    'u_pawn' => 200, 'u_legionnaire' => 50, 'u_centurion' => 0, 'u_ballista_legion' => 0,
+    'catapults' => 12, 'catapults_in_progress' => 4,
     'agents' => 0, 'networth' => 250000,
     'protection_until' => date('Y-m-d H:i:s', time() + 3600),
     'is_defeated' => 0, 'attacks_made' => 0, 'attacks_won' => 0, 'attacks_suffered' => 0,
@@ -138,16 +140,16 @@ foreach (array_keys(IDO_UI::PAGES) as $page) {
     printf("%-9s %6d bytes%s\n", $page, strlen($html), strpos($html, 'Fatal') !== false ? '  <-- FATAL' : '');
 }
 
-echo "--- rendering with no kingdom (the claim screen) ---\n";
+echo "--- rendering with no empire (the claim screen) ---\n";
 $GLOBALS['ido_fake_kingdom'] = null;
-printf("found     %6d bytes\n", strlen(IDO_Shortcodes::render('throne')));
+printf("found     %6d bytes\n", strlen(IDO_Shortcodes::render('empire')));
 echo "ALL VIEWS OK\n";
 
 // Write a standalone preview page, wrapped in a theme-like content column.
 $GLOBALS['ido_fake_kingdom'] = $kingdom_row;
 $css = file_get_contents(__DIR__ . '/../assets/css/imperial-dominion-online.css');
 $body = '';
-foreach (['throne', 'lands', 'war'] as $page) {
+foreach (['empire', 'lands', 'war'] as $page) {
     $body .= IDO_Shortcodes::render($page) . '<hr style="margin:40px 0;border:0;border-top:1px dashed #999">';
 }
 $html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -161,13 +163,13 @@ $html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" 
 file_put_contents(__DIR__ . '/preview.html', $html);
 echo "preview.html written (" . strlen($html) . " bytes)\n";
 
-echo "--- guide, signed in with a kingdom ---\n";
+echo "--- guide, signed in with an empire ---\n";
 $GLOBALS['ido_fake_kingdom'] = $kingdom_row;
 printf("guide     %6d bytes\n", strlen(IDO_Shortcodes::render('guide')));
 
 echo "--- logged out: front door and guide ---\n";
 $GLOBALS['ido_logged_out'] = true;
-$welcome = IDO_Shortcodes::render('throne');
+$welcome = IDO_Shortcodes::render('empire');
 printf("welcome   %6d bytes, leaderboard: %s\n", strlen($welcome),
     strpos($welcome, 'Who leads') !== false ? 'present' : 'MISSING');
 printf("guide     %6d bytes, rules visible: %s\n", strlen(IDO_Shortcodes::render('guide')),
@@ -184,7 +186,7 @@ printf("ceiling on the increase : %s\n", strpos($sql, 'LEAST(9000000000000000') 
 printf("floor on the decrease   : %s\n", strpos($sql, '`gold` >= 5000') !== false ? 'yes' : 'NO');
 
 echo "--- the three states of the home page ---\n";
-// A visitor, a signed-in reader with no kingdom, and a ruler: each must be
+// A visitor, a signed-in reader with no empire, and a ruler: each must be
 // offered the next step that actually applies to them.
 $GLOBALS['ido_logged_out'] = true;
 $GLOBALS['ido_fake_kingdom'] = null;
@@ -204,8 +206,8 @@ function state(string $label, bool $ok) {
     printf("%-52s %s\n", $label, $ok ? 'PASS' : 'FAIL');
 }
 // Match the button, not the words: the guide's "first day" list opens with
-// the sentence "Claim your kingdom." as ordinary prose.
-$claim = '>Claim your kingdom</a>';
+// the sentence "Claim your empire." as ordinary prose.
+$claim = '>Claim your empire</a>';
 state('visitor is asked to sign in', strpos($visitor, 'Sign in to play') !== false);
 state('signed-in reader is asked to claim, not sign in', strpos($signed_in, $claim) !== false
     && strpos($signed_in, 'Sign in to play') === false);

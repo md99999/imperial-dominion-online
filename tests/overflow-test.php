@@ -5,11 +5,16 @@
 define('ABSPATH', __DIR__ . '/');
 function number_format_i18n($n, $d = 0) { return number_format((float) $n, $d); }
 function esc_html($s) { return $s; }
+// Engine prices are settings, so scoring an engine reads the options table.
+// There is no WordPress here: the stock defaults are the honest answer.
+function get_option($name, $default = false) { return $default; }
+function wp_parse_args($args, $defaults = []) { return array_merge($defaults, (array) $args); }
 
 $base = __DIR__ . '/../includes/';
 require $base . 'class-ido-core.php';
 require $base . 'data/class-ido-buildings.php';
 require $base . 'data/class-ido-units.php';
+require $base . 'data/class-ido-engines.php';
 
 $fails = 0;
 function check(string $label, bool $ok, string $detail = '') {
@@ -31,20 +36,26 @@ check("NAN clamps to zero, never to the top", IDO_Game::clamp(NAN) === 0);
 check('cap is under 2^53 so it stays exact', IDO_Game::MAX_VALUE < (2 ** 53));
 check('cap survives a float round trip', (int) (float) IDO_Game::MAX_VALUE === IDO_Game::MAX_VALUE);
 
-echo "\n=== net worth of an absurd kingdom ===\n";
-// A kingdom stuffed with the largest values any column could hold.
+echo "\n=== net worth of an absurd empire ===\n";
+// An empire stuffed with the largest values any column could hold.
 $monster = (object) [
     'land' => PHP_INT_MAX, 'land_in_progress' => 0,
     'gold' => PHP_INT_MAX, 'grain' => PHP_INT_MAX, 'iron' => PHP_INT_MAX,
     'peasants' => PHP_INT_MAX, 'agents' => PHP_INT_MAX,
-    'b_homestead' => PHP_INT_MAX, 'b_farmstead' => PHP_INT_MAX, 'b_counting_house' => PHP_INT_MAX,
+    'b_homestead' => PHP_INT_MAX, 'b_farmstead' => PHP_INT_MAX, 'b_mint' => PHP_INT_MAX,
     'b_foundry' => PHP_INT_MAX, 'b_barracks' => PHP_INT_MAX, 'b_fortification' => PHP_INT_MAX,
-    'u_pawn' => PHP_INT_MAX, 'u_knight' => PHP_INT_MAX, 'u_squire' => PHP_INT_MAX, 'u_rook' => PHP_INT_MAX,
+    'u_pawn' => PHP_INT_MAX, 'u_legionnaire' => PHP_INT_MAX, 'u_centurion' => PHP_INT_MAX,
+    'u_ballista_legion' => PHP_INT_MAX,
+    'catapults' => PHP_INT_MAX, 'catapults_in_progress' => PHP_INT_MAX,
 ];
 
 $army = IDO_Units::networth($monster);
 check('army worth never goes negative', $army >= 0, 'got ' . $army);
 check('army worth saturates at the cap', $army === IDO_Game::MAX_VALUE);
+
+$engines = IDO_Engines::networth($monster);
+check('engine worth never goes negative', $engines >= 0, 'got ' . $engines);
+check('engine worth saturates at the cap', $engines === IDO_Game::MAX_VALUE);
 
 // The same sum recalc_networth performs, without needing the database.
 $worth = 0.0;
@@ -52,6 +63,7 @@ $worth += (float) $monster->land * 500;
 $worth += (float) IDO_Buildings::total($monster) * IDO_Buildings::NETWORTH_PER_BUILDING;
 $worth += (float) $monster->peasants * 25;
 $worth += (float) IDO_Units::networth($monster);
+$worth += (float) IDO_Engines::networth($monster);
 $worth += (float) $monster->gold / 50;
 $worth += (float) $monster->grain / 200;
 $worth += (float) $monster->iron / 20;
@@ -65,9 +77,9 @@ echo "\n=== the old integer way, for comparison ===\n";
 $old = 0;
 $old += (int) $monster->land * 500;
 $old += IDO_Buildings::total($monster) * IDO_Buildings::NETWORTH_PER_BUILDING;
-printf("%-52s %s\n", 'unguarded integer sum of the same kingdom',
+printf("%-52s %s\n", 'unguarded integer sum of the same empire',
     is_float($old) ? 'overflowed to float ' . $old : (string) $old);
-printf("%-52s %s\n", 'would it have ranked above an honest kingdom?',
+printf("%-52s %s\n", 'would it have ranked above an honest empire?',
     (is_float($old) || $old > 0) ? 'YES - this is the bug' : 'no');
 
 echo "\n=== derived values stay sane at the cap ===\n";
@@ -75,6 +87,10 @@ check('buildings total saturates', IDO_Buildings::total($monster) === IDO_Game::
     || IDO_Buildings::total($monster) > 0, 'got ' . IDO_Buildings::total($monster));
 check('defence power is not negative', IDO_Units::defence_power($monster) >= 0);
 check('unit upkeep is not negative', IDO_Units::upkeep($monster) >= 0);
+check('engines total saturates', IDO_Engines::total($monster) === IDO_Game::MAX_VALUE,
+    'got ' . IDO_Engines::total($monster));
+check('engine defence is not negative', IDO_Engines::defence_power($monster) >= 0);
+check('engine upkeep is not negative', IDO_Engines::upkeep($monster) >= 0);
 check('title lookup survives the cap', IDO_Game::title(IDO_Game::MAX_VALUE) !== '');
 
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");

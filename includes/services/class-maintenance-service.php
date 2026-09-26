@@ -104,7 +104,7 @@ class IDO_Maintenance {
 
             self::record('daily', $source);
             return sprintf(
-                'Daily upkeep: turns granted to %d kingdoms, %d buildings finished.%s',
+                'Daily upkeep: turns granted to %d empires, %d buildings finished.%s',
                 $granted, $built, $rollover ? ' ' . $rollover : ''
             );
         } finally {
@@ -124,7 +124,7 @@ class IDO_Maintenance {
     }
 
     /**
-     * Grants turns on demand for a single kingdom that has not had today's
+     * Grants turns on demand for a single empire that has not had today's
      * allowance yet, so a ruler who logs in before cron has run is not left
      * waiting. The guarded UPDATE makes this safe to race with the daily tick.
      */

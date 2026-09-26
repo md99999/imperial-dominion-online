@@ -15,7 +15,7 @@ class IDO_UI {
      */
     const PAGES = [
         'guide'    => ['ID - Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
-        'throne'   => ['ID - Throne Room', 'imperial-dominion-online', 'ido_throne', 'Throne'],
+        'empire'   => ['ID - Empire', 'imperial-dominion-online', 'ido_empire', 'Empire'],
         'lands'    => ['ID - Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
         'military' => ['ID - Army', 'imperial-dominion-online-muster', 'ido_military', 'Army'],
         'war'      => ['ID - War Room', 'imperial-dominion-online-war', 'ido_war', 'War'],
@@ -95,7 +95,7 @@ class IDO_UI {
         $days_left = IDO_Rounds::days_left($round);
 
         // "7 of 30" while the pool is within its ceiling, so a ruler can see
-        // how much room is left before a day's grant is wasted. A kingdom
+        // how much room is left before a day's grant is wasted. An empire
         // holding more than the cap, because the cap was lowered under it,
         // would read as "70 of 30", so that case shows the count alone.
         $cap = max(1, IDO_Settings::int('turn_cap'));

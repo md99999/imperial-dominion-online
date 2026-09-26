@@ -1,9 +1,9 @@
 <?php
 /**
- * The building types a kingdom can raise on its land. Each building occupies one
+ * The building types an empire can raise on its land. Each building occupies one
  * acre; unbuilt acres are wilderness and produce nothing.
  *
- * Every column here is a real column on the kingdoms table (prefixed b_), so the
+ * Every column here is a real column on the ido_kingdoms table (prefixed b_), so the
  * key names are also part of the schema and must not change without a migration.
  */
 if (!defined('ABSPATH')) exit;
@@ -37,9 +37,9 @@ class IDO_Buildings {
                 'effect'  => 'Produces 85 grain a turn. Grain feeds your peasants and your army; run out and both start to desert.',
                 'yield'   => ['grain' => 85],
             ],
-            'counting_house' => [
-                'label'   => 'Counting House',
-                'plural'  => 'Counting Houses',
+            'mint' => [
+                'label'   => 'Mint',
+                'plural'  => 'Mints',
                 'effect'  => 'Produces 60 gold a turn on top of the taxes your peasants pay.',
                 'yield'   => ['gold' => 60],
             ],
@@ -58,7 +58,7 @@ class IDO_Buildings {
             'fortification' => [
                 'label'   => 'Fortification',
                 'plural'  => 'Fortifications',
-                'effect'  => 'Each fortification adds 0.6% to your defence, to a maximum of 50%. Rooks are built to break them.',
+                'effect'  => 'Each fortification adds 0.6% to your defence, to a maximum of 50%. Ballistae legions are built to break them.',
                 'yield'   => [],
             ],
         ];
@@ -82,13 +82,13 @@ class IDO_Buildings {
         return $all[$key]['plural'] ?? self::label($key);
     }
 
-    /** The kingdoms table column holding the standing count of a building. */
+    /** The empires table column holding the standing count of a building. */
     public static function column(string $key): string {
         return 'b_' . $key;
     }
 
     /**
-     * Total standing buildings on a kingdom row. Summed as a float and clamped,
+     * Total standing buildings on an empire row. Summed as a float and clamped,
      * so a corrupt row can never overflow the sum into a float and fail the
      * int return type, or wrap into a negative count.
      */

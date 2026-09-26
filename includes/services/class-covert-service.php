@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Covert work. An agent is the most expensive thing a kingdom can own, no ruler
+ * Covert work. An agent is the most expensive thing an empire can own, no ruler
  * may keep more than the crown allows (one, by default), and every mission
  * risks losing them for good. That is deliberate: intelligence should be a
  * considered investment, not a habit.
@@ -20,7 +20,7 @@ class IDO_Covert {
             ],
             'burn_granary' => [
                 'label'  => 'Burn the granaries',
-                'note'   => 'Puts a torch to a share of a rival grain store. A starving kingdom loses troops on its own.',
+                'note'   => 'Puts a torch to a share of a rival grain store. A starving empire loses troops on its own.',
                 'gold'   => 45000,
                 'chance' => 65,
                 'risk'   => 25,
@@ -87,7 +87,7 @@ class IDO_Covert {
     }
 
     /**
-     * Sends the agent against another kingdom. Failure often costs the agent,
+     * Sends the agent against another empire. Failure often costs the agent,
      * and a lost agent means paying the full hiring price again.
      *
      * @return array flash lines
@@ -105,7 +105,7 @@ class IDO_Covert {
 
         $target = IDO_Kingdom::find($target_id);
         if (!$target || (int) $target->round_id !== (int) $kingdom->round_id || (int) $target->is_defeated === 1) {
-            throw new IDO_Game_Exception('No such kingdom stands in this round.');
+            throw new IDO_Game_Exception('No such empire stands in this round.');
         }
         if (IDO_Kingdom::is_protected($target)) {
             throw new IDO_Game_Exception(sprintf('%s is still under the crown truce.', $target->kingdom_name));
@@ -123,7 +123,7 @@ class IDO_Covert {
         IDO_Kingdom::pay($kingdom, ['gold' => -(int) $op['gold']], 'Your treasury cannot cover the bribes.');
         $kingdom = IDO_Kingdom::reload($kingdom);
 
-        // Larger kingdoms are harder to move against, smaller ones easier.
+        // Larger empires are harder to move against, smaller ones easier.
         $size_ratio = max(0.5, min(2.0, ((int) $kingdom->networth + 1) / max(1, (int) $target->networth)));
         $chance = (int) round(min(95, max(10, $op['chance'] * (0.75 + 0.25 * $size_ratio))));
         $success = wp_rand(1, 100) <= $chance;
@@ -209,11 +209,11 @@ class IDO_Covert {
         }
         $lines[] = 'Under arms: ' . implode(', ', $army) . '.';
         $lines[] = sprintf('Defence rating %s, with %s fortifications standing.',
-            IDO_Game::fmt(round(IDO_Units::defence_power($target))), IDO_Game::fmt($target->b_fortification));
+            IDO_Game::fmt(round(IDO_Military::defence_power($target))), IDO_Game::fmt($target->b_fortification));
         return $lines;
     }
 
-    /** Missions run by or against a kingdom, newest first. */
+    /** Missions run by or against an empire, newest first. */
     public static function history(object $kingdom, int $limit = 25): array {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(

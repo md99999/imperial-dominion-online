@@ -31,8 +31,8 @@ class IDO_Market {
     /**
      * What a unit of something is roughly worth, in gold.
      *
-     * Derived from what the kingdom gives up to have it, using the counting
-     * house as the yardstick: a counting house earns 60 gold a turn, so a
+     * Derived from what the empire gives up to have it, using the counting
+     * mint as the yardstick: a mint earns 60 gold a turn, so a
      * farmstead's 85 grain a turn is worth about 60 gold, and a foundry's 25
      * iron about the same. Troops are priced at what training them costs,
      * before any barracks discount, with their iron valued the same way.
@@ -41,7 +41,7 @@ class IDO_Market {
      * Rulers set their own prices and always have.
      */
     public static function reference_price(string $key): float {
-        $gold_per_turn = 60.0;                      // one counting house
+        $gold_per_turn = 60.0;                      // one mint
         $iron_value = $gold_per_turn / 25.0;        // one foundry
 
         if ($key === 'grain')      return $gold_per_turn / 85.0;
@@ -293,7 +293,7 @@ class IDO_Market {
     }
 
     /**
-     * Returns escrowed goods for every open lot belonging to a kingdom. Used when
+     * Returns escrowed goods for every open lot belonging to an empire. Used when
      * a round is wound up so nothing is left in limbo.
      */
     public static function close_round(int $round_id): int {

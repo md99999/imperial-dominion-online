@@ -22,7 +22,7 @@ $settings = get_option('ido_settings');
 $delete_data = is_array($settings) && !empty($settings['delete_data_on_uninstall']);
 
 if (!$delete_data) {
-    // Kingdoms, rounds, battles and settings all stay exactly as they are, so
+    // Empires, rounds, battles and settings all stay exactly as they are, so
     // reinstalling picks the game up mid-round.
     return;
 }

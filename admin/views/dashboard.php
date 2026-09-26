@@ -22,7 +22,7 @@ $pages_made = is_array($page_ids) ? count($page_ids) : 0;
         <tbody>
             <tr><th>Round</th><td><?php echo $round ? esc_html($round->round_name) : 'None running'; ?></td></tr>
             <tr><th>Ends</th><td><?php echo $round && $round->ends_at ? esc_html($round->ends_at) : '&mdash;'; ?></td></tr>
-            <tr><th>Kingdoms</th><td><?php echo esc_html((string) $kingdoms); ?></td></tr>
+            <tr><th>Empires</th><td><?php echo esc_html((string) $kingdoms); ?></td></tr>
             <tr><th>Game pages</th><td><?php echo esc_html(sprintf('%d of %d created', $pages_made, count(IDO_UI::PAGES))); ?></td></tr>
             <tr><th>Last daily upkeep</th><td><?php echo esc_html((string) get_option('ido_last_daily', 'never')); ?></td></tr>
             <tr><th>Last hourly upkeep</th><td><?php echo esc_html((string) get_option('ido_last_hourly', 'never')); ?></td></tr>

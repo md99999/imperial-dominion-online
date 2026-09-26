@@ -70,19 +70,19 @@ class IDO_Settings {
             // Three days' worth: enough to forgive a weekend away, not enough
             // to bank a fortnight and spend it in one sitting.
             'turn_cap'               => 30,
-            // What a kingdom is founded with, so a new ruler has more than one
+            // What an empire is founded with, so a new ruler has more than one
             // day's worth to learn the game with on their first sitting.
             'starting_turns'         => 15,
             'attack_turn_cost'       => 2,
             'op_turn_cost'           => 1,
-            // Starting kingdom
+            // Starting empire
             'starting_land'          => 250,
             'starting_gold'          => 75000,
             'starting_grain'         => 40000,
             'starting_iron'          => 5000,
             'starting_peasants'      => 1500,
             'starting_pawns'        => 200,
-            'starting_knights'       => 50,
+            'starting_legionnaires'  => 50,
             'protection_hours'       => 72,
             // Land and building
             'explore_base_acres'     => 30,
@@ -90,11 +90,22 @@ class IDO_Settings {
             'build_iron_per_acre'    => 15,
             'build_days'             => 1,
             'demolish_refund_percent'    => 20,
+            // Siege engines. Priced like a fortification, because that is what
+            // a ruler is choosing between when they spend the acre's worth of
+            // gold: a wall that never leaves, or an engine that can.
+            'catapult_gold_cost'     => 300,
+            'catapult_iron_cost'     => 15,
             // War
             'target_min_percent'     => 40,
             'target_max_percent'     => 250,
             'max_hits_per_target'    => 3,
             'conquest_land_percent'  => 6,
+            // What happens to the catapults the losing side had at stake: the
+            // winner drags this share home, and a further share is smashed
+            // where it stands. Together they are what a defeat costs in engines,
+            // so 30 and 10 means the loser is out 40% of what they committed.
+            'catapult_capture_percent' => 30,
+            'catapult_destroy_percent' => 10,
             // Covert
             'agent_gold_cost'        => 500000,
             'max_agents'             => 1,
@@ -253,9 +264,9 @@ class IDO_Game {
     }
 
     /**
-     * The name of this world: every kingdom on this site belongs to one
+     * The name of this world: every empire on this site belongs to one
      * dominion, named after the WordPress site unless a game master overrides
-     * it. When kingdoms on different sites eventually go to war, this is the
+     * it. When empires on different sites eventually go to war, this is the
      * name each side is known by.
      */
     public static function dominion(): string {

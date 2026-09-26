@@ -3,7 +3,7 @@
 **A turn-based empire building and conquest game for WordPress.**
 
 The old empire is broken. Its provinces lie open, its granaries are unguarded, and every ruler
-with a banner and a few hundred acres believes the throne is theirs. Claim land, raise a kingdom,
+with a banner and a few hundred acres believes the purple is theirs. Claim land, raise an empire,
 feed it, arm it, and take what your neighbours cannot hold.
 
 Imperial Dominion Online is played entirely in the browser through ordinary WordPress pages.
@@ -53,7 +53,7 @@ endorsed by its creators or rights holders.
 
 | Page | Shortcode | What it is |
 | --- | --- | --- |
-| ID - Throne Room | `[ido_throne]` | The state of the kingdom, and what one turn currently yields |
+| ID - Empire | `[ido_empire]` | The state of the empire, and what one turn currently yields |
 | ID - Lands | `[ido_lands]` | Settle wilderness, raise buildings, demolish them |
 | ID - Army | `[ido_military]` | Train and disband troops |
 | ID - War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
@@ -66,22 +66,22 @@ endorsed by its creators or rights holders.
 
 ## How a round is played
 
-Each ruler gets **one kingdom per round**, tied to their WordPress account.
+Each ruler gets **one empire per round**, tied to their WordPress account.
 
 **Turns are the currency.** You are granted 10 turns a day (configurable), stored up to 30, and a new
-kingdom is founded with 15.
+empire is founded with 15.
 Every order costs turns, and every turn spent pays out your income at that instant. Turns sitting
 unspent earn nothing at all, which is what keeps the game moving.
 
 **Land and buildings.** Send settlers to claim wilderness, then raise buildings on it. The bigger
-your kingdom, the fewer acres a scouting party finds and the more each one costs, until taking land
+your empire, the fewer acres a scouting party finds and the more each one costs, until taking land
 from a neighbour is cheaper than settling it. Building orders finish on the daily tick.
 
 | Building | What it does |
 | --- | --- |
 | Homesteads | House 30 peasants each, and peasants pay the taxes |
 | Farmsteads | 85 grain a turn |
-| Counting Houses | 60 gold a turn |
+| Mints | 60 gold a turn |
 | Foundries | 25 iron a turn |
 | Barracks | Trim up to 35% from the gold price of training |
 | Fortifications | Up to +50% defence |
@@ -93,20 +93,20 @@ army built for one job is nearly useless at the other.
 | Troops | Offence | Defence | Notes |
 | --- | --- | --- | --- |
 | Pawns | 0 | 3 | Cheap conscripts |
-| Knights | 1 | 9 | The backbone of any kingdom expecting to be hit |
-| Squires | 9 | 1 | Raiders, worthless at home |
-| Rooks | 18 | 4 | The only reliable answer to fortifications |
+| Legionnaires | 1 | 9 | The backbone of any empire expecting to be hit |
+| Centurions | 9 | 1 | Officers who lead from the front, worthless at home |
+| Ballistae Legions | 18 | 4 | The only reliable answer to fortifications |
 
 **War.** A march costs 2 turns and resolves the moment you commit, against whatever the defender
-has standing at that instant. Both sides get a written report. You may only attack kingdoms worth
-between 40% and 250% of your own net worth, at most three times each a day. New kingdoms hold a
+has standing at that instant. Both sides get a written report. You may only attack empires worth
+between 40% and 250% of your own net worth, at most three times each a day. New empires hold a
 72-hour crown truce, which ends the moment they attack somebody.
 
 - **Conquest** takes acres, and the buildings standing on them.
 - **Raid** strips gold, grain and iron.
 - **Siege** throws down buildings, fortifications first.
 
-**The spy court.** An agent is the most expensive thing a kingdom can own, costing 500,000 gold,
+**The spy court.** An agent is the most expensive thing an empire can own, costing 500,000 gold,
 and no ruler may keep more than one. Missions can fail, and a failed mission
 often ends with the agent on a rope: replacing them means paying the full price again.
 Reconnaissance tells you what a rival is actually holding; the other missions burn granaries,
@@ -116,7 +116,7 @@ wreck forges or set peasants against their lord.
 your stores the moment you post them and return if the lot expires or you withdraw it. The crown
 takes 5% of every sale.
 
-**The round ends** after 45 days. The standings are carved into the Hall of Fame, every kingdom is
+**The round ends** after 45 days. The standings are carved into the Hall of Fame, every empire is
 retired, and the next round opens automatically, so a player who joins late is never permanently
 behind.
 
@@ -157,7 +157,7 @@ The admin **Maintenance** screen shows when each tick last ran and can run eithe
 
 ### Deleting the plugin
 
-Deleting Imperial Dominion Online **keeps every game table by default**: kingdoms, rounds,
+Deleting Imperial Dominion Online **keeps every game table by default**: empires, rounds,
 battles, the Hall of Fame and your settings all survive, so reinstalling resumes the game
 mid-round. Deactivating never touches the data either.
 
@@ -179,7 +179,7 @@ otherwise.
 - Spending is atomic. `IDO_Kingdom::pay()` writes one guarded `UPDATE ... WHERE gold >= cost` and
   checks the affected row count, so two requests from the same ruler cannot spend the same gold
   twice. Battles and market purchases additionally take a named lock.
-- Everything rendered is escaped at the point of output, including player-supplied kingdom and ruler
+- Everything rendered is escaped at the point of output, including player-supplied empire and ruler
   names, which are validated on the way in as well.
 
 ---
@@ -188,7 +188,7 @@ otherwise.
 
 Phase 1 (this release) is a complete game on a single WordPress site.
 
-Phase 2 is **inter-site war**: letting the kingdoms of one WordPress site combine their forces
+Phase 2 is **inter-site war**: letting the empires of one WordPress site combine their forces
 against a game hosted on another. See [docs/CROSS-SITE.md](docs/CROSS-SITE.md) for the design
 questions that have to be answered first, above all how a war packet is signed, verified and
 replayed exactly once.

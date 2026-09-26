@@ -55,7 +55,7 @@ echo "\n=== a game master who has opted in ===\n";
 $db = run_uninstall(['delete_data_on_uninstall' => 1]);
 $dropped = $db->dropped();
 check('every game table is dropped', count($dropped) === 9, count($dropped) . ' dropped');
-check('kingdoms are among them', (bool) array_filter($dropped, static function ($q) {
+check('empires are among them', (bool) array_filter($dropped, static function ($q) {
     return strpos($q, 'wp_ido_kingdoms') !== false;
 }));
 check('options are removed too', in_array('ido_settings', $GLOBALS['ido_deleted_options'], true));

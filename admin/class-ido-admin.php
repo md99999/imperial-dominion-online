@@ -21,7 +21,7 @@ class IDO_Admin {
         );
         add_submenu_page('ido_dashboard', 'Dashboard', 'Dashboard', self::CAP, 'ido_dashboard', [__CLASS__, 'render_dashboard']);
         add_submenu_page('ido_dashboard', 'Rounds', 'Rounds', self::CAP, 'ido_rounds', [__CLASS__, 'render_rounds']);
-        add_submenu_page('ido_dashboard', 'Kingdoms', 'Kingdoms', self::CAP, 'ido_kingdoms', [__CLASS__, 'render_kingdoms']);
+        add_submenu_page('ido_dashboard', 'Empires', 'Empires', self::CAP, 'ido_kingdoms', [__CLASS__, 'render_kingdoms']);
         add_submenu_page('ido_dashboard', 'Settings', 'Settings', self::CAP, 'ido_settings', [__CLASS__, 'render_settings']);
         add_submenu_page('ido_dashboard', 'Maintenance', 'Maintenance', self::CAP, 'ido_maintenance', [__CLASS__, 'render_maintenance']);
     }
@@ -171,17 +171,17 @@ class IDO_Admin {
         return sprintf('%d pages created, %d renamed to match the game, %d already correct.', $created, $renamed, $kept);
     }
 
-    /** Removes one kingdom and everything hanging off it. */
+    /** Removes one empire and everything hanging off it. */
     private static function delete_kingdom(int $kingdom_id): string {
         global $wpdb;
         $kingdom = IDO_Kingdom::find($kingdom_id);
-        if (!$kingdom) return 'No such kingdom.';
+        if (!$kingdom) return 'No such empire.';
 
         $wpdb->delete(IDO_DB::t('constructions'), ['kingdom_id' => $kingdom_id], ['%d']);
         $wpdb->delete(IDO_DB::t('listings'), ['seller_kingdom_id' => $kingdom_id], ['%d']);
         $wpdb->delete(IDO_DB::t('kingdoms'), ['id' => $kingdom_id], ['%d']);
 
-        IDO_Log::admin('delete_kingdom', sprintf('Deleted kingdom %s (id %d).', $kingdom->kingdom_name, $kingdom_id));
+        IDO_Log::admin('delete_kingdom', sprintf('Deleted empire %s (id %d).', $kingdom->kingdom_name, $kingdom_id));
         return sprintf('%s has been struck from the rolls.', $kingdom->kingdom_name);
     }
 

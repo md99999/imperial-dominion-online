@@ -14,7 +14,7 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
 <div class="ido-panel">
     <h3 class="ido-panel-title">Welcome to <?php echo esc_html(IDO_Game::dominion()); ?></h3>
     <p>
-        The old empire is broken and its provinces lie open. Claim a kingdom, settle the wilderness, raise
+        The old empire is broken and its provinces lie open. Claim an empire, settle the wilderness, raise
         farmsteads and fortifications on it, and turn your peasants into an army. Then decide what to do about
         your neighbours, who are doing exactly the same thing a few acres away.
     </p>
@@ -22,12 +22,12 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
         You get <strong><?php echo esc_html((string) $s['turns_per_day']); ?> turns a day</strong>. Every order
         costs turns, and every turn you spend pays out your income at once, so the game rewards showing up rather
         than grinding. A round lasts <strong><?php echo esc_html((string) $s['round_days']); ?> days</strong>;
-        at the end, the richest kingdom is champion, everything is wiped, and a new round opens for everyone.
+        at the end, the richest empire is champion, everything is wiped, and a new round opens for everyone.
     </p>
     <?php
     /*
      * Three states, not two: a visitor has to sign in, a signed-in reader who
-     * has not claimed a kingdom has to claim one, and a ruler never sees this
+     * has not claimed an empire has to claim one, and a ruler never sees this
      * panel at all. Showing "Sign in to play" to somebody already signed in is
      * the kind of dead end that makes a game look broken.
      */
@@ -46,11 +46,11 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
     <?php else : ?>
         <p class="ido-dim">
             Signed in as <strong><?php echo esc_html(wp_get_current_user()->display_name); ?></strong>,
-            with no kingdom in <?php echo esc_html($round ? $round->round_name : 'this round'); ?> yet.
+            with no empire in <?php echo esc_html($round ? $round->round_name : 'this round'); ?> yet.
         </p>
         <p>
             <?php if ($round && IDO_Settings::int('allow_new_kingdoms')) : ?>
-                <a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('throne')); ?>">Claim your kingdom</a>
+                <a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('empire')); ?>">Claim your empire</a>
             <?php endif; ?>
             <?php if (($key ?? '') !== 'guide') : ?>
                 <a class="ido-btn ido-btn-alt" href="<?php echo esc_url(IDO_UI::url('guide')); ?>">How to play</a>
@@ -84,7 +84,7 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
                     <?php if ($left !== null) : ?>
                         <tr><th>Time left</th><td><?php echo esc_html(sprintf(_n('%d day', '%d days', $left, 'imperial-dominion-online'), $left)); ?></td></tr>
                     <?php endif; ?>
-                    <tr><th>Kingdoms</th><td><?php echo esc_html(IDO_Game::fmt($count)); ?></td></tr>
+                    <tr><th>Empires</th><td><?php echo esc_html(IDO_Game::fmt($count)); ?></td></tr>
                     <tr><th>Turns a day</th><td><?php echo esc_html((string) $s['turns_per_day']); ?></td></tr>
                     <tr><th>New rulers</th><td><?php echo $s['allow_new_kingdoms'] ? 'Welcome' : 'The rolls are closed'; ?></td></tr>
                 </tbody>
@@ -96,12 +96,12 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
 <div class="ido-panel">
     <h3 class="ido-panel-title">Who leads <?php echo esc_html(IDO_Game::dominion()); ?></h3>
     <?php if (!$standings) : ?>
-        <p class="ido-dim">Not one throne is claimed. The first kingdom founded takes the top of this table by
+        <p class="ido-dim">Not one empire is claimed. The first empire founded takes the top of this table by
             default, and holds it until somebody takes it from them.</p>
     <?php else : ?>
         <table class="ido-table ido-table-wide">
             <thead>
-                <tr><th class="ido-right">#</th><th>Kingdom</th><th>Ruler</th><th>Title</th>
+                <tr><th class="ido-right">#</th><th>Empire</th><th>Ruler</th><th>Title</th>
                     <th class="ido-right">Acres</th><th class="ido-right">Net worth</th><th class="ido-right">Victories</th></tr>
             </thead>
             <tbody>
@@ -120,7 +120,7 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
         </table>
         <?php if ($count > count($standings)) : ?>
             <p class="ido-dim">
-                <?php echo esc_html(sprintf('Showing the top %d of %d kingdoms.', count($standings), $count)); ?>
+                <?php echo esc_html(sprintf('Showing the top %d of %d empires.', count($standings), $count)); ?>
             </p>
         <?php endif; ?>
     <?php endif; ?>
@@ -131,7 +131,7 @@ $count     = $round ? IDO_Rankings::kingdom_count((int) $round->id) : 0;
     <div class="ido-panel">
         <h3 class="ido-panel-title">Champions of rounds past</h3>
         <table class="ido-table ido-table-wide">
-            <thead><tr><th>Round</th><th>Kingdom</th><th>Ruler</th><th>Title</th><th class="ido-right">Net worth</th></tr></thead>
+            <thead><tr><th>Round</th><th>Empire</th><th>Ruler</th><th>Title</th><th class="ido-right">Net worth</th></tr></thead>
             <tbody>
             <?php foreach ($hall as $row) : ?>
                 <tr>

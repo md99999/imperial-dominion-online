@@ -3,7 +3,7 @@
  * Integration test: Send Settlers, against a real WordPress and a real database.
  *
  * The other tests stub $wpdb, so they prove the code runs but not that the SQL
- * does what it claims. This one boots WordPress, creates a throwaway kingdom,
+ * does what it claims. This one boots WordPress, creates a throwaway empire,
  * explores with it, checks what actually moved in the database, and deletes it
  * again. No row belonging to a real player is touched.
  *
@@ -52,7 +52,7 @@ global $wpdb;
 $round = IDO_Rounds::current();
 if (!$round) { say('No round is running.'); exit(1); }
 
-$name = 'Test Kingdom ' . wp_rand(1000, 9999);
+$name = 'Test Empire ' . wp_rand(1000, 9999);
 $created = $wpdb->insert(IDO_DB::t('kingdoms'), [
     'round_id'        => (int) $round->id,
     'user_id'         => 999999,               // deliberately not a real user
@@ -70,7 +70,7 @@ $created = $wpdb->insert(IDO_DB::t('kingdoms'), [
     'created_at'      => IDO_Game::now(),
 ]);
 $id = (int) $wpdb->insert_id;
-if (!$created || !$id) { say('Could not create the test kingdom: ' . $wpdb->last_error); exit(1); }
+if (!$created || !$id) { say('Could not create the test empire: ' . $wpdb->last_error); exit(1); }
 
 try {
     $before  = IDO_Kingdom::find($id);
@@ -122,9 +122,9 @@ try {
     $wpdb->delete(IDO_DB::t('kingdoms'), ['id' => $id], ['%d']);
     $wpdb->query($wpdb->prepare(
         'DELETE FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND message LIKE %s',
-        (int) $round->id, '%Test Kingdom%'
+        (int) $round->id, '%Test Empire%'
     ));
-    say('Test kingdom removed.');
+    say('Test empire removed.');
 }
 
 exit($fails === 0 ? 0 : 1);

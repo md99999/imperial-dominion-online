@@ -10,7 +10,7 @@ $position  = 0;
     <h3 class="ido-panel-title">Standings</h3>
     <table class="ido-table ido-table-wide">
         <thead>
-            <tr><th class="ido-right">#</th><th>Kingdom</th><th>Ruler</th><th>Title</th>
+            <tr><th class="ido-right">#</th><th>Empire</th><th>Ruler</th><th>Title</th>
                 <th class="ido-right">Acres</th><th class="ido-right">Net worth</th><th class="ido-right">Victories</th></tr>
         </thead>
         <tbody>
@@ -37,7 +37,7 @@ $position  = 0;
         <p class="ido-dim">No round has been carved into the stone yet.</p>
     <?php else : ?>
         <table class="ido-table ido-table-wide">
-            <thead><tr><th>Round</th><th class="ido-right">#</th><th>Kingdom</th><th>Ruler</th><th>Title</th><th class="ido-right">Net worth</th></tr></thead>
+            <thead><tr><th>Round</th><th class="ido-right">#</th><th>Empire</th><th>Ruler</th><th>Title</th><th class="ido-right">Net worth</th></tr></thead>
             <tbody>
             <?php foreach ($hall as $row) : ?>
                 <tr>

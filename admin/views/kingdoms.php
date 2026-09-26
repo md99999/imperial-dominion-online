@@ -4,7 +4,7 @@ $round = IDO_Rounds::current();
 $kingdoms = $round ? IDO_Rankings::standings((int) $round->id, 200) : [];
 ?>
 <div class="wrap">
-    <h1>Kingdoms</h1>
+    <h1>Empires</h1>
     <?php IDO_Admin::notice(); ?>
 
     <?php if (!$round) : ?>
@@ -13,7 +13,7 @@ $kingdoms = $round ? IDO_Rankings::standings((int) $round->id, 200) : [];
         <p>Standings for <strong><?php echo esc_html($round->round_name); ?></strong>.</p>
         <table class="widefat striped">
             <thead>
-                <tr><th>#</th><th>Kingdom</th><th>Ruler</th><th>WordPress user</th>
+                <tr><th>#</th><th>Empire</th><th>Ruler</th><th>WordPress user</th>
                     <th>Acres</th><th>Net worth</th><th>Won</th><th>Suffered</th><th></th></tr>
             </thead>
             <tbody>
@@ -33,7 +33,7 @@ $kingdoms = $round ? IDO_Rankings::standings((int) $round->id, 200) : [];
                         <?php echo IDO_Admin::form_open('delete_kingdom', 'ido_kingdoms'); ?>
                             <input type="hidden" name="kingdom_id" value="<?php echo esc_attr((string) $kingdom->id); ?>">
                             <button type="submit" class="button button-link-delete"
-                                onclick="return confirm('Delete this kingdom permanently?');">Delete</button>
+                                onclick="return confirm('Delete this empire permanently?');">Delete</button>
                         </form>
                     </td>
                 </tr>

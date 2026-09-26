@@ -24,14 +24,14 @@ $highest_title = end($titles);
 <div class="ido-panel">
     <h3 class="ido-panel-title">The goal</h3>
     <p>
-        You rule one kingdom in <strong><?php echo esc_html(IDO_Game::dominion()); ?></strong>, among every other
-        kingdom on this site. A round runs <strong><?php echo esc_html((string) $s['round_days']); ?> days</strong>.
-        When it ends, the kingdom with the highest <strong>net worth</strong> is champion, the standings are carved
+        You rule one empire in <strong><?php echo esc_html(IDO_Game::dominion()); ?></strong>, among every other
+        empire on this site. A round runs <strong><?php echo esc_html((string) $s['round_days']); ?> days</strong>.
+        When it ends, the empire with the highest <strong>net worth</strong> is champion, the standings are carved
         into the Hall of Fame, and everyone begins again on equal ground.
     </p>
     <p>
         Net worth counts everything you hold: land, buildings, peasants, your army and your treasury. There is no
-        way to win by hiding. A large, rich, undefended kingdom is simply a target, and the ranking that makes you
+        way to win by hiding. A large, rich, undefended empire is simply a target, and the ranking that makes you
         proud is the same ranking that tells your neighbours what you are worth taking.
     </p>
 </div>
@@ -68,7 +68,7 @@ $highest_title = end($titles);
             <tr><td>Settle new land</td><td class="ido-right">1</td></tr>
             <tr><td>Order buildings (any quantity)</td><td class="ido-right">1</td></tr>
             <tr><td>Train troops (any quantity)</td><td class="ido-right">1</td></tr>
-            <tr><td>March on a kingdom</td><td class="ido-right"><?php echo esc_html((string) $s['attack_turn_cost']); ?></td></tr>
+            <tr><td>March on an empire</td><td class="ido-right"><?php echo esc_html((string) $s['attack_turn_cost']); ?></td></tr>
             <tr><td>Send an agent</td><td class="ido-right"><?php echo esc_html((string) $s['op_turn_cost']); ?></td></tr>
             <tr><td>Post or buy on the market</td><td class="ido-right">0</td></tr>
         </tbody>
@@ -82,20 +82,20 @@ $highest_title = end($titles);
 <div class="ido-panel">
     <h3 class="ido-panel-title">Your first day, step by step</h3>
     <ol class="ido-list">
-        <li>Claim your kingdom. You start with <?php echo esc_html(IDO_Game::fmt($s['starting_land'])); ?> acres,
+        <li>Claim your empire. You start with <?php echo esc_html(IDO_Game::fmt($s['starting_land'])); ?> acres,
             <?php echo esc_html(IDO_Game::fmt($s['starting_gold'])); ?> gold, and a crown truce of
             <?php echo esc_html((string) $s['protection_hours']); ?> hours that nobody can break.</li>
         <li>Open <strong>Lands</strong> and look at your wilderness: acres with nothing on them, earning nothing.</li>
         <li><strong>Build farmsteads and homesteads first.</strong> Food and people come before everything. Check the
-            Throne Room afterwards: if grain per turn is negative, you are heading for starvation.</li>
+            Empire screen afterwards: if grain per turn is negative, you are heading for starvation.</li>
         <li>Spend a turn or two <strong>settling more land</strong>, then build on that too.</li>
-        <li>Open <strong>Muster</strong> and train defenders. Your truce ends, and an undefended kingdom with a good
+        <li>Open <strong>Muster</strong> and train defenders. Your truce ends, and an undefended empire with a good
             net worth is the most attractive target on the board.</li>
         <li>Spend every remaining turn. Come back tomorrow.</li>
     </ol>
     <p class="ido-dim">
         A reasonable opening is roughly a quarter of your land in farmsteads, a quarter in homesteads, and the rest
-        split between counting houses, foundries and defence. There is no correct answer, which is the point.
+        split between mints, foundries and defence. There is no correct answer, which is the point.
     </p>
 </div>
 
@@ -135,7 +135,7 @@ $highest_title = end($titles);
     </p>
     <p class="ido-warning">
         If your grain runs out, peasants flee and troops desert, every single turn you spend. Watch the grain line in
-        the Throne Room. If it is negative, build farmsteads or buy grain on the market before you spend anything else.
+        the Empire screen. If it is negative, build farmsteads or buy grain on the market before you spend anything else.
     </p>
 </div>
 
@@ -185,17 +185,17 @@ $highest_title = end($titles);
     </table>
     <h4>The rules of engagement</h4>
     <ul class="ido-list">
-        <li>You may only attack kingdoms worth between
+        <li>You may only attack empires worth between
             <strong><?php echo esc_html((string) $s['target_min_percent']); ?>%</strong> and
             <strong><?php echo esc_html((string) $s['target_max_percent']); ?>%</strong> of your own net worth.
             Nobody can farm a beginner, and nobody is safe purely by being large.</li>
-        <li>You may strike the same kingdom at most
+        <li>You may strike the same empire at most
             <strong><?php echo esc_html((string) $s['max_hits_per_target']); ?></strong> times a day.</li>
-        <li>New kingdoms hold a crown truce for
+        <li>New empires hold a crown truce for
             <strong><?php echo esc_html((string) $s['protection_hours']); ?> hours</strong>. It ends the moment they
             march on somebody, so you cannot raid from behind it.</li>
         <li>Losses are permanent on both sides. Winning a battle still costs you soldiers.</li>
-        <li>Fortifications lift your defence; rooks are built to break through them.</li>
+        <li>Fortifications lift your defence; ballistae legions are built to break through them.</li>
     </ul>
 </div>
 
@@ -234,7 +234,7 @@ $highest_title = end($titles);
     <p class="ido-dim">
         The crown takes <?php echo esc_html((string) $s['market_tax_percent']); ?>% of every sale. Lots expire after
         <?php echo esc_html(sprintf(_n('%d day', '%d days', (int) $s['listing_days'], 'imperial-dominion-online'), (int) $s['listing_days'])); ?>,
-        and you may keep <?php echo esc_html((string) $s['max_listings_per_kingdom']); ?> open at a time. A kingdom
+        and you may keep <?php echo esc_html((string) $s['max_listings_per_kingdom']); ?> open at a time. An empire
         that farms grain well and sells the surplus can fund an army it could never have trained on its own.
     </p>
 </div>
@@ -270,16 +270,16 @@ $highest_title = end($titles);
             echo '.';
         }
         ?>
-        When the clock runs out the standings are archived to the Hall of Fame, every kingdom is retired, and a new
+        When the clock runs out the standings are archived to the Hall of Fame, every empire is retired, and a new
         round opens. Nobody carries an advantage across, so arriving late in a round costs you nothing but this round.
     </p>
 </div>
 
 <?php if (!$has_kingdom) : ?>
     <div class="ido-panel">
-        <h3 class="ido-panel-title">Take a throne</h3>
+        <h3 class="ido-panel-title">Take an empire</h3>
         <?php if (!is_user_logged_in()) : ?>
-            <p>Sign in to claim your kingdom.</p>
+            <p>Sign in to claim your empire.</p>
             <p>
                 <a class="ido-btn" href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">Sign in</a>
                 <?php if (get_option('users_can_register')) : ?>
@@ -287,7 +287,7 @@ $highest_title = end($titles);
                 <?php endif; ?>
             </p>
         <?php else : ?>
-            <p><a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('throne')); ?>">Claim your kingdom</a></p>
+            <p><a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('empire')); ?>">Claim your empire</a></p>
         <?php endif; ?>
     </div>
 <?php endif; ?>

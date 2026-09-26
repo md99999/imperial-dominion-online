@@ -17,7 +17,7 @@ $has_agent = (int) $kingdom->agents > 0;
         An agent is the most expensive servant a crown can keep, and no ruler may keep more than
         <strong><?php echo esc_html((string) $max); ?></strong>. Hiring one costs
         <strong><?php echo esc_html(IDO_Game::fmt($cost['gold'])); ?></strong> gold, which is a
-        fortune no young kingdom can raise: the trade in secrets belongs to those who have already
+        fortune no young empire can raise: the trade in secrets belongs to those who have already
         built something worth protecting.
     </p>
     <p class="ido-dim">
@@ -52,7 +52,7 @@ $has_agent = (int) $kingdom->agents > 0;
             <label class="ido-field">
                 <span>Target</span>
                 <select name="target_id" class="ido-select" required>
-                    <option value="">Choose a kingdom</option>
+                    <option value="">Choose an empire</option>
                     <?php foreach ($targets as $target) : ?>
                         <?php if (IDO_Kingdom::is_protected($target)) continue; ?>
                         <option value="<?php echo esc_attr((string) $target->id); ?>">

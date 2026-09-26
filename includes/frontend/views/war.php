@@ -11,27 +11,29 @@ $turn_cost = IDO_Settings::int('attack_turn_cost');
 $selected  = isset($_GET['target']) ? (int) $_GET['target'] : 0;
 $band_min  = IDO_Settings::int('target_min_percent');
 $band_max  = IDO_Settings::int('target_max_percent');
+$capture_pct = IDO_Settings::int('catapult_capture_percent');
+$destroy_pct = IDO_Settings::int('catapult_destroy_percent');
 ?>
 <div class="ido-panel">
     <h3 class="ido-panel-title">Order a march</h3>
     <?php if (IDO_Kingdom::is_protected($kingdom)) : ?>
-        <p class="ido-warning">You are under the crown truce. Marching on another kingdom ends it at once and leaves you open to attack.</p>
+        <p class="ido-warning">You are under the crown truce. Marching on another empire ends it at once and leaves you open to attack.</p>
     <?php endif; ?>
     <p class="ido-dim">
         A march costs <?php echo esc_html((string) $turn_cost); ?> turns and resolves the moment you commit.
-        You may attack kingdoms worth between <?php echo esc_html((string) $band_min); ?>% and
+        You may attack empires worth between <?php echo esc_html((string) $band_min); ?>% and
         <?php echo esc_html((string) $band_max); ?>% of your net worth, at most
         <?php echo esc_html((string) IDO_Settings::int('max_hits_per_target')); ?> times each a day.
     </p>
 
     <?php if (!$targets) : ?>
-        <p>No kingdom is within reach of your banners. Grow, or wait for your rivals to.</p>
+        <p>No empire is within reach of your banners. Grow, or wait for your rivals to.</p>
     <?php else : ?>
         <?php echo IDO_UI::form_open('attack'); ?>
             <label class="ido-field">
                 <span>Target</span>
                 <select name="target_id" class="ido-select" required>
-                    <option value="">Choose a kingdom</option>
+                    <option value="">Choose an empire</option>
                     <?php foreach ($targets as $target) :
                         $is_protected = IDO_Kingdom::is_protected($target); ?>
                         <option value="<?php echo esc_attr((string) $target->id); ?>"
@@ -66,7 +68,23 @@ $band_max  = IDO_Settings::int('target_max_percent');
                         <?php echo IDO_UI::number_field('force_' . $key, 0, 0); ?>
                     </label>
                 <?php endforeach; ?>
+                <?php foreach (IDO_Engines::all() as $key => $engine) : ?>
+                    <label class="ido-field ido-field-small">
+                        <span><?php echo esc_html($engine['plural']); ?>
+                            <span class="ido-dim">(<?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Engines::column($key)})); ?> standing, offence <?php echo esc_html((string) $engine['offence']); ?>, at stake)</span>
+                        </span>
+                        <?php echo IDO_UI::number_field('engine_' . $key, 0, 0); ?>
+                    </label>
+                <?php endforeach; ?>
             </div>
+
+            <p class="ido-dim">
+                Every engine you send marches with the army and is in the wager. Win and you drag
+                <?php echo esc_html((string) $capture_pct); ?>% of the defender's engines home; lose and the
+                defender takes <?php echo esc_html((string) $capture_pct); ?>% of the train you sent while a
+                further <?php echo esc_html((string) $destroy_pct); ?>% burns on the field. Engines left at
+                home are never at stake when you attack, but all of them are when you are attacked.
+            </p>
 
             <p><button type="submit" class="ido-btn ido-btn-danger">Sound the horns</button> <?php echo IDO_UI::turn_cost($turn_cost); ?></p>
         </form>
@@ -74,9 +92,9 @@ $band_max  = IDO_Settings::int('target_max_percent');
 </div>
 
 <div class="ido-panel">
-    <h3 class="ido-panel-title">Kingdoms within reach</h3>
+    <h3 class="ido-panel-title">Empires within reach</h3>
     <table class="ido-table ido-table-wide">
-        <thead><tr><th>Kingdom</th><th>Ruler</th><th class="ido-right">Acres</th><th class="ido-right">Net worth</th><th>Status</th></tr></thead>
+        <thead><tr><th>Empire</th><th>Ruler</th><th class="ido-right">Acres</th><th class="ido-right">Net worth</th><th>Status</th></tr></thead>
         <tbody>
         <?php foreach ($targets as $target) : ?>
             <tr>

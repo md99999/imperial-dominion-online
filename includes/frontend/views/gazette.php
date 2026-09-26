@@ -1,5 +1,5 @@
 <?php
-/** Gazette: what the kingdoms have been saying about each other. */
+/** Gazette: what the empires have been saying about each other. */
 if (!defined('ABSPATH')) exit;
 /** @var object $kingdom */
 $round = IDO_Rounds::current();
@@ -14,7 +14,7 @@ $news  = IDO_Rankings::news((int) $kingdom->round_id, 100);
             <?php if ($left !== null) : ?>
                 &middot; <?php echo esc_html(sprintf(_n('%d day remains', '%d days remain', $left, 'imperial-dominion-online'), $left)); ?>
             <?php endif; ?>
-            &middot; <?php echo esc_html(sprintf('%d kingdoms', IDO_Rankings::kingdom_count((int) $kingdom->round_id))); ?>
+            &middot; <?php echo esc_html(sprintf('%d empires', IDO_Rankings::kingdom_count((int) $kingdom->round_id))); ?>
         </p>
     <?php endif; ?>
 

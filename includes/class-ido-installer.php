@@ -28,8 +28,30 @@ class IDO_Installer {
     public static function maybe_upgrade(): void {
         if (get_option('ido_db_version') !== IDO_DB_VERSION) {
             self::migrate_settings();
+            self::migrate_page_ids();
             self::install_schema();
         }
+    }
+
+    /**
+     * Carries the recorded page ids across when a screen is renamed. Without
+     * this the game forgets which WordPress page held the old screen and the
+     * next press of "create pages" makes a duplicate beside it.
+     */
+    private static function migrate_page_ids(): void {
+        $ids = get_option('ido_page_ids');
+        if (!is_array($ids)) return;
+
+        $renamed = ['throne' => 'empire'];
+        $changed = false;
+        foreach ($renamed as $old => $new) {
+            if (array_key_exists($old, $ids)) {
+                if (!array_key_exists($new, $ids)) $ids[$new] = $ids[$old];
+                unset($ids[$old]);
+                $changed = true;
+            }
+        }
+        if ($changed) update_option('ido_page_ids', $ids);
     }
 
     /**
@@ -40,7 +62,10 @@ class IDO_Installer {
         $saved = get_option(IDO_Settings::OPTION);
         if (!is_array($saved)) return;
 
-        $renamed = ['raze_refund_percent' => 'demolish_refund_percent'];
+        $renamed = [
+            'raze_refund_percent' => 'demolish_refund_percent',
+            'starting_knights'    => 'starting_legionnaires',
+        ];
         $changed = false;
         foreach ($renamed as $old => $new) {
             if (array_key_exists($old, $saved)) {
@@ -84,14 +109,20 @@ class IDO_Installer {
         $columns = $wpdb->get_col('SHOW COLUMNS FROM `' . $table . '`');
         if (!is_array($columns)) return;
 
-        // 1.8.0 renamed the troop types. The columns are renamed rather than
-        // added, so standing armies carry over instead of being wiped, and any
-        // troops sitting on the market keep pointing at something real.
+        // 1.8.0 renamed the troop types, and 1.15.0 renamed them again when the
+        // game took its Roman theme. The columns are renamed rather than added,
+        // so standing armies carry over instead of being wiped, and any troops
+        // sitting on the market keep pointing at something real. The 1.8.0 names
+        // are still listed so a site that skipped that release lands in the same
+        // place: each rename runs in turn, u_warden -> u_knight -> u_legionnaire.
         $troops = [
             'u_levy'        => 'u_pawn',
             'u_warden'      => 'u_knight',
             'u_reaver'      => 'u_squire',
             'u_siege_train' => 'u_rook',
+            'u_knight'      => 'u_legionnaire',
+            'u_squire'      => 'u_centurion',
+            'u_rook'        => 'u_ballista_legion',
         ];
         foreach ($troops as $old => $new) {
             if (in_array($old, $columns, true) && !in_array($new, $columns, true)) {
@@ -100,7 +131,20 @@ class IDO_Installer {
                     'UPDATE ' . IDO_DB::t('listings') . ' SET item_key = %s WHERE item_key = %s',
                     substr($new, 2), substr($old, 2)
                 ));
+                // Later renames in this list have to see the new name, or a
+                // chained rename would only ever run its first step.
+                $columns = array_map(static fn($c) => $c === $old ? $new : $c, $columns);
             }
+        }
+
+        // 1.15.0 renamed the counting house to the mint. Buildings are not
+        // tradeable, so only the column and the queued build orders move.
+        if (in_array('b_counting_house', $columns, true) && !in_array('b_mint', $columns, true)) {
+            $wpdb->query('ALTER TABLE `' . $table . '` CHANGE `b_counting_house` `b_mint` bigint(20) NOT NULL DEFAULT 0');
+            $wpdb->query($wpdb->prepare(
+                'UPDATE ' . IDO_DB::t('constructions') . ' SET building = %s WHERE building = %s',
+                'mint', 'counting_house'
+            ));
         }
 
         // 1.5.0 dropped runestones: gold is the only currency now. The acres

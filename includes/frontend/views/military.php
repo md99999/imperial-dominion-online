@@ -67,10 +67,11 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
         <h3 class="ido-panel-title">Standing defence</h3>
         <table class="ido-table">
             <tbody>
-                <tr><th>Defence rating</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Units::defence_power($kingdom)))); ?></td></tr>
+                <tr><th>Defence rating</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Military::defence_power($kingdom)))); ?></td></tr>
+                <tr><th>Siege engines on the walls</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Engines::total($kingdom))); ?></td></tr>
                 <tr><th>Fortifications</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->b_fortification)); ?>
                     <span class="ido-dim">(+<?php echo esc_html(number_format_i18n((IDO_Buildings::fortification_bonus($kingdom) - 1) * 100, 1)); ?>%)</span></td></tr>
-                <tr><th>Grain eaten each turn</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Units::upkeep($kingdom)))); ?></td></tr>
+                <tr><th>Grain eaten each turn</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Units::upkeep($kingdom) + IDO_Engines::upkeep($kingdom)))); ?></td></tr>
             </tbody>
         </table>
     </div>
@@ -78,9 +79,11 @@ $discount = IDO_Buildings::barracks_discount($kingdom);
         <h3 class="ido-panel-title">A word on armies</h3>
         <ul class="ido-list">
             <li>Pawns are the cheapest way to make an attacker think twice, and useless for anything else.</li>
-            <li>Knights hold ground. A kingdom with no knights is a larder with the door open.</li>
-            <li>Squires take ground. They are worth almost nothing at home, so never leave them idle.</li>
-            <li>Rooks break fortifications. They cost a fortune and eat like three men each.</li>
+            <li>Legionnaires hold ground. An empire with no legionnaires is a larder with the door open.</li>
+            <li>Centurions take ground. They are worth almost nothing at home, so never leave them idle.</li>
+            <li>Ballistae legions break fortifications. They cost a fortune and eat like three men each.</li>
+            <li>Catapults are built in the siege yards, not mustered here. They fight on both attack and
+                defence, and they are the only part of your strength a beaten enemy can take from you.</li>
         </ul>
     </div>
 </div>

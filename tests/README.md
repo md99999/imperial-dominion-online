@@ -35,7 +35,7 @@ If PHP is not on your PATH, the binary bundled with Local works:
 | `overflow-test.php` | Drives net worth with maximum values and asserts it saturates at the ceiling instead of wrapping negative |
 | `smoke-test.php` | Loads the plugin, runs the activation path, renders all nine pages signed in and logged out, and checks the SQL guards |
 | `uninstall-test.php` | Runs `uninstall.php` with the setting off and on, proving the default keeps every table and the opt-in really drops them |
-| `integration-explore.php` | Boots a real WordPress, explores with a throwaway kingdom, and checks the database actually changed. Deletes the kingdom afterwards |
+| `integration-explore.php` | Boots a real WordPress, explores with a throwaway empire, and checks the database actually changed. Deletes the empire afterwards |
 | `wp-admin/includes/upgrade.php` | A stub `dbDelta()`, since the installer requires that file the way WordPress provides it |
 
 `smoke-test.php` also writes `preview.html` next to itself: a standalone copy of

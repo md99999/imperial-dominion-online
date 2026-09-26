@@ -13,7 +13,7 @@ class IDO_Military {
         return [
             'conquest' => [
                 'label' => 'Conquest',
-                'note'  => 'Seize acres. The costliest fight and the only one that grows your kingdom.',
+                'note'  => 'Seize acres. The costliest fight and the only one that grows your empire.',
             ],
             'raid' => [
                 'label' => 'Raid',
@@ -21,9 +21,22 @@ class IDO_Military {
             ],
             'siege' => [
                 'label' => 'Siege',
-                'note'  => 'Throw down buildings, fortifications first. Softens a kingdom you mean to conquer later.',
+                'note'  => 'Throw down buildings, fortifications first. Softens an empire you mean to conquer later.',
             ],
         ];
+    }
+
+    /**
+     * Everything an empire can put on its walls: the troops standing at home
+     * and the siege engines beside them, lifted by the fortification bonus.
+     *
+     * This is the one definition of a defence rating. The battle resolver works
+     * from the same two sums, so what a ruler reads on their own screen and
+     * what an attacker runs into are the same number.
+     */
+    public static function defence_power(object $kingdom): float {
+        $raw = IDO_Units::defence_power($kingdom) + IDO_Engines::defence_power($kingdom);
+        return $raw * IDO_Buildings::fortification_bonus($kingdom);
     }
 
     /** Gold and iron price of training, after the barracks discount. */
@@ -99,7 +112,7 @@ class IDO_Military {
         );
     }
 
-    /** Kingdoms this ruler is allowed to march on, by net worth band. */
+    /** Empires this ruler is allowed to march on, by net worth band. */
     public static function targets(object $kingdom, int $limit = 100): array {
         global $wpdb;
         $min = max(1, (int) round((int) $kingdom->networth * IDO_Settings::int('target_min_percent') / 100));
@@ -115,7 +128,7 @@ class IDO_Military {
         ));
     }
 
-    /** Times this kingdom has already hit that target since midnight. */
+    /** Times this empire has already hit that target since midnight. */
     public static function hits_today(int $attacker_id, int $defender_id): int {
         global $wpdb;
         return (int) $wpdb->get_var($wpdb->prepare(
@@ -126,12 +139,13 @@ class IDO_Military {
     }
 
     /**
-     * Marches on another kingdom and resolves the battle at once.
+     * Marches on another empire and resolves the battle at once.
      *
      * @param array $force unit key => quantity committed
+     * @param array $train engine key => quantity committed
      * @return string[] report lines for the attacker
      */
-    public static function attack(object $kingdom, int $target_id, string $type, array $force): array {
+    public static function attack(object $kingdom, int $target_id, string $type, array $force, array $train = []): array {
         global $wpdb;
 
         $types = self::attack_types();
@@ -139,7 +153,7 @@ class IDO_Military {
             throw new IDO_Game_Exception('Choose a kind of attack.');
         }
         if ($target_id === (int) $kingdom->id) {
-            throw new IDO_Game_Exception('You cannot march on your own kingdom.');
+            throw new IDO_Game_Exception('You cannot march on your own empire.');
         }
 
         // Normalise and verify the force before anything is spent.
@@ -159,9 +173,27 @@ class IDO_Military {
         if (!$committed) {
             throw new IDO_Game_Exception('Send at least one soldier.');
         }
-        $offence_base = IDO_Units::offence_power($committed);
+
+        // The engine train rides with the army. Every engine sent is also every
+        // engine at stake, which is the whole decision: a bigger train hits
+        // harder and is a bigger prize for the enemy if the day goes badly.
+        $engines = [];
+        foreach ($train as $key => $qty) {
+            if (!IDO_Engines::exists($key)) continue;
+            $qty = IDO_Game::qty($qty);
+            if ($qty < 1) continue;
+            if ($qty > (int) $kingdom->{IDO_Engines::column($key)}) {
+                throw new IDO_Game_Exception(sprintf(
+                    'You have only %s %s standing.',
+                    IDO_Game::fmt($kingdom->{IDO_Engines::column($key)}), strtolower(IDO_Engines::plural($key))
+                ));
+            }
+            $engines[$key] = $qty;
+        }
+
+        $offence_base = IDO_Units::offence_power($committed) + IDO_Engines::offence_power($engines);
         if ($offence_base <= 0) {
-            throw new IDO_Game_Exception('None of those troops can carry an attack. Send squires or rooks.');
+            throw new IDO_Game_Exception('None of those troops can carry an attack. Send centurions or ballistae legions.');
         }
 
         $turn_cost = max(1, IDO_Settings::int('attack_turn_cost'));
@@ -169,15 +201,15 @@ class IDO_Military {
             throw new IDO_Game_Exception(sprintf('Marching costs %d turns and you have %d.', $turn_cost, (int) $kingdom->turns));
         }
 
-        // One battle per attacker at a time, so two tabs cannot loot the same kingdom twice.
+        // One battle per attacker at a time, so two tabs cannot loot the same empire twice.
         if (!IDO_Lock::acquire('battle_' . min((int) $kingdom->id, $target_id) . '_' . max((int) $kingdom->id, $target_id), 8)) {
-            throw new IDO_Game_Exception('That kingdom is already under attack. Try again in a moment.');
+            throw new IDO_Game_Exception('That empire is already under attack. Try again in a moment.');
         }
 
         try {
             $target = IDO_Kingdom::find($target_id);
             if (!$target || (int) $target->round_id !== (int) $kingdom->round_id || (int) $target->is_defeated === 1) {
-                throw new IDO_Game_Exception('No such kingdom stands in this round.');
+                throw new IDO_Game_Exception('No such empire stands in this round.');
             }
             if (IDO_Kingdom::is_protected($target)) {
                 throw new IDO_Game_Exception(sprintf('%s is still under the crown truce and cannot be attacked yet.', $target->kingdom_name));
@@ -203,18 +235,17 @@ class IDO_Military {
             IDO_Kingdom::drop_protection($kingdom);
 
             // Strength on the day. The small random swing keeps a narrow win uncertain.
-            $rook_share = $offence_base > 0
-                ? IDO_Units::offence_power(array_intersect_key($committed, ['rook' => 1])) / $offence_base
+            $ballista_share = $offence_base > 0
+                ? IDO_Units::offence_power(array_intersect_key($committed, ['ballista_legion' => 1])) / $offence_base
                 : 0.0;
             $offence = $offence_base * self::swing();
 
-            $raw_defence = 0.0;
-            foreach (IDO_Units::all() as $key => $unit) {
-                $raw_defence += $unit['defence'] * (int) $target->{IDO_Units::column($key)};
-            }
-            // Rooks blunt the fortification bonus rather than the troops behind it.
+            // Engines at home man the walls beside the troops, and so are part
+            // of what the attacker has to break through.
+            $raw_defence = IDO_Units::defence_power($target) + IDO_Engines::defence_power($target);
+            // Ballistae blunt the fortification bonus rather than the troops behind it.
             $fortification = IDO_Buildings::fortification_bonus($target);
-            $effective_fortification = 1.0 + ($fortification - 1.0) * (1 - 0.75 * $rook_share);
+            $effective_fortification = 1.0 + ($fortification - 1.0) * (1 - 0.75 * $ballista_share);
             $defence = $raw_defence * $effective_fortification * self::swing();
 
             $won = $offence > $defence;
@@ -222,6 +253,7 @@ class IDO_Military {
 
             $result = [
                 'land' => 0, 'gold' => 0, 'grain' => 0, 'iron' => 0, 'demolished' => 0,
+                'engines_taken' => 0, 'engines_wrecked' => 0,
             ];
             if ($won) {
                 switch ($type) {
@@ -236,6 +268,14 @@ class IDO_Military {
                         break;
                 }
             }
+
+            // Engines change hands before the casualty rolls, so the counts the
+            // spoils are worked out from are the ones both sides marched with.
+            // The loser's stake is what they had in the fight: for the attacker
+            // that is the train they sent, for the defender everything standing.
+            $spoils = self::resolve_engine_spoils($kingdom, $target, $engines, $won);
+            $result['engines_taken'] = $spoils['taken'];
+            $result['engines_wrecked'] = $spoils['wrecked'];
 
             $attacker_losses = self::apply_losses($kingdom, $committed, $won ? 0.07 : 0.18);
             $defender_home = [];
@@ -269,10 +309,12 @@ class IDO_Military {
                 // The column keeps its original name: renaming it would cost a
                 // migration, and the word never reaches a player.
                 'buildings_razed'   => (int) $result['demolished'],
+                'catapults_captured' => (int) $result['engines_taken'],
+                'catapults_destroyed' => (int) $result['engines_wrecked'],
                 'attacker_report'   => implode("\n", $attacker_report),
                 'defender_report'   => implode("\n", $defender_report),
                 'created_at'        => IDO_Game::now(),
-            ], ['%d', '%d', '%d', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%s', '%s']);
+            ], ['%d', '%d', '%d', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%s', '%s']);
 
             IDO_Log::news('war', $won
                 ? sprintf('%s marched on %s and carried the field.', $kingdom->kingdom_name, $target->kingdom_name)
@@ -283,6 +325,53 @@ class IDO_Military {
         } finally {
             IDO_Lock::release('battle_' . min((int) $kingdom->id, $target_id) . '_' . max((int) $kingdom->id, $target_id));
         }
+    }
+
+    /**
+     * Moves siege engines from the losing side to the winning one, and smashes
+     * a further share where it stands.
+     *
+     * Only what was at stake counts. The attacker stakes the train they sent
+     * and nothing they left at home; the defender stakes everything standing,
+     * because everything standing was in the fight. The winner drags home
+     * catapult_capture_percent of the loser's stake and
+     * catapult_destroy_percent is wrecked, so a defeat costs the two added
+     * together. When rounding would take more than was at stake, the wrecked
+     * share gives way first: an engine cannot be both captured and splinters.
+     *
+     * @return array ['taken' => int, 'wrecked' => int]
+     */
+    private static function resolve_engine_spoils(object $kingdom, object $target, array $sent, bool $attacker_won): array {
+        $winner = $attacker_won ? $kingdom : $target;
+        $loser  = $attacker_won ? $target : $kingdom;
+
+        $capture = max(0, min(100, IDO_Settings::int('catapult_capture_percent')));
+        $destroy = max(0, min(100, IDO_Settings::int('catapult_destroy_percent')));
+
+        $taken = 0;
+        $wrecked = 0;
+        foreach (IDO_Engines::keys() as $key) {
+            $column = IDO_Engines::column($key);
+            $stake = $attacker_won
+                ? (int) $target->{$column}          // everything the defender had on the walls
+                : (int) ($sent[$key] ?? 0);         // only the train the attacker marched out with
+            $stake = max(0, min($stake, (int) $loser->{$column}));
+            if ($stake < 1) continue;
+
+            $captured = (int) round($stake * $capture / 100);
+            $smashed  = (int) round($stake * $destroy / 100);
+            $captured = min($captured, $stake);
+            $smashed  = min($smashed, $stake - $captured);
+            if ($captured + $smashed < 1) continue;
+
+            IDO_Kingdom::pay($loser, [$column => -($captured + $smashed)], 'Those engines were no longer there to lose.');
+            if ($captured > 0) {
+                IDO_Kingdom::pay($winner, [$column => $captured]);
+            }
+            $taken += $captured;
+            $wrecked += $smashed;
+        }
+        return ['taken' => $taken, 'wrecked' => $wrecked];
     }
 
     /** A 5% swing either way, so evenly matched armies are a gamble. */
@@ -316,7 +405,7 @@ class IDO_Military {
                 }
             }
         }
-        IDO_Kingdom::pay($target, $deltas, 'The defending kingdom no longer holds that land.');
+        IDO_Kingdom::pay($target, $deltas, 'The defending empire no longer holds that land.');
         IDO_Construction::trim_to_land($target);
         IDO_Kingdom::pay($kingdom, ['land' => $acres, 'land_taken' => $acres]);
         return $acres;
@@ -425,6 +514,22 @@ class IDO_Military {
             }
         }
 
+        // The engine spoils read the same way whichever side won, so they are
+        // written once, outside the branch that only covers an attacker's win.
+        if ($result['engines_taken'] > 0 || $result['engines_wrecked'] > 0) {
+            $kept_them = $for_attacker === $attacker_won;
+            $lines[] = $kept_them
+                ? sprintf(
+                    'You haul off %s enemy catapults and leave %s burning on the field.',
+                    IDO_Game::fmt($result['engines_taken']), IDO_Game::fmt($result['engines_wrecked'])
+                )
+                : sprintf(
+                    'You lose %s catapults: %s are dragged away by the enemy and %s are smashed where they stand.',
+                    IDO_Game::fmt($result['engines_taken'] + $result['engines_wrecked']),
+                    IDO_Game::fmt($result['engines_taken']), IDO_Game::fmt($result['engines_wrecked'])
+                );
+        }
+
         $lines[] = 'Your losses: ' . (self::losses_text($for_attacker ? $attacker_losses : $defender_losses) ?: 'none');
         $lines[] = 'Enemy losses: ' . (self::losses_text($for_attacker ? $defender_losses : $attacker_losses) ?: 'none');
         return $lines;
@@ -438,7 +543,7 @@ class IDO_Military {
         return implode(', ', $parts);
     }
 
-    /** Recent battles involving a kingdom, newest first. */
+    /** Recent battles involving an empire, newest first. */
     public static function history(object $kingdom, int $limit = 25): array {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(

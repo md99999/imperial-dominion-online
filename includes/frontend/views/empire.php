@@ -1,5 +1,5 @@
 <?php
-/** Throne room: the state of the kingdom at a glance. */
+/** The empire at a glance: its holdings, its income, and what is being built. */
 if (!defined('ABSPATH')) exit;
 /** @var object $kingdom */
 $rate      = IDO_Economy::per_turn($kingdom);
@@ -22,10 +22,10 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
 
 <div class="ido-columns">
     <div class="ido-panel">
-        <h3 class="ido-panel-title">The kingdom</h3>
+        <h3 class="ido-panel-title">The empire</h3>
         <table class="ido-table">
             <tbody>
-                <tr><th>Standing</th><td><?php echo esc_html(sprintf('%d of %d kingdoms', $position, $kingdoms)); ?></td></tr>
+                <tr><th>Standing</th><td><?php echo esc_html(sprintf('%d of %d empires', $position, $kingdoms)); ?></td></tr>
                 <tr><th>Title</th><td><?php echo esc_html(IDO_Game::title((int) $kingdom->networth)); ?></td></tr>
                 <tr><th>Land</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->land)); ?> acres</td></tr>
                 <tr><th>Built</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Buildings::total($kingdom))); ?></td></tr>
@@ -33,7 +33,8 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
                 <tr><th>Wilderness</th><td><?php echo esc_html(IDO_Game::fmt($wilderness)); ?></td></tr>
                 <tr><th>Peasants</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->peasants)); ?> of <?php echo esc_html(IDO_Game::fmt($rate['capacity'])); ?> housed</td></tr>
                 <tr><th>Under arms</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Units::total($kingdom))); ?></td></tr>
-                <tr><th>Defence rating</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Units::defence_power($kingdom)))); ?></td></tr>
+                <tr><th>Siege engines</th><td><?php echo esc_html(IDO_Game::fmt(IDO_Engines::total($kingdom))); ?></td></tr>
+                <tr><th>Defence rating</th><td><?php echo esc_html(IDO_Game::fmt(round(IDO_Military::defence_power($kingdom)))); ?></td></tr>
                 <tr><th>Agents</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->agents)); ?></td></tr>
             </tbody>
         </table>
@@ -52,7 +53,7 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
             </tbody>
         </table>
         <?php if ($rate['grain'] < 0) : ?>
-            <p class="ido-warning">Your kingdom eats more grain than it grows. Raise farmsteads or buy grain before the stores run dry.</p>
+            <p class="ido-warning">Your empire eats more grain than it grows. Raise farmsteads or buy grain before the stores run dry.</p>
         <?php endif; ?>
         <p class="ido-dim">Income is paid out as turns are spent, never while they sit idle.</p>
     </div>
@@ -78,11 +79,14 @@ $wilderness = IDO_Buildings::wilderness($kingdom);
     <div class="ido-panel">
         <h3 class="ido-panel-title">Work in progress</h3>
         <table class="ido-table">
-            <thead><tr><th>Building</th><th class="ido-right">Ordered</th><th>Stands on</th></tr></thead>
+            <thead><tr><th>Under way</th><th class="ido-right">Ordered</th><th>Ready on</th></tr></thead>
             <tbody>
-            <?php foreach ($pending as $order) : ?>
+            <?php foreach ($pending as $order) :
+                $is_engine = isset($order->kind) && $order->kind === 'engine'; ?>
                 <tr>
-                    <td><?php echo esc_html(IDO_Buildings::plural($order->building)); ?></td>
+                    <td><?php echo esc_html($is_engine
+                        ? IDO_Engines::plural($order->building)
+                        : IDO_Buildings::plural($order->building)); ?></td>
                     <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($order->qty)); ?></td>
                     <td><?php echo esc_html(date_i18n(get_option('date_format'), strtotime($order->ready_on))); ?></td>
                 </tr>

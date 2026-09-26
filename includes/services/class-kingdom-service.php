@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Kingdoms: creation, lookup, and the two primitives every other service is built
+ * Empires: creation, lookup, and the two primitives every other service is built
  * on, paying resources and spending turns.
  *
  * All spending goes through pay(), which writes a single guarded UPDATE
@@ -17,7 +17,7 @@ class IDO_Kingdom {
 
 
 
-    /** The kingdom of the logged-in user in the open round, or null. */
+    /** The empire of the logged-in user in the open round, or null. */
     public static function current(): ?object {
         $user_id = get_current_user_id();
         $round_id = IDO_Rounds::current_id();
@@ -47,14 +47,14 @@ class IDO_Kingdom {
         return $row ?: null;
     }
 
-    /** Re-reads a kingdom row after it has been written to. */
+    /** Re-reads an empire row after it has been written to. */
     public static function reload(object $kingdom): object {
         $fresh = self::find((int) $kingdom->id);
-        if (!$fresh) throw new IDO_Game_Exception('Your kingdom could not be found.');
+        if (!$fresh) throw new IDO_Game_Exception('Your empire could not be found.');
         return $fresh;
     }
 
-    /** Founds a kingdom for the logged-in user in the open round. */
+    /** Founds an empire for the logged-in user in the open round. */
     public static function create(int $user_id, string $kingdom_name, string $ruler_name): object {
         global $wpdb;
 
@@ -66,13 +66,13 @@ class IDO_Kingdom {
             throw new IDO_Game_Exception('No round is running. Ask the game master to open one.');
         }
         if (!$user_id) {
-            throw new IDO_Game_Exception('You must be signed in to claim a kingdom.');
+            throw new IDO_Game_Exception('You must be signed in to claim an empire.');
         }
         if (self::by_user($user_id, (int) $round->id)) {
-            throw new IDO_Game_Exception('You already rule a kingdom this round.');
+            throw new IDO_Game_Exception('You already rule an empire this round.');
         }
 
-        $kingdom_name = self::clean_name($kingdom_name, 'kingdom');
+        $kingdom_name = self::clean_name($kingdom_name, 'empire');
         $ruler_name = self::clean_name($ruler_name ?: wp_get_current_user()->display_name, 'ruler');
 
         // Both names must be unique within the round. The database enforces this
@@ -85,7 +85,7 @@ class IDO_Kingdom {
         ));
         if ($clash) {
             throw new IDO_Game_Exception(self::same_name($clash->kingdom_name, $kingdom_name)
-                ? 'Another kingdom in this round already goes by that name. Choose another.'
+                ? 'Another empire in this round already goes by that name. Choose another.'
                 : 'Another ruler in this round already goes by that name. Choose another.');
         }
 
@@ -103,16 +103,16 @@ class IDO_Kingdom {
             'iron'             => IDO_Settings::int('starting_iron'),
             'peasants'         => IDO_Settings::int('starting_peasants'),
             'u_pawn'           => IDO_Settings::int('starting_pawns'),
-            'u_knight'         => IDO_Settings::int('starting_knights'),
+            'u_legionnaire'    => IDO_Settings::int('starting_legionnaires'),
             'protection_until' => date('Y-m-d H:i:s', current_time('timestamp') + $protection * HOUR_IN_SECONDS),
             'created_at'       => IDO_Game::now(),
             'last_seen'        => IDO_Game::now(),
         ];
-        // A starting kingdom arrives with a little of everything already standing.
+        // A starting empire arrives with a little of everything already standing.
         $land = (int) $data['land'];
         $data['b_homestead']      = (int) round($land * 0.24);
         $data['b_farmstead']      = (int) round($land * 0.24);
-        $data['b_counting_house'] = (int) round($land * 0.12);
+        $data['b_mint'] = (int) round($land * 0.12);
         $data['b_foundry']        = (int) round($land * 0.10);
         $data['b_barracks']       = (int) round($land * 0.05);
         $data['b_fortification']        = (int) round($land * 0.05);
@@ -129,7 +129,7 @@ class IDO_Kingdom {
         }
 
         self::recalc_networth($kingdom);
-        IDO_Log::news('founding', sprintf('%s of %s has claimed a seat among the kingdoms.', $ruler_name, $kingdom_name));
+        IDO_Log::news('founding', sprintf('%s of %s has claimed a seat among the empires.', $ruler_name, $kingdom_name));
         return self::reload($kingdom);
     }
 
@@ -144,8 +144,8 @@ class IDO_Kingdom {
         return strcasecmp($a, $b) === 0;
     }
 
-    /** Validates and sanitises a kingdom or ruler name. */
-    public static function clean_name(string $name, string $what = 'kingdom'): string {
+    /** Validates and sanitises an empire or ruler name. */
+    public static function clean_name(string $name, string $what = 'empire'): string {
         $name = sanitize_text_field(wp_strip_all_tags($name));
         $name = trim(preg_replace('/\s+/', ' ', $name));
         $length = function_exists('mb_strlen') ? mb_strlen($name) : strlen($name);
@@ -184,7 +184,7 @@ class IDO_Kingdom {
      * no matter which service called this or how two requests interleave.
      *
      * @param array $deltas column => signed integer
-     * @throws IDO_Game_Exception when the kingdom cannot cover the cost
+     * @throws IDO_Game_Exception when the empire cannot cover the cost
      */
     public static function pay(object $kingdom, array $deltas, string $shortfall_message = ''): void {
         global $wpdb;
@@ -237,6 +237,10 @@ class IDO_Kingdom {
             'land_taken', 'land_lost'];
         foreach (IDO_Buildings::keys() as $key) $columns[] = IDO_Buildings::column($key);
         foreach (IDO_Units::keys() as $key)     $columns[] = IDO_Units::column($key);
+        foreach (IDO_Engines::keys() as $key) {
+            $columns[] = IDO_Engines::column($key);
+            $columns[] = IDO_Engines::progress_column($key);
+        }
         return $columns;
     }
 
@@ -260,9 +264,9 @@ class IDO_Kingdom {
     /**
      * Grants the daily turn allowance, capped. Safe to call more than once a day.
      *
-     * GREATEST keeps whatever the kingdom already holds: a game master who
+     * GREATEST keeps whatever the empire already holds: a game master who
      * lowers the cap should stop the pool growing, not take turns away that
-     * were granted under the old ceiling. A kingdom above the cap simply
+     * were granted under the old ceiling. An empire above the cap simply
      * receives nothing until it has spent back below it.
      */
     public static function grant_daily_turns(int $round_id): int {
@@ -295,6 +299,7 @@ class IDO_Kingdom {
         $worth += (float) IDO_Buildings::total($kingdom) * IDO_Buildings::NETWORTH_PER_BUILDING;
         $worth += (float) $kingdom->peasants * 25;
         $worth += (float) IDO_Units::networth($kingdom);
+        $worth += (float) IDO_Engines::networth($kingdom);
         $worth += (float) $kingdom->gold / 50;
         $worth += (float) $kingdom->grain / 200;
         $worth += (float) $kingdom->iron / 20;
