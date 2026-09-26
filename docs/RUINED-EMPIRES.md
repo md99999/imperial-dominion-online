@@ -65,6 +65,35 @@ An administrator should still be able to restore or remove an empire by hand, lo
 trail, for the cases automation should not try to judge: a bugged empire, a returning player, a
 test account. Rare, deliberate, and recorded.
 
+### The day in between
+
+Relief does not land the moment an empire falls. The empire is marked defeated, and restored on
+the first daily tick at least a day later.
+
+That pause is worth having. A defeat that is undone within the minute never happened, and the
+ruler never reads the report that explains it: they refresh, everything is fine, and the only
+lesson learned is that losing costs nothing. A day is long enough to be felt and short enough that
+nobody leaves over it.
+
+It also suits the machinery. The daily tick is already the thing that grants turns and finishes
+building work, so restoration is one more job it does, on a schedule players already understand.
+
+**What the wait looks like**
+
+- `defeated_at` records the moment. `is_defeated` stays set until relief.
+- No turns are granted while defeated. The grant already skips these empires, so this needs
+  nothing new, and the founding allowance arrives with the relief.
+- The empire cannot be attacked and does not count as a league contributor. There is nothing left
+  to take, and a march that includes a defeated empire would be counting troops that are gone.
+- The screens say so plainly: the empire has fallen, relief arrives on the next daily tick after
+  a given time. Not an error, not silence.
+
+**How long is a day, exactly.** Restoration runs on the daily tick, so a grace of 24 hours means
+an empire defeated at three in the afternoon is restored at the tick after the following midnight:
+somewhere between 24 and 48 hours later. Setting the grace to zero instead restores overnight, 
+between 0 and 24 hours, which may be closer to what most sites want. It is a setting either way,
+`defeat_grace_hours`, and the default is 24.
+
 ### `is_defeated` finally has a use
 
 The column exists and nothing has ever set it. Defeat is the right name for this state: an empire
