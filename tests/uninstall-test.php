@@ -54,7 +54,10 @@ check('scheduled events are still cleared', count($GLOBALS['ido_cleared_hooks'])
 echo "\n=== a game master who has opted in ===\n";
 $db = run_uninstall(['delete_data_on_uninstall' => 1]);
 $dropped = $db->dropped();
-check('every game table is dropped', count($dropped) === 9, count($dropped) . ' dropped');
+check('every game table is dropped', count($dropped) === 14, count($dropped) . ' dropped');
+foreach (['kingdoms', 'rounds', 'hall', 'leagues', 'sites', 'invites', 'packets_in', 'packets_out'] as $table) {
+    check("  including ido_$table", (bool) preg_grep('/ido_' . $table . '$/', $dropped));
+}
 check('empires are among them', (bool) array_filter($dropped, static function ($q) {
     return strpos($q, 'wp_ido_kingdoms') !== false;
 }));

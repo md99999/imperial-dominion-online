@@ -51,7 +51,7 @@ $GLOBALS['ido_options']['ido_page_ids'] = [
     'gazette' => 15, 'rankings' => 16, 'covert' => 99,
 ];
 
-IDO_Installer::maybe_upgrade();
+IDO_Installer::maybe_rename_pages();
 
 check('the front page loses the prefix entirely', $GLOBALS['ido_posts'][11]->post_title === 'Imperial Dominion',
     $GLOBALS['ido_posts'][11]->post_title);
@@ -68,14 +68,14 @@ echo "\n=== it only runs once ===\n";
 check('the run is recorded', get_option('ido_page_titles') === '2');
 $GLOBALS['ido_writes'] = [];
 $GLOBALS['ido_posts'][12]->post_title = 'ID - Lands';
-IDO_Installer::maybe_upgrade();
+IDO_Installer::maybe_rename_pages();
 check('a second upgrade rewrites nothing', $GLOBALS['ido_writes'] === []);
 check('so a later hand-rename survives', $GLOBALS['ido_posts'][12]->post_title === 'ID - Lands');
 
 echo "\n=== a fresh install with no pages yet ===\n";
 $GLOBALS['ido_options'] = ['ido_db_version' => IDO_DB_VERSION];
 $GLOBALS['ido_writes']  = [];
-IDO_Installer::maybe_upgrade();
+IDO_Installer::maybe_rename_pages();
 check('nothing is written and the run is recorded', $GLOBALS['ido_writes'] === []
     && get_option('ido_page_titles') === '2');
 

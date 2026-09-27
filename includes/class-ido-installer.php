@@ -35,6 +35,23 @@ class IDO_Installer {
             self::migrate_page_ids();
             self::install_schema();
         }
+    }
+
+    /**
+     * Page renaming runs on admin_init, not on plugins_loaded, and the reason
+     * is worth recording because it cost a fatal error to learn.
+     *
+     * wp-settings.php fires plugins_loaded and only then calls
+     * wp_functionality_constants(), three lines later, which is what defines
+     * WP_POST_REVISIONS. A plugin that calls wp_update_post() from
+     * plugins_loaded therefore reaches wp_save_post_revision() with that
+     * constant undefined and dies, on every single request, part way through
+     * whatever it was doing.
+     *
+     * Nothing here needs to run before an administrator is looking at the page
+     * list anyway, so admin_init is both the safe hook and the honest one.
+     */
+    public static function maybe_rename_pages(): void {
         self::rename_legacy_pages();
     }
 

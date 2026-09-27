@@ -22,6 +22,7 @@ class IDO_Admin {
         add_submenu_page('ido_dashboard', 'Dashboard', 'Dashboard', self::CAP, 'ido_dashboard', [__CLASS__, 'render_dashboard']);
         add_submenu_page('ido_dashboard', 'Rounds', 'Rounds', self::CAP, 'ido_rounds', [__CLASS__, 'render_rounds']);
         add_submenu_page('ido_dashboard', 'Empires', 'Empires', self::CAP, 'ido_kingdoms', [__CLASS__, 'render_kingdoms']);
+        add_submenu_page('ido_dashboard', 'League Play', 'League Play', self::CAP, 'ido_league', [__CLASS__, 'render_league']);
         add_submenu_page('ido_dashboard', 'Settings', 'Settings', self::CAP, 'ido_settings', [__CLASS__, 'render_settings']);
         add_submenu_page('ido_dashboard', 'Maintenance', 'Maintenance', self::CAP, 'ido_maintenance', [__CLASS__, 'render_maintenance']);
     }
@@ -38,6 +39,7 @@ class IDO_Admin {
     public static function render_dashboard(): void   { self::view('dashboard'); }
     public static function render_rounds(): void      { self::view('rounds'); }
     public static function render_kingdoms(): void      { self::view('kingdoms'); }
+    public static function render_league(): void      { self::view('league'); }
     public static function render_settings(): void    { self::view('settings'); }
     public static function render_maintenance(): void { self::view('maintenance'); }
 
@@ -102,6 +104,67 @@ class IDO_Admin {
                 // The front page may have only just come into existence.
                 $menu_notice = IDO_Menu::apply();
                 if ($menu_notice) $notice .= ' ' . $menu_notice;
+                break;
+
+            // League play. Every one of these is behind manage_options and a
+            // nonce like the rest, and each throws rather than half-doing
+            // something when the state is wrong.
+            case 'league_opt_in':
+                $notice = IDO_League_Setup::opt_in();
+                break;
+
+            case 'league_opt_out':
+                $notice = IDO_League_Setup::opt_out(!empty($_POST['drop_tables']));
+                break;
+
+            case 'league_found':
+                try {
+                    $league = IDO_League_Setup::found([
+                        'league_name'    => isset($_POST['league_name']) ? wp_unslash($_POST['league_name']) : '',
+                        'max_sites'      => isset($_POST['max_sites']) ? (int) $_POST['max_sites'] : 12,
+                        'round_days'     => isset($_POST['round_days']) ? (int) $_POST['round_days'] : 90,
+                        'muster_days'    => isset($_POST['muster_days']) ? (int) $_POST['muster_days'] : 5,
+                        'delay_min_days' => isset($_POST['delay_min_days']) ? (int) $_POST['delay_min_days'] : 3,
+                        'delay_max_days' => isset($_POST['delay_max_days']) ? (int) $_POST['delay_max_days'] : 8,
+                    ]);
+                    $notice = sprintf('%s has been founded. Invite the other sites next.', $league->league_name);
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
+            case 'league_invite':
+                try {
+                    $blob = IDO_League_Setup::invite(isset($_POST['note']) ? wp_unslash($_POST['note']) : '');
+                    // Held for one page load and shown once. Not put in the URL:
+                    // a redirect lands in server logs and browser history, and an
+                    // invitation does not belong in either.
+                    set_transient('ido_league_invitation', $blob, MINUTE_IN_SECONDS * 5);
+                    $notice = 'Invitation created. Send it to the other administrator.';
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
+            case 'league_revoke_invite':
+                $notice = IDO_League_Setup::revoke_invite(isset($_POST['invite_id']) ? (int) $_POST['invite_id'] : 0);
+                break;
+
+            case 'league_join':
+                try {
+                    IDO_League_Setup::join(isset($_POST['invitation']) ? (string) wp_unslash($_POST['invitation']) : '');
+                    $notice = 'Invitation read and the enrolment recorded. The handshake with the hub comes next.';
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
+            case 'league_pause':
+                $notice = IDO_League_Setup::set_paused(!empty($_POST['paused']));
+                break;
+
+            case 'league_leave':
+                $notice = IDO_League_Setup::leave();
                 break;
 
             case 'delete_kingdom':

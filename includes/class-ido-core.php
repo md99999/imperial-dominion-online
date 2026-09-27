@@ -135,6 +135,9 @@ class IDO_Settings {
             'allow_new_kingdoms'      => 1,
             // Deleting the plugin keeps the game's data unless this is turned on.
             'delete_data_on_uninstall' => 0,
+            // League play is opt in and off by default: a site that never joins
+            // one should carry none of its tables, routes or attack surface.
+            'league_enabled'         => 0,
         ];
     }
 
@@ -174,6 +177,7 @@ class IDO_Settings {
         $current['target_max_percent'] = max((int) $current['target_min_percent'], (int) $current['target_max_percent']);
         $current['market_tax_percent'] = min(50, (int) $current['market_tax_percent']);
         $current['delete_data_on_uninstall'] = !empty($current['delete_data_on_uninstall']) ? 1 : 0;
+        $current['league_enabled']           = !empty($current['league_enabled']) ? 1 : 0;
         update_option(self::OPTION, $current);
         return $current;
     }

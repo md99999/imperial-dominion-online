@@ -83,6 +83,48 @@ public.
 
 ---
 
+## League play (optional, off by default)
+
+A league joins this site to other WordPress sites running this game. Rulers here stop warring with
+each other and become one side: they raise an army together and march on another site, which takes
+days to arrive, resolves there, and comes home with spoils.
+
+**It is entirely optional and off unless you turn it on.** A site that never opts in has no league
+tables, no public endpoint and no extra attack surface. Most sites will play locally and never
+touch it.
+
+Set it up under **Imperial Dominion &rarr; League Play**, which has three states: not opted in, opted
+in but not in a league, and in one. Opting in creates the tables. Then either found a league, which
+makes this site the originator that owns the ruleset and the calendar, or join one by pasting an
+invitation.
+
+What a league takes over:
+
+- **The settings that decide who wins** become the league's: turns a day, starting resources, costs,
+  combat percentages. A site that granted its own rulers 200 turns a day would win a league without
+  ever fighting well. Cosmetic settings stay local.
+- **The round calendar**, length and start, so members wipe together and a season is comparable.
+
+A few things worth knowing before you enable it:
+
+- Your site must be reachable over **HTTPS at a public address**. The hub calls back to prove you
+  control it, so `http://` and development addresses are refused.
+- The **public endpoint is only registered once this site has actually joined a league**.
+- Invitations carry a **one-time token that expires, never the shared secret**. The secret is
+  generated at the end of the handshake and sent to the joining site over TLS, so nobody copies it
+  by hand.
+- There is a **kill switch** that stops all league traffic without deactivating the plugin or
+  leaving the league.
+
+The full design, including the packet format, the threat model and what is still undecided, is in
+[docs/CROSS-SITE.md](docs/CROSS-SITE.md).
+
+**Current state:** opting in, founding, invitations, joining and leaving are built. The handshake,
+packet exchange, musters and marches are designed and not yet built, so a league can be set up but
+not yet fought.
+
+---
+
 ## How a round is played
 
 Each ruler gets **one empire per round**, tied to their WordPress account.

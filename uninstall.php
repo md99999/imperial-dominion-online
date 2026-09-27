@@ -27,7 +27,11 @@ if (!$delete_data) {
     return;
 }
 
-$tables = ['rounds', 'kingdoms', 'constructions', 'listings', 'battles', 'ops', 'news', 'hall', 'admin_log'];
+$tables = ['rounds', 'kingdoms', 'constructions', 'listings', 'battles', 'ops', 'news', 'hall', 'admin_log',
+           // League tables. Dropped with everything else when the game master
+           // asked for the data to go; absent entirely on a site that never
+           // opted in, which DROP TABLE IF EXISTS handles without complaint.
+           'leagues', 'sites', 'invites', 'packets_in', 'packets_out'];
 foreach ($tables as $table) {
     $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'ido_' . $table);
 }

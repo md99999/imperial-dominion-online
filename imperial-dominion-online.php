@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 1.18.0
+Version: 2.0.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -24,7 +24,7 @@ See the GNU General Public License for more details. A copy is included in LICEN
 */
 if (!defined('ABSPATH')) exit;
 
-define('IDO_VERSION', '1.18.0');
+define('IDO_VERSION', '2.0.0');
 define('IDO_DB_VERSION', '11');
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
@@ -46,6 +46,13 @@ require_once IDO_PATH . 'includes/services/class-covert-service.php';
 require_once IDO_PATH . 'includes/services/class-market-service.php';
 require_once IDO_PATH . 'includes/services/class-rankings-service.php';
 require_once IDO_PATH . 'includes/services/class-maintenance-service.php';
+// League play. The classes load always, because the admin screen has to be
+// able to offer the opt in; nothing they do runs until a game master turns it
+// on, and the REST endpoint is registered only once this site is in a league.
+require_once IDO_PATH . 'includes/league/class-ido-league-crypto.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-url.php';
+require_once IDO_PATH . 'includes/league/class-ido-league.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-setup.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-ui.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-actions.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-shortcodes.php';
@@ -54,6 +61,9 @@ register_activation_hook(__FILE__, ['IDO_Installer', 'activate']);
 register_deactivation_hook(__FILE__, ['IDO_Installer', 'deactivate']);
 
 add_action('plugins_loaded', ['IDO_Installer', 'maybe_upgrade']);
+// Renaming pages writes posts, which is not safe this early: see the note on
+// maybe_rename_pages.
+add_action('admin_init', ['IDO_Installer', 'maybe_rename_pages']);
 add_action('plugins_loaded', ['IDO_Maintenance', 'sync_timezone']);
 add_action('init', ['IDO_Shortcodes', 'register']);
 add_action('init', ['IDO_Menu', 'init']);
