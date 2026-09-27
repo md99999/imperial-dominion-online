@@ -29,6 +29,57 @@ class IDO_Shortcodes {
                 return IDO_Shortcodes::render($key);
             });
         }
+
+        // The rules on their own, for an ordinary page or post: no navigation,
+        // no status bar, nothing that assumes the reader is playing.
+        add_shortcode('ido_how_to_play', ['IDO_Shortcodes', 'render_how_to_play']);
+    }
+
+    /**
+     * The How to Play content with none of the game's furniture around it, so
+     * it can sit in a marketing page, an announcement post or a sidebar
+     * without dragging the navigation and a status bar along with it.
+     *
+     * Every figure still comes from live settings, so an embedded copy cannot
+     * drift away from the rules the game is actually enforcing.
+     *
+     *   [ido_how_to_play]                 heading and a closing call to action
+     *   [ido_how_to_play heading="no"]    for a page that has its own title
+     *   [ido_how_to_play cta="no"]        rules only, nothing asking for a signup
+     */
+    public static function render_how_to_play($atts = []): string {
+        if (is_admin() || (defined('REST_REQUEST') && REST_REQUEST)) {
+            return '<p>[Imperial Dominion Online: How to Play]</p>';
+        }
+
+        $atts = shortcode_atts([
+            'heading' => 'yes',
+            'cta'     => 'yes',
+        ], is_array($atts) ? $atts : [], 'ido_how_to_play');
+
+        $show = static function ($value): bool {
+            return !in_array(strtolower(trim((string) $value)), ['no', 'false', '0', ''], true);
+        };
+
+        wp_enqueue_style('imperial-dominion-online');
+
+        // The view reads $kingdom to decide whether to invite the reader to
+        // claim one. Suppressing the call to action is the same as having one.
+        $round   = IDO_Rounds::current();
+        $kingdom = is_user_logged_in() && $round ? IDO_Kingdom::current() : null;
+        if (!$show($atts['cta'])) {
+            $kingdom = (object) ['id' => 0];
+        }
+
+        ob_start();
+        echo '<div class="ido-game ido-embed ido-page-guide">';
+        if ($show($atts['heading'])) {
+            echo '<div class="ido-title">' . esc_html(IDO_Game::dominion()) . '</div>';
+            echo '<div class="ido-subtitle">' . esc_html(IDO_Game::NAME) . '</div>';
+        }
+        include IDO_PATH . 'includes/frontend/views/guide.php';
+        echo '</div>';
+        return (string) ob_get_clean();
     }
 
     public static function render(string $key): string {

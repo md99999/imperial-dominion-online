@@ -47,6 +47,13 @@ class IDO_UI {
         wp_register_script('imperial-dominion-online', IDO_URL . 'assets/js/imperial-dominion-online.js', [], IDO_VERSION, true);
         global $post;
         if (!is_singular() || !$post) return;
+
+        // The rules can be embedded in any page or post, so that tag counts too.
+        if (has_shortcode($post->post_content, 'ido_how_to_play')) {
+            wp_enqueue_style('imperial-dominion-online');
+            return;
+        }
+
         foreach (self::PAGES as $def) {
             if (has_shortcode($post->post_content, $def[2])) {
                 wp_enqueue_style('imperial-dominion-online');

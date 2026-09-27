@@ -533,3 +533,23 @@
 @media (max-width: 480px) {
     .ido-footer-credit { margin-left: 0; }
 }
+
+
+/*
+ * Embedded in an ordinary page or post rather than being the page. It keeps
+ * the game's look but stays inside the theme's content column: the 20% breakout
+ * is right for a screen a player works in and wrong for a paragraph of prose
+ * somebody is reading.
+ */
+.ido-game.ido-embed {
+    width: auto;
+    margin-left: 0;
+    transform: none;
+}
+@media (min-width: 900px) {
+    .ido-game.ido-embed {
+        width: auto;
+        margin-left: 0;
+        transform: none;
+    }
+}

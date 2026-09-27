@@ -62,6 +62,22 @@ endorsed by its creators or rights holders.
 | ID - Gazette | `[ido_gazette]` | Public news of the round |
 | ID - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
 
+### The rules, on a page of your own
+
+`[ido_how_to_play]` renders the whole guide — turns, the economy, war, covert work, the market,
+titles and rounds — on any ordinary page or post. It is the same text the game's own guide screen
+shows, read live from the current settings, so a board granting 12 turns a day says 12.
+
+It carries no navigation, no status bar and no footer, and it never assumes the reader is playing:
+a visitor is invited to sign in, a signed-in reader without an empire is invited to claim one, and
+a ruler already in the round is offered nothing. Drop it anywhere, including a page open to the
+public.
+
+| Attribute | Default | What it does |
+| --- | --- | --- |
+| `heading` | `yes` | `heading="no"` drops the world name and game title, for a page with its own |
+| `cta` | `yes` | `cta="no"` drops the sign-in panel, leaving the rules alone |
+
 ---
 
 ## How a round is played

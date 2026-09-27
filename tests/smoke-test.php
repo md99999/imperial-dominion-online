@@ -228,3 +228,37 @@ state('signed-in reader is asked to claim, not sign in', strpos($signed_in, $cla
 state('ruler is offered neither button', strpos($ruler, 'Sign in to play') === false
     && strpos($ruler, $claim) === false);
 echo $state_fails === 0 ? "HOME PAGE STATES OK\n" : "$state_fails STATE CHECK(S) FAILED\n";
+
+echo "--- the standalone how-to-play shortcode ---\n";
+function shortcode_atts($pairs, $atts, $shortcode = '') {
+    $out = [];
+    foreach ($pairs as $name => $default) {
+        $out[$name] = array_key_exists($name, (array) $atts) ? $atts[$name] : $default;
+    }
+    return $out;
+}
+$GLOBALS['ido_logged_out'] = true;
+$GLOBALS['ido_fake_kingdom'] = null;
+
+$full = IDO_Shortcodes::render_how_to_play([]);
+$bare = IDO_Shortcodes::render_how_to_play(['heading' => 'no', 'cta' => 'no']);
+
+$embed_fails = 0;
+function embed(string $label, bool $ok) {
+    global $embed_fails;
+    if (!$ok) $embed_fails++;
+    printf("%-52s %s\n", $label, $ok ? 'PASS' : 'FAIL');
+}
+embed('renders the rules', strpos($full, 'rules of engagement') !== false);
+embed('carries no navigation', strpos($full, 'ido-nav') === false);
+embed('carries no status bar', strpos($full, 'ido-status') === false);
+embed('marked as embedded so it stays in the column', strpos($full, 'ido-embed') !== false);
+embed('shows the heading by default', strpos($full, 'ido-title') !== false);
+embed('heading="no" drops it', strpos($bare, 'ido-title') === false);
+embed('cta="yes" invites the reader in', strpos($full, 'Take an empire') !== false
+    && strpos($full, 'Sign in to claim your empire') !== false);
+embed('cta="no" asks for nothing', strpos($bare, 'Take an empire') === false
+    && strpos($bare, 'Sign in to claim your empire') === false);
+embed('still reads live settings', strpos($bare, '10 turns') !== false
+    || strpos($bare, 'gain 10') !== false || strpos($bare, '>10<') !== false);
+echo $embed_fails === 0 ? "EMBED SHORTCODE OK\n" : "$embed_fails EMBED CHECK(S) FAILED\n";
