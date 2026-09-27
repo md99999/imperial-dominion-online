@@ -231,7 +231,12 @@ move; only league administration pauses.
     POST   ido/v1/join        enrolment, presenting a one-time invitation token
     POST   ido/v1/hello       echoes a nonce, so the hub can prove a joining site owns its domain
     GET    ido/v1/ruleset     the league ruleset and its version, for a member catching up
-    GET    ido/v1/standings   hub only: the league table, aggregated from what members have sent
+    GET    ido/v1/standings   hub only: a convenience mirror of the league table, never authoritative
+
+That last one needs a caveat, because it is easy to read as a scoreboard server. It is not: every
+site computes its own table from the packets it holds, as described under the league table, and the
+hub's copy is a convenience for a member that has been offline, with exactly the same standing as
+any other member's opinion. The hub does not arbitrate outcomes, and that includes the standings.
 
 The namespace is versioned because the protocol will change. A site speaking `ido/v1` to a peer
 that only offers `ido/v2` should be told so plainly rather than failing at the parser.
@@ -379,8 +384,9 @@ The secret is per pairing, so a compromised member exposes its own link and noth
 
 ### How many sites in a league
 
-I do not know what the original inter-BBS games capped this at, and would rather say so than invent
-a number. What can be reasoned about:
+The original inter-BBS games capped this at 254, a node id being a single byte. That is the ceiling
+worth keeping, and it is far above the number a league should actually run. What can be reasoned
+about:
 
 - **Secrets stay linear** under hub-and-spoke: one per member, not one per pair. Ten sites is ten
   secrets, not forty-five.
@@ -392,14 +398,19 @@ a number. What can be reasoned about:
 
 So the cap is a judgement, not a technical ceiling.
 
-**The decision: up to 20 sites, configurable, defaulting lower.**
+**The decision: a hard ceiling of 254 sites, with 20 as the recommended maximum and a far lower
+default.** The 254 comes from the inter-BBS games this one descends from, where a node id was a
+single byte; it is the number the software enforces, and everything below is advice about the
+number a league should actually run. See *How many players, and how many sites* for the ceiling and
+what it costs at the top end.
 
 - `league_max_sites` is set by the originator and enforced by the hub at enrolment. A league that
   is full refuses a token with a clear reason rather than a generic failure, so an administrator
   is not left guessing.
-- **20 is the ceiling**, not the default. A league that size is a real tournament: enough sites
-  that the same two empires are not meeting every exchange, and enough standings to be worth
-  reading.
+- **20 is the recommended maximum**, not the default. A league that size is a real tournament:
+  enough sites that the same two empires are not meeting every exchange, and enough standings to be
+  worth reading. The software will let an originator go past it, up to 254, and should say what
+  that costs rather than refuse.
 - Somewhere around **8 to 12 is the comfortable middle**, and a first league is better small. It
   is easy to admit another site and awkward to ask one to leave.
 
@@ -726,6 +737,11 @@ A site may send **one war packet every 24 hours**. Not one per target: one, full
 league march a considered act rather than a tactic to spam, and it caps the damage a compromised
 or hostile member can do to everyone else in a day.
 
+In ordinary play the muster is the stricter limit anyway, since one open muster at a time means a
+site cannot assemble two marches at once. This limit exists for the case the muster rules do not
+cover: a member whose site has been compromised, or whose plugin has been modified, sending war
+packets directly.
+
 Two things have to be right for this not to deadlock the league.
 
 **It is enforced by the receiver, not the sender.** A sending site that has been compromised will
@@ -737,8 +753,12 @@ the player, not a control.
 be, or a site attacked by three peers in one day could not answer any of them, and the league
 would jam within a week. The limit is on *starting* a fight, never on finishing one.
 
-The window is 24 hours from the last accepted war packet, per peer pair, recorded on the receiving
-side. A packet refused for the limit gets a distinct, honest response so the sender can tell it
+The window is 24 hours from the last accepted war packet, recorded on the receiving side, which
+means each receiver enforces it **per peer pair**: that is the only version a receiver can enforce
+alone, since it sees only its own traffic. The stricter site-wide limit is a sending-side rule and
+a muster rule. Be clear about the consequence: a compromised member can march on every peer in the
+league on the same day, one packet each, and no receiver can see that pattern by itself. What
+catches it is the league table, where a site that fought eight exchanges in a day is not subtle. A packet refused for the limit gets a distinct, honest response so the sender can tell it
 apart from a signature failure, because this one is not an attack and the administrator needs to
 know why the march did not land.
 
@@ -1065,7 +1085,7 @@ league itself dissolving, which leagues do.
 A single admin page under Imperial Dominion, and the one place a game master manages all of this.
 
 **When no league exists**, it offers two things: found a league, or join one with an invitation.
-Founding asks for a name, a member cap defaulting well below the 20 maximum, the ruleset it will
+Founding asks for a name, a member cap defaulting well below the recommended 20, the ruleset it will
 publish, the round calendar and the delay range. Joining asks for the invitation blob and nothing
 else, since everything else arrives with it.
 
@@ -1406,6 +1426,126 @@ carrying hostile values. Review the order of operations specifically. Confirm th
 kind happens before verification. Test key rotation with packets in flight, since that is the path
 most likely to be wrong and least likely to be exercised.
 
+## Gaps: what this design has not answered
+
+Everything above is settled enough to build from. What follows is not, and is written down so it
+is found deliberately rather than discovered halfway through an implementation. Roughly in the
+order they would hurt.
+
+### 1. Who pays on the defending side
+
+This is the largest hole, and it contradicts a rule stated earlier in this document.
+
+*Only what is committed is at risk* says empires opt in by committing, and that an empire which
+sends nothing neither gains nor loses. That is coherent for the attacker, who chooses. It cannot be
+true for the defender, who does not: a defence is whatever happens to be standing on the day the
+packet lands, assembled from empires that made no decision at all. Yet spoils are taken from "the
+defending side", and somebody's gold leaves.
+
+So the unanswered question is exactly *whose*, and there are three candidate answers:
+
+- **Everyone on the site, in proportion to what they held.** Simple, and it makes defence a shared
+  civic burden. It also means a ruler who logs in to find their treasury lighter because two other
+  sites had a war, which is the failure mode the opt-in rule was written to prevent.
+- **Only empires with troops standing.** Rewards keeping a garrison with the right to be robbed,
+  which is backwards, and it means the safest thing a defender can do is hold no army at all.
+- **In proportion to each empire's share of the defence that actually fought**, with losses and
+  the plunder both falling there. Closest to consistent with the attacker's rule, and it makes
+  garrisoning a real decision with a real cost.
+
+The third is the most likely right answer, and it needs one more decision inside it: what happens
+to an empire that held nothing back and contributed everything to its own site's muster. It
+defended with nothing, so it loses nothing, which reads as a loophole until you remember its army
+is a week away and at risk elsewhere. That may be fine. It needs thinking about rather than
+assuming.
+
+**Defence also needs to pay.** The league table scores a repelled march, but nothing says what the
+defending *empires* get. If repelling is purely a cost, the dominant play is to keep nothing home.
+A share of the attacker's casualties as salvage, or captured engines from a broken assault, would
+make a garrison worth keeping.
+
+### 2. Numbers that are referred to but never set
+
+Each of these is currently a phrase where a value has to be:
+
+- **The escrow timeout.** "Released with a timeout if it never does" appears three times with no
+  number. It is security-relevant, not cosmetic: too short and a slow peer causes a double release,
+  too long and an army is hostage to a dead site. It has to be derived from the settings rather
+  than typed, something like the outbound delay plus the inbound delay plus a margin, and the
+  release must stay idempotent so a result arriving afterwards is a no-op.
+- **What league actions cost in turns.** Calling a muster costs "more than any local order",
+  contributing costs "a small number". Both belong in the league ruleset, since a site that made
+  them free would be buying exchanges.
+- **The minimum force a muster must raise** to march rather than fail.
+- **The scoring constants**: what a win is worth, how the decay on repeat exchanges works.
+- **Packet size and rate limits**, which the threat model names without quantifying.
+
+### 3. The round boundary needs an absolute instant, not each site's midnight
+
+The league owns the round calendar, and delays are carefully stored in UTC for exactly the right
+reasons. But a round boundary in the local game is a local midnight, and members in different
+timezones are up to a day apart. Sites would wipe on the same *date* and not at the same *moment*,
+so for most of a day one site is playing a fresh round while another is still finishing the old
+one, with league packets crossing between them.
+
+The league round has to start and end on a single absolute instant published in the calendar, with
+each site displaying it in local time. This is the same mistake as the daily turn grant, which
+broke because an absolute cron instant and a local calendar day were treated as the same thing, and
+it will be made again here unless it is written down.
+
+### 4. Restoring a database breaks the protocol
+
+Sequence numbers are per sending site and monotonic, and UUIDs of processed packets are recorded.
+An administrator restoring last week's backup, which is an ordinary thing to do after an unrelated
+problem, rolls both backwards: the restored site re-sends sequence numbers its peers have already
+seen and will refuse, and it has forgotten packets it already applied, so a peer's retry will be
+applied twice.
+
+Nothing in the design notices this. What it needs is an epoch alongside the sequence number,
+changed whenever a site detects that its own state has gone backwards, and a documented recovery
+path that is a re-handshake rather than a silent resync. Both sides should be told what happened,
+because the alternative is a member that quietly stops being able to play and nobody knows why.
+
+### 5. What happens when the originator disappears
+
+The hub holds the ruleset and the calendar, and a hub that is down merely pauses administration.
+A hub that is *gone*, because the administrator lost interest or the domain lapsed, leaves a league
+that can still fight but can never change a rule, admit a member, evict a cheat or end a season.
+
+Leagues outlive their founders' enthusiasm, so there should be a succession: a nominated second
+site, or a majority of members agreeing to promote one. This is worth designing before it is needed
+rather than during an argument about it.
+
+### 6. Scouting is recommended and unspecified
+
+*Covert work, which is the interesting one* proposes reconnaissance packets and stops there. If it
+is built, it needs the same treatment as everything else: what it costs, what it returns, what a
+target may refuse to answer, and above all whether a scouting *reply* can lie. It can, being
+self-reported, which makes a scout report worth exactly as much as the league table unless the
+answer is constrained to things the receiving site can sanity-check.
+
+There is a sharper question underneath. A scout report that is accurate defeats the blind commit
+this whole design is built around. One that can be wrong preserves it. The interesting version is
+probably a report that is accurate *as of days ago*, which is useful and still not knowledge.
+
+### 7. Smaller things, listed so they are not forgotten
+
+- **A site joining mid-season** has no league record and starts at the bottom of a table it could
+  not have competed in. Whether a late joiner is scored, unranked, or provisional is undecided.
+- **Grace periods and the table.** A site under grace cannot fight; whether it still publishes news
+  and appears in the standings is unsaid.
+- **What the defending players see, and when.** The attacker's experience is described in detail.
+  The defender's is not: whether a repelled march is news, how a ruler learns their garrison fought
+  overnight, and what the gazette says.
+- **Two-site integration testing.** The threat model calls for fuzzing the handler, which is the
+  security half. The other half is a harness that runs two installs and puts a real exchange
+  through both, and that is the only way the escrow, the delay and the settlement get exercised
+  together before a league does it for real.
+- **Leaving with an army in flight** is described for eviction and removal but not for a member who
+  simply resigns mid-exchange.
+- **The gazette and packet strings.** Second-order injection is covered; what is not decided is how
+  much of another site's business appears in the local gazette at all.
+
 ## What Phase 1 already provides
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
@@ -1431,6 +1571,9 @@ most likely to be wrong and least likely to be exercised.
   them. This is where the queued combat path from the original design question comes back.
 - An admin screen for pairing with another site, which must require an explicit confirmation from
   *both* administrators before any packet is accepted.
+- A player-facing league page, `[ido_league]`, created only while league play is on.
+- A two-site test harness, since the escrow, the delay and the settlement can only be exercised
+  together by running a real exchange between two installs.
 
 ## A caution
 
