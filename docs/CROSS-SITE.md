@@ -892,6 +892,174 @@ Enabling league play changes the rules under players who planned around the old 
 effect the same way league settings do: **at the next round boundary**. Leaving a league restores
 local war the same way. A site does not flip between the two games mid-round.
 
+## The league table: what a score can honestly be built from
+
+Players need somewhere to see how their site is doing against the rest of the league, and it is the
+screen that makes a league feel like one rather than like a series of unrelated raids. It is also
+the screen with the sharpest design problem in Phase 2, because every number on it came from
+somewhere, and half of those somewheres are sites with an interest in the answer.
+
+### The rule the page is built on
+
+**Rank on what was witnessed. Display what was asserted, labelled as an assertion.**
+
+A league exchange is witnessed by two sites. The defender computes the battle and signs the result,
+the attacker applies it and holds the same signed document, so both sites end up with identical,
+independently-held records of what happened. That is the only class of fact in the league that a
+single site cannot fabricate alone.
+
+Net worth, empire count and every other figure a site publishes about itself is the other class: a
+claim signed by the claimant. Signing proves it came from that site unaltered. It proves nothing
+whatever about whether it is true.
+
+There is a third way to learn something about a peer, and it is the one that gives the enormous
+cost of an agent a purpose: scouting. A reconnaissance packet returns a figure the target did not
+choose to publish, which is worth more than anything on this page precisely because it was not
+volunteered. The league table is what everybody knows; an agent is how a site finds out what it is
+actually marching into.
+
+So the league table ranks on war record, which is corroborated, and shows wealth as context with
+the date it was claimed. Ranking sites by self-reported net worth would be handing every member a
+slider labelled "my position", and the first league to notice would be the last one anybody
+enjoyed.
+
+### The site standings
+
+The table every player sees, ordered by league score:
+
+| Column | Where it comes from |
+| --- | --- |
+| Site | the roster |
+| Score | computed here, from exchanges this site holds records of |
+| Won / lost | marches won, marches lost, defences repelled, defences broken |
+| Spoils | gold, grain, iron and engines taken, net of what was lost |
+| Empires | claimed by that site, with an as-of date |
+| Net worth | claimed by that site, with an as-of date |
+| Last heard | the date of its most recent packet |
+
+Wealth columns are visibly a different kind of thing from the record columns: dimmer, stamped, and
+never sorted on by default. The page says once, in plain words, that the last two columns are what
+each site says about itself.
+
+### Scoring
+
+Points come from exchanges, and the shape matters more than the constants:
+
+- **Winning a march** scores, scaled by the size of the force that stood against it. Beating a
+  garrison scores less than beating an army.
+- **Repelling a march** scores on the same scale. A league that only rewards attacking teaches
+  every site to empty its garrison, and then the only skill is guessing who marched this week.
+- **Losing** scores nothing. Not negative: a site that keeps fighting and losing should sit at the
+  bottom of the table rather than below zero, and a negative score is an invitation to work out
+  whether arranging a defeat for somebody else is worth more than winning yourself.
+- **Repeat exchanges with the same peer decay within a season.** The second march on the same site
+  is worth less than the first, the third less again. Without this the dominant strategy is to find
+  the weakest member and farm it, which is both the most boring way to win a league and the fastest
+  way to lose a member.
+
+Every constant here is a league setting published in the ruleset, so every site computes the same
+table from the same records, and a site running different numbers is visible as a fingerprint
+mismatch the way any other rule divergence is.
+
+### Each site computes its own table, and they may differ
+
+There is no central scorekeeper. The hub holds the ruleset and the calendar and explicitly does not
+arbitrate outcomes, and that rule does not get bent for a leaderboard. Each site builds the table
+from the packets it holds: every exchange it took part in, plus what peers have published about
+exchanges it did not.
+
+This means two sites can show slightly different tables, usually because one has not yet heard
+about an exchange between two other members. That is honest and should be said on the page, not
+hidden: the table is the standings **as this site has heard them**, with the date of the most recent
+packet that informed it. A leaderboard that quietly presents partial information as authoritative is
+worse than one that admits what it is.
+
+### Disagreement is the cheat detector
+
+Because both parties to an exchange hold the same signed result, a site can check every peer's
+published record against its own for the exchanges they shared. A member claiming a victory over
+this site that this site's records show as a defeat is not a rounding difference. It is either a
+bug or a lie, and either way somebody needs to look.
+
+So the League screen flags disagreements rather than silently preferring one version: which peer,
+which exchange, what each side says. This is the evidence that makes eviction a decision rather
+than a suspicion, and it is a natural consequence of the design rather than a feature bolted on.
+
+It has a real limit worth stating. A site can only check exchanges it was in. Two members colluding
+to publish matching lies about a battle between themselves cannot be caught this way by anybody,
+and no amount of cryptography fixes that, because both signatures are genuine. What limits the
+damage is that collusion is only worth doing for score, score decays on repeat exchanges with the
+same peer, and the league is small enough for a pair of sites trading improbable victories to be
+noticed by people. The honest statement is that the protocol catches contradiction and people catch
+collusion.
+
+### What the league table must never show
+
+**Nothing about a march in flight, and nothing about an open muster anywhere.**
+
+This is the one place where the score page could quietly destroy the best mechanic in the design. A
+league table that showed open musters would be an early-warning system: a site could watch the
+league, see an army being raised, and know to keep its legions home. The attacker commits blind and
+the defender is met by whatever happens to be standing, and both of those stop being true the moment
+this page is helpful about it.
+
+So a site's own muster is public **on that site only**, and never travels in a news packet. The
+league table shows exchanges that have completed. The oldest rule in this document, that a staged
+war packet must not show the defending side what is coming, applies with equal force to a
+leaderboard.
+
+### News packets, specified
+
+The score page is the reason to pin down what a site publishes about itself, which the rest of this
+document has referred to without defining.
+
+    league        league id, ruleset fingerprint
+    site          site id, name, round id, round day
+    claimed       empire count, total net worth, largest empire net worth   (self-reported)
+    record        per peer: marches sent, won, lost; defences repelled, broken;
+                  spoils net, by resource                                   (corroborated)
+    status        under grace until, accepting marches or not
+    as_of         the moment the site read its own database to build this
+
+Sent on a schedule rather than on demand, daily by default, to every member. It carries no player
+names, no empire names, no per-empire figures, and nothing about musters, marches in flight or
+intentions. A news packet is a site describing its own past, never its present and never its plans.
+
+It is rate-limited like everything else, and a member sending them faster than the schedule is
+noise at best. Because it is the packet that arrives most often, it is also the one most worth
+fuzzing when the receiver is tested: every field parsed, clamped and range-checked before it is
+stored, and a news packet that fails any of that is staged for an administrator rather than
+applied, exactly as a war packet would be.
+
+### The player's view
+
+A page, `[ido_league]`, titled **Imperial Dominion - League**, created only when league mode is on
+and removed from navigation when it is off. It carries, in this order:
+
+1. **This site's standing**: position, score, record, and what it has taken and lost this season.
+2. **The open muster**, if there is one: the target, the window, who has pledged, and a link into
+   the War Room, which is where a force is actually committed. This is the call to action and it
+   belongs above the table, but the committing happens in the mustering hall like every other
+   order that costs turns.
+3. **The site standings**, paged. At the 254-site ceiling this table has to page rather than render
+   every row, and it defaults to showing the sites this one has actually fought.
+4. **This ruler's own league record**: marches joined, forces committed, spoils earned, survivors
+   returned. The personal column, and the reason a player reads the page twice.
+5. **Recent exchanges across the league**, as a feed, which is the part that makes the league feel
+   inhabited: who marched on whom, and how it went.
+
+Empires are not ranked league-wide. A cross-league table of six thousand empires would rank players
+on self-reported figures from sites they have never fought, which is the exact thing the site
+standings refuse to do, and it would quietly turn a team game into a solo ladder. Rulers compete on
+their own board and contribute to their site's position, and that is the shape of the game.
+
+### At the end of a season
+
+The league champion is the site at the top when the league round closes, and it goes into the Hall
+of Fame with the league's name, the season, the final table and the ruler on each site who
+contributed the most to it. The Hall of Fame is local and permanent, so the record survives the
+league itself dissolving, which leagues do.
+
 ## The League screen
 
 A single admin page under Imperial Dominion, and the one place a game master manages all of this.
