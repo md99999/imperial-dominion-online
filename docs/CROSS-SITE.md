@@ -858,6 +858,101 @@ league owns the calendar, members wipe together, and a member running a differen
 member playing a different game. Changing it should take effect at the next boundary, like every
 other league setting, and should be the originator's to change.
 
+## A board reset, and the grace period that follows
+
+An empire reduced to nothing is covered in [RUINED-EMPIRES.md](RUINED-EMPIRES.md). This is the
+harder case: **a whole site beaten flat**, every empire on it in ruins, with nothing left to build
+from and no realistic way back inside a round.
+
+A game master can reset the board: the site starts over as if freshly installed, every empire
+refounded with the starting package, the round restarted, and the Hall of Fame left intact so the
+history is not rewritten. Only for a site that is genuinely finished, not as a way out of a bad
+week.
+
+### The grace period
+
+A reset board then gets **X days in which it cannot be attacked**, so its players can rebuild
+before anybody arrives. Without it a reset is pointless: the site that flattened them is still
+strong, still in range, and would simply do it again on day one.
+
+The grace period is a setting, and it applies to **local and league play alike**.
+
+### League play has to honour it, and prove that it does
+
+This is the part that needs care, because the attacking site decides to march days before the
+defending site sees the packet. A march committed in good faith can land on a board that reset
+while the army was in transit.
+
+**The defending site refuses the march and sends everything home.** The result packet carries the
+force back intact, with no casualties and no spoils, and a plain reason: the board is under a
+grace period until a given date. The attacker loses the turns they spent and the days the army was
+away, which is the correct price for bad timing, but not the army.
+
+Refusing in this way has to be indistinguishable, to the attacker, from an ordinary result packet
+arriving. It is a normal outcome, not an error, and the message says so.
+
+A site under grace may not march either. Protection is not a shield to attack from behind, which
+is the same rule the local crown truce already follows.
+
+## How many players, and how many sites
+
+**Twenty-five empires to a site.** Beyond that a board stops being a place where people know each
+other, and the top of the table stops being reachable for anyone joining late.
+
+**Up to 254 sites in a league.** That number comes from the inter-BBS games this one descends from,
+where a node id was a single byte, and it is a sensible hard ceiling to keep.
+
+The earlier note in this document recommended a maximum of 20, and both things can be true: 254 is
+the ceiling the software enforces, while the number a league should actually run is far smaller.
+The reasoning has not changed. Secrets stay linear, and traffic follows participation rather than
+membership, so the limit is not technical: it is that a league is held honest by administrators who
+notice when a member's numbers look wrong, and nobody reads a standings table spanning two hundred
+sites. Eight to twelve remains the recommendation for a first league. The originator sets the cap,
+and the software will not stop them at 254.
+
+At the ceiling that is 254 sites times 25 empires, so a league-wide standings table has to page
+rather than render six thousand rows.
+
+## Evicting a member
+
+The member list is already specified. What was missing is how a league removes somebody caught
+cheating, and it needs to be explicit rather than improvised, because it will be used in anger.
+
+**Only the originator can evict**, and it takes effect immediately:
+
+- the member's secret is destroyed, so nothing it sends will verify again
+- packets already staged from that member are discarded, since they were authored under the same
+  suspicion
+- armies from other sites currently in transit toward it are returned intact, the same way a grace
+  period returns them
+- the remaining members are told, once, with the reason recorded
+
+**What eviction does not do is rewrite history.** Spoils already taken stay taken and standings
+already recorded stand. Unwinding a season on suspicion would cause more argument than the
+cheating did, and the evidence for cheating in a federated game is rarely clean enough to justify
+it.
+
+A member evicted in error can be re-invited: it is a new enrolment with a new secret, not an undo.
+
+## The goals, and two mechanics they imply
+
+The original statement of the game reads: keep your population content, maintain a military large
+enough to defend your empire, balance size and strength, and attack, trade with and make alliances
+with other rulers.
+
+Two of those are not in the game yet, and both are decisions rather than oversights.
+
+**Population contentment does not exist.** Peasants grow toward the housing available and starve
+when grain runs out, and that is all. A contentment mechanic, where taxes, war and food affect
+whether people stay, would give the economy a second dimension and a reason to care about more
+than capacity. It would also be a substantial addition, and it should be judged after a round has
+been played rather than added because the sentence mentions it.
+
+**Alliances were deliberately excluded** from Phase 1, and league play arguably replaces them: in a
+league the whole site is an alliance, which is a cleaner answer than factions within a board. If
+local alliances are still wanted, they belong in local play only, since in league mode the site is
+already the team.
+
 ## Threat model
 
 Written for review rather than reassurance. Where something cannot be defended, it says so.

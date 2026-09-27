@@ -72,6 +72,12 @@ class IDO_Economy {
         $peasants = (int) $kingdom->peasants;
         $troop_losses = [];
 
+        // Worked out once, not per turn: it costs a query, and nobody climbs
+        // the standings midway through spending a handful of turns.
+        $raidable = IDO_Barbarians::eligible($kingdom);
+        $raids = 0;
+        $raided = ['gold' => 0, 'grain' => 0];
+
         // A scratch copy so per_turn() sees the compounding numbers.
         $scratch = clone $kingdom;
 
@@ -90,6 +96,19 @@ class IDO_Economy {
             $totals['iron']       += $rate['iron'];
             $totals['grain']      += $rate['grain'];
             $totals['peasants']   += $rate['peasants'];
+
+            if ($raidable && IDO_Barbarians::rolls()) {
+                // Taken from the stores as they stand this turn, before any
+                // starvation is worked out: the barbarians get there first.
+                $taken = IDO_Barbarians::take($gold, $grain);
+                if ($taken['gold'] > 0 || $taken['grain'] > 0) {
+                    $gold  = max(0, $gold - $taken['gold']);
+                    $grain = max(0, $grain - $taken['grain']);
+                    $raided['gold']  += $taken['gold'];
+                    $raided['grain'] += $taken['grain'];
+                    $raids++;
+                }
+            }
 
             if ($grain < 0) {
                 // The stores are empty: peasants flee and troops desert.
@@ -131,6 +150,10 @@ class IDO_Economy {
             IDO_Game::fmt($totals['gold']), IDO_Game::fmt($totals['grain']),
             IDO_Game::fmt($totals['iron'])
         );
+        if ($raids > 0) {
+            IDO_Barbarians::announce($kingdom, $raided);
+            $lines[] = ['warning', IDO_Barbarians::report($raided, $raids)];
+        }
         if ($starved['peasants'] > 0 || $starved['troops'] > 0) {
             $lines[] = ['error', sprintf(
                 'The granaries ran dry. %s peasants fled and %s troops deserted. Build farmsteads or buy grain on the market.',

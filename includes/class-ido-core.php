@@ -113,6 +113,13 @@ class IDO_Settings {
             // Covert
             'agent_gold_cost'        => 500000,
             'max_agents'             => 1,
+            // Barbarians: a brake on a runaway leader, not a tax on everybody.
+            'barbarians_enabled'       => 1,
+            'barbarian_min_players'    => 10,
+            'barbarian_top_ranks'      => 3,
+            'barbarian_chance_percent' => 5,
+            'barbarian_gold_percent'   => 10,
+            'barbarian_grain_percent'  => 10,
             // Market
             'market_tax_percent'     => 5,
             'listing_days'           => 3,
