@@ -40,8 +40,10 @@ endorsed by its creators or rights holders.
 1. Copy this folder into `wp-content/plugins/` and activate **Imperial Dominion Online**.
    Activation creates the tables, writes the default settings and opens **Round 1**.
 2. Go to **Imperial Dominion &rarr; Dashboard** and press **Create any missing game pages**.
-   That creates the nine pages below, each holding a single shortcode. Every title carries an
-   `ID - ` prefix so the game's pages sort together and cannot be confused with the rest of the site.
+   That creates the nine pages below, each holding a single shortcode. Every title but the front
+   page carries an `Imperial Dominion - ` prefix, so the game's pages sort together and cannot be
+   confused with the rest of the site. Pressing the button again renames any page whose title has
+   drifted from this list.
 3. Adjust the game under **Imperial Dominion &rarr; Settings**. If you want a link in the site's
    own menu, set **Assign menu to theme location** there: it creates a one-item menu pointing at
    the game's front page. The other eight pages are kept out of menus a theme builds automatically
@@ -53,14 +55,15 @@ endorsed by its creators or rights holders.
 
 | Page | Shortcode | What it is |
 | --- | --- | --- |
-| ID - Empire | `[ido_empire]` | The state of the empire, and what one turn currently yields |
-| ID - Lands | `[ido_lands]` | Settle wilderness, raise buildings, build siege weapons |
-| ID - Army | `[ido_military]` | Train and disband troops |
-| ID - War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
-| ID - Spy Court | `[ido_covert]` | Hire an agent and send them out |
-| ID - Market | `[ido_market]` | Post lots, buy what other rulers have posted |
-| ID - Gazette | `[ido_gazette]` | Public news of the round |
-| ID - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
+| Imperial Dominion | `[ido_guide]` | The front page: the game's name, the rules and the standings |
+| Imperial Dominion - Empire | `[ido_empire]` | The state of the empire, and what one turn currently yields |
+| Imperial Dominion - Lands | `[ido_lands]` | Settle wilderness, raise buildings, build siege weapons |
+| Imperial Dominion - Army | `[ido_military]` | Train and disband troops |
+| Imperial Dominion - War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
+| Imperial Dominion - Spy Court | `[ido_covert]` | Hire an agent and send them out |
+| Imperial Dominion - Market | `[ido_market]` | Post lots, buy what other rulers have posted |
+| Imperial Dominion - Gazette | `[ido_gazette]` | Public news of the round |
+| Imperial Dominion - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
 
 ### The rules, on a page of your own
 

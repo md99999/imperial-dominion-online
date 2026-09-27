@@ -47,13 +47,14 @@ class IDO_Menu {
     }
 
     /**
-     * What the menu item says to a visitor. The page title carries an "ID - "
-     * prefix so the game's pages sort together in the admin; that prefix has no
-     * business in the site's own navigation.
+     * What the menu item says to a visitor. Game pages are titled "Imperial
+     * Dominion - Something" so they sort together in the admin; that prefix
+     * has no business in the site's own navigation. The older "ID - " form is
+     * still stripped, for a site whose pages predate the longer name.
      */
     public static function menu_label(): string {
         $title = IDO_UI::PAGES['guide'][0];
-        return trim(preg_replace('/^ID\s*-\s*/', '', $title)) ?: $title;
+        return trim(preg_replace('/^(Imperial Dominion|ID)\s*-\s*/', '', $title)) ?: $title;
     }
 
     /** Theme locations a menu can be assigned to, for the settings dropdown. */

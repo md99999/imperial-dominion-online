@@ -3,6 +3,10 @@ if (!defined('ABSPATH')) exit;
 
 class IDO_Installer {
 
+    /** Bumped when the game changes what it calls its own pages. */
+    const PAGE_TITLES_OPTION  = 'ido_page_titles';
+    const PAGE_TITLES_VERSION = '2';
+
     public static function activate(): void {
         self::install_schema();
         if (get_option(IDO_Settings::OPTION) === false) {
@@ -31,6 +35,48 @@ class IDO_Installer {
             self::migrate_page_ids();
             self::install_schema();
         }
+        self::rename_legacy_pages();
+    }
+
+    /**
+     * Brings pages titled "ID - Something" into line with the spelled-out
+     * "Imperial Dominion - Something" the game now uses. The slugs do not
+     * change, so no link anybody has already shared breaks.
+     *
+     * Only a title the game itself wrote is replaced. A page an administrator
+     * has renamed by hand keeps their wording: the prefix is presentation, and
+     * silently overwriting a deliberate choice is worse than an inconsistent
+     * list in the admin.
+     */
+    private static function rename_legacy_pages(): void {
+        if (get_option(self::PAGE_TITLES_OPTION) === self::PAGE_TITLES_VERSION) return;
+
+        $legacy = [
+            'guide'    => 'ID - Imperial Dominion',
+            'empire'   => 'ID - Empire',
+            'lands'    => 'ID - Lands',
+            'military' => 'ID - Army',
+            'war'      => 'ID - War Room',
+            'covert'   => 'ID - Spy Court',
+            'market'   => 'ID - Market',
+            'gazette'  => 'ID - Gazette',
+            'rankings' => 'ID - Rankings',
+        ];
+
+        $ids = get_option('ido_page_ids');
+        if (is_array($ids)) {
+            foreach ($legacy as $key => $was) {
+                if (empty($ids[$key]) || empty(IDO_UI::PAGES[$key][0])) continue;
+                $page = get_post((int) $ids[$key]);
+                if (!$page || $page->post_type !== 'page' || $page->post_title !== $was) continue;
+                wp_update_post([
+                    'ID'         => (int) $page->ID,
+                    'post_title' => IDO_UI::PAGES[$key][0],
+                ]);
+            }
+        }
+
+        update_option(self::PAGE_TITLES_OPTION, self::PAGE_TITLES_VERSION);
     }
 
     /**

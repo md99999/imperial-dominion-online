@@ -14,15 +14,15 @@ class IDO_UI {
      * of play: rule, grow, arm, march, scheme, trade, read.
      */
     const PAGES = [
-        'guide'    => ['ID - Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
-        'empire'   => ['ID - Empire', 'imperial-dominion-online', 'ido_empire', 'Empire'],
-        'lands'    => ['ID - Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
-        'military' => ['ID - Army', 'imperial-dominion-online-muster', 'ido_military', 'Army'],
-        'war'      => ['ID - War Room', 'imperial-dominion-online-war', 'ido_war', 'War'],
-        'covert'   => ['ID - Spy Court', 'imperial-dominion-online-spies', 'ido_covert', 'Spies'],
-        'market'   => ['ID - Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
-        'gazette'  => ['ID - Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
-        'rankings' => ['ID - Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
+        'guide'    => ['Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
+        'empire'   => ['Imperial Dominion - Empire', 'imperial-dominion-online', 'ido_empire', 'Empire'],
+        'lands'    => ['Imperial Dominion - Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
+        'military' => ['Imperial Dominion - Army', 'imperial-dominion-online-muster', 'ido_military', 'Army'],
+        'war'      => ['Imperial Dominion - War Room', 'imperial-dominion-online-war', 'ido_war', 'War'],
+        'covert'   => ['Imperial Dominion - Spy Court', 'imperial-dominion-online-spies', 'ido_covert', 'Spies'],
+        'market'   => ['Imperial Dominion - Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
+        'gazette'  => ['Imperial Dominion - Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
+        'rankings' => ['Imperial Dominion - Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
     ];
 
     public static function url(string $key, array $args = []): string {
