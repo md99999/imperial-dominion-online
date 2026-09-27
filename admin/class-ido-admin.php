@@ -110,6 +110,13 @@ class IDO_Admin {
             // nonce like the rest, and each throws rather than half-doing
             // something when the state is wrong.
             case 'league_opt_in':
+                // The box is required in the markup, and checked again here:
+                // a required attribute is a courtesy to the browser, not a
+                // control, and this one is worth actually enforcing.
+                if (empty($_POST['accept_risk'])) {
+                    $notice = 'League play was not enabled: the risk acknowledgement was not accepted.';
+                    break;
+                }
                 $notice = IDO_League_Setup::opt_in();
                 break;
 

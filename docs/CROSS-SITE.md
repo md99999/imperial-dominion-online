@@ -1330,6 +1330,12 @@ already the team.
 
 Written for review rather than reassurance. Where something cannot be defended, it says so.
 
+**None of what follows is a promise that this is safe.** It is a description of what has been
+thought about and what has not. The plugin is provided without warranty and is run at the site
+owner's own risk; a threat model is a statement of intent and reasoning, not a guarantee, and new
+vulnerabilities are found in software every day. Anyone enabling league play is opening their site
+to traffic from other sites, and should decide that deliberately.
+
 ### What we are protecting
 
 The WordPress installation first: remote code execution or database access through this endpoint

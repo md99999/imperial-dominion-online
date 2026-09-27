@@ -25,7 +25,11 @@ class IDO_League_Setup {
         IDO_Settings::update(['league_enabled' => 1]);
         IDO_League::install_tables();
         IDO_League::forget();
-        IDO_Log::admin('league', 'League play enabled.');
+        // Recorded with the acknowledgement, because the admin log already
+        // carries who did it and when: the one place a site owner can later
+        // see that this was a deliberate act rather than something that
+        // arrived with an update.
+        IDO_Log::admin('league', 'League play enabled, and the risk acknowledgement accepted.');
         return 'League play is enabled. Found a league, or join one with an invitation.';
     }
 

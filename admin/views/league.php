@@ -53,8 +53,40 @@ if ($invite) delete_transient('ido_league_invitation');
         <li>Requires this site to be reachable over HTTPS at a public address.</li>
     </ul>
 
+    <h2>Before you turn it on</h2>
+    <div class="notice notice-warning inline" style="max-width:44em">
+        <p><strong>You enable this at your own risk.</strong></p>
+        <p>
+            This plugin is provided as is, without warranty of any kind. The author accepts no
+            responsibility for any loss, damage, downtime, data loss or compromise arising from
+            installing or running it. That is the GPL's disclaimer in plain language, and it applies to
+            the whole plugin, not only to league play.
+        </p>
+        <p>
+            Every effort is made to write this carefully and securely: packets are signed and verified
+            before anything parses them, peer addresses are checked against where they actually resolve,
+            and the reasoning is written down rather than assumed. <strong>None of that is a
+            guarantee.</strong> New vulnerabilities are found in software every day, in WordPress, in
+            PHP, in plugins, and in this one.
+        </p>
+        <p>
+            League play is the only part of this game that accepts data from outside your site. That is
+            why it is off until you turn it on, why the endpoint is a second switch that is also off,
+            and why both say so plainly instead of being enabled for you.
+        </p>
+        <p>
+            Before enabling it: keep backups and know how to restore them, keep WordPress, PHP and this
+            plugin updated, and do not run it on a site you cannot afford to have broken.
+        </p>
+    </div>
+
     <p>
         <?php echo IDO_Admin::form_open('league_opt_in', 'ido_league'); ?>
+            <label style="display:block; margin-bottom:.75em">
+                <input type="checkbox" name="accept_risk" value="1" required>
+                I understand that I enable league play at my own risk, and that this plugin comes with
+                no warranty of any kind.
+            </label>
             <button type="submit" class="button button-primary">Enable league play</button>
         </form>
     </p>

@@ -6,6 +6,19 @@ WordPress installation is worth more than any amount of cheating.
 
 Reports are welcome, including ones that turn out to be nothing.
 
+## No warranty, and what that means
+
+**This software is provided as is, without warranty of any kind. You install and run it at your own
+risk, and the author accepts no responsibility for any loss, damage, downtime, data loss or
+compromise arising from it.** That is the GPL's disclaimer, sections 15 and 16, in plain language.
+
+Taking security seriously and promising security are different things. Every effort is made here to
+write carefully and to write the reasoning down, and none of it amounts to a guarantee: new
+vulnerabilities are found in software every day, in WordPress, in PHP, in plugins, and in this one.
+The policy below exists because that is expected rather than hypothetical.
+
+Keep backups. Keep everything updated. Decide deliberately whether to open the league endpoint.
+
 ## Reporting a vulnerability
 
 **Email <sysop@maddogproductions.online>.**

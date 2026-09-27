@@ -11,6 +11,36 @@ Players sign in to your WordPress site and rule.
 
 ---
 
+## Disclaimer: you install this at your own risk
+
+**This software is provided as is, without warranty of any kind, and you run it at your own risk.
+The author accepts no responsibility for any loss, damage, downtime, data loss or compromise
+arising from installing or running it.**
+
+Every effort is made to write this carefully: input is validated, output is escaped, queries are
+prepared, admin actions check capabilities and nonces, and the design decisions behind all of it
+are written down rather than assumed. None of that is a guarantee. New vulnerabilities are found in
+software every day, in WordPress, in PHP, in plugins, and in this one. Nobody can promise otherwise,
+and anybody who does is selling something.
+
+What that means in practice:
+
+- **Keep backups**, and know how to restore them.
+- **Keep WordPress, PHP and this plugin updated.** The honest answer for an old install is to update.
+- **Do not run it on a site you cannot afford to have broken**, at least not before you have tried it
+  somewhere you can.
+- **League play deserves a second thought**, because it is the only part that accepts data from
+  outside your site. It is off by default, its endpoint is a separate switch that is also off by
+  default, and both are off deliberately. Turning them on is a decision to accept that exposure.
+
+If you find a security problem, please report it privately: see [SECURITY.md](SECURITY.md).
+
+This is the plain-language version of the warranty disclaimer in the GPL, under which this plugin is
+licensed. Sections 15 and 16 of [the licence](LICENSE) are the legally operative text, and they say
+the same thing at greater length.
+
+---
+
 ## Inspiration and attribution
 
 Imperial Dominion Online is inspired by **Barren Realms Elite**, the BBS door game that, from the
