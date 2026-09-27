@@ -49,9 +49,16 @@ if ($was_enabled === 1 && IDO_League::league()) {
     exit(2);
 }
 
-// Whatever happens below, put the setting back.
-register_shutdown_function(static function () use ($was_enabled) {
-    IDO_Settings::update([IDO_League::SETTING => $was_enabled]);
+// Whatever happens below, put the whole settings row back exactly as it was.
+// Restoring only the one key would leave this test's other changes behind, and
+// a test that quietly edits the site it ran against is worse than no test.
+$settings_before = get_option(IDO_Settings::OPTION);
+register_shutdown_function(static function () use ($settings_before) {
+    if ($settings_before === false) {
+        delete_option(IDO_Settings::OPTION);
+    } else {
+        update_option(IDO_Settings::OPTION, $settings_before);
+    }
 });
 
 say('=== opting in ===');
@@ -161,6 +168,26 @@ if ($league) {
     }
 
     say('');
+    say('=== the endpoint gate ===');
+    // A previous run may have left the key set, and a default only applies to a
+    // key that is absent. Clear it so this tests the default rather than
+    // whatever this site happens to be carrying.
+    $stored = get_option(IDO_Settings::OPTION);
+    if (is_array($stored)) {
+        unset($stored['league_endpoint']);
+        update_option(IDO_Settings::OPTION, $stored);
+    }
+    check('closed by default, even in a league', !IDO_League::endpoint_enabled());
+    check('and says what to do about it',
+        strpos(IDO_League::endpoint_status(), 'until you turn it on') !== false,
+        IDO_League::endpoint_status());
+    IDO_Settings::update(['league_endpoint' => 1]);
+    check('turning it on opens it', IDO_League::endpoint_enabled());
+    IDO_Settings::update(['league_endpoint' => 0]);
+    check('turning it off closes it again', !IDO_League::endpoint_enabled());
+    IDO_Settings::update(['league_endpoint' => 1]);
+
+    say('');
     say('=== the kill switch ===');
     IDO_League_Setup::set_paused(true);
     check('pausing stops the site being active', !IDO_League::active());
@@ -172,6 +199,7 @@ if ($league) {
     say('=== leaving ===');
     IDO_League_Setup::leave();
     check('leaving clears the league', IDO_League::league() === null);
+    check('and closes the endpoint with it', !IDO_League::endpoint_enabled());
     check('the row is kept rather than deleted',
         (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . IDO_DB::t('leagues')) > 0);
 }
@@ -208,6 +236,16 @@ if ($was_enabled !== 1) {
     $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('leagues') . ' WHERE league_name = %s', $name));
     say('NOTE  left the existing league tables alone.');
 }
+
+say('');
+say('=== locked shut in wp-config ===');
+// Last, because a constant cannot be undefined once it is set: everything that
+// needs it absent has already run.
+IDO_Settings::update([IDO_League::SETTING => 1, 'league_endpoint' => 1]);
+define('IDO_LEAGUE_DISABLE_ENDPOINT', true);
+check('the constant closes the endpoint whatever the settings say', !IDO_League::endpoint_enabled());
+check('and the reason names wp-config',
+    strpos(IDO_League::endpoint_status(), 'wp-config.php') !== false, IDO_League::endpoint_status());
 
 say('');
 say($fails === 0 ? 'ALL CHECKS PASSED' : "$fails CHECK(S) FAILED");

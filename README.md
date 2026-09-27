@@ -109,7 +109,11 @@ A few things worth knowing before you enable it:
 
 - Your site must be reachable over **HTTPS at a public address**. The hub calls back to prove you
   control it, so `http://` and development addresses are refused.
-- The **public endpoint is only registered once this site has actually joined a league**.
+- The **endpoint other member sites deliver to is off by default.** Opting in does not open it and
+  joining a league does not open it: you turn it on yourself under **Settings &rarr; League play**,
+  and until you do, this site cannot receive marches or results. To put it beyond the reach of the
+  admin screens entirely, add `define( 'IDO_LEAGUE_DISABLE_ENDPOINT', true );` to `wp-config.php`,
+  which a compromised administrator account cannot undo.
 - Invitations carry a **one-time token that expires, never the shared secret**. The secret is
   generated at the end of the handshake and sent to the joining site over TLS, so nobody copies it
   by hand.

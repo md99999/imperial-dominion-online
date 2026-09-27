@@ -130,6 +130,52 @@ $help = [
             </tr>
         </table>
 
+        <h2>League play</h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">Incoming packets</th>
+                <td>
+                    <?php $locked = defined('IDO_LEAGUE_DISABLE_ENDPOINT') && IDO_LEAGUE_DISABLE_ENDPOINT; ?>
+                    <input type="hidden" name="settings[league_endpoint]" value="0">
+                    <label for="ido_league_endpoint">
+                        <input type="checkbox" id="ido_league_endpoint"
+                               name="settings[league_endpoint]" value="1"
+                               <?php checked(1, (int) $settings['league_endpoint']); ?>
+                               <?php disabled($locked); ?>>
+                        Allow other sites in this league to deliver packets to this site
+                    </label>
+                    <p class="description">
+                        <strong>Status: <?php echo esc_html(IDO_League::endpoint_status()); ?></strong>
+                    </p>
+                    <p class="description">
+                        <strong>Off by default.</strong> This is the one public, unauthenticated surface
+                        league play adds, so nothing opens it on your behalf. Even with it on it is only
+                        registered when this site is actually in a league: opting in is not enough, and a
+                        site playing locally never exposes anything.
+                    </p>
+                    <p class="description">
+                        <strong>You have to turn it on to play a league.</strong> A march this site sends
+                        is resolved by the defending site and the result is delivered back here, so a site
+                        that cannot receive cannot get its army home. Leaving it off is a decision not to
+                        play, or a way to stop while you investigate something.
+                    </p>
+                    <p class="description">
+                        <?php if ($locked) : ?>
+                            <strong>Locked shut in <code>wp-config.php</code>.</strong> This box cannot
+                            change it. Remove the constant to allow it again.
+                        <?php else : ?>
+                            To put it beyond the reach of these screens entirely, add this to
+                            <code>wp-config.php</code>:
+                            <br><code>define( 'IDO_LEAGUE_DISABLE_ENDPOINT', true );</code>
+                            <br>A setting lives in the database, so anything that can write to the database
+                            can turn it back on, including somebody who has taken an administrator account.
+                            A constant in a file cannot be changed that way.
+                        <?php endif; ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
         <h2>Deleting the plugin</h2>
         <table class="form-table" role="presentation">
             <tr>

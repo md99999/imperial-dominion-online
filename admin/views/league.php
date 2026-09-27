@@ -44,8 +44,9 @@ if ($invite) delete_transient('ido_league_invitation');
     <h2>What turning it on does</h2>
     <ul class="ul-disc" style="max-width:44em">
         <li>Creates the league tables. Nothing is created until you opt in.</li>
-        <li>Opens a public endpoint <em>once this site has actually joined a league</em>, so other
-            member sites can deliver packets. A site that opts in and joins nothing has no endpoint.</li>
+        <li>Nothing is exposed to the internet by this switch. The endpoint other member sites
+            deliver to is <em>off by default</em> and has to be turned on separately in Settings, and
+            even then it only exists once this site has actually joined a league.</li>
         <li>Hands the league control of the settings that decide who wins: turns a day, starting
             resources, costs and combat percentages. They become read-only here, because a site that
             granted its own rulers 200 turns a day would win a league without ever fighting well.</li>
@@ -170,6 +171,16 @@ if ($invite) delete_transient('ido_league_invitation');
         </p></div>
     <?php endif; ?>
 
+    <?php if (!$pending && !IDO_League::endpoint_enabled()) : ?>
+        <div class="notice notice-warning inline"><p>
+            <strong>This site cannot receive league packets.</strong>
+            <?php echo esc_html(IDO_League::endpoint_status()); ?>
+            Marches sent from here are resolved by the defending site and the result is delivered back
+            to this address, so until the endpoint is open no army can come home.
+            <a href="<?php echo esc_url(admin_url('admin.php?page=ido_settings')); ?>">Open it in Settings</a>.
+        </p></div>
+    <?php endif; ?>
+
     <?php if (IDO_League::paused() && !$pending) : ?>
         <div class="notice notice-warning inline"><p>
             <strong>League traffic is paused.</strong> Nothing is sent or accepted. The league is otherwise intact.
@@ -194,6 +205,8 @@ if ($invite) delete_transient('ido_league_invitation');
                     (int) $league->delay_min_days, (int) $league->delay_max_days)); ?></td></tr>
             <tr><th scope="row">Longest exchange</th>
                 <td><?php echo esc_html(sprintf('%d days from calling a muster to the army coming home', $round_trip)); ?></td></tr>
+            <tr><th scope="row">Incoming packets</th>
+                <td><?php echo esc_html(IDO_League::endpoint_status()); ?></td></tr>
             <tr><th scope="row">Ruleset</th>
                 <td>
                     version <?php echo esc_html((int) $league->ruleset_version); ?>

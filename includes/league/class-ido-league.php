@@ -59,6 +59,59 @@ class IDO_League {
         return $league !== null && (int) $league->paused === 0;
     }
 
+    /**
+     * Whether this site will expose the endpoint other league sites deliver to.
+     *
+     * Four things have to be true, and they are deliberately four separate
+     * controls rather than one, because they answer different questions and are
+     * reversed by different people.
+     *
+     *   1. The site has opted in to league play at all.
+     *   2. It is actually in a league. A site that has opted in and joined
+     *      nothing has nothing to receive, so the route is not registered.
+     *   3. The game master has turned the endpoint on in the settings. It is
+     *      off until somebody chooses otherwise, like every other switch here
+     *      that opens something to the internet.
+     *   4. Nobody has locked it shut in wp-config.php.
+     *
+     * The fourth is the one that matters most and it is the one this method
+     * checks first. A setting lives in the database, so anything that can write
+     * to the database can turn it back on, and that includes an attacker who
+     * has taken an administrator account. IDO_LEAGUE_DISABLE_ENDPOINT is a
+     * constant in a file, outside the reach of the admin screens entirely, and
+     * a site that defines it cannot be talked into listening by anything short
+     * of filesystem access.
+     *
+     * A site with the endpoint closed can still send. It cannot receive, which
+     * in practice means it cannot play: a march it sends is resolved by the
+     * defender and the result comes back to this endpoint. Closing it is a
+     * decision to stop, not a way to play more safely, and the screens say so
+     * rather than letting somebody discover it a week later when an army does
+     * not come home.
+     */
+    public static function endpoint_enabled(): bool {
+        if (defined('IDO_LEAGUE_DISABLE_ENDPOINT') && IDO_LEAGUE_DISABLE_ENDPOINT) return false;
+        if (!self::enabled()) return false;
+        if (IDO_Settings::int('league_endpoint') !== 1) return false;
+        return self::league() !== null;
+    }
+
+    /** Why the endpoint is closed, in words, for the admin screens. */
+    public static function endpoint_status(): string {
+        if (defined('IDO_LEAGUE_DISABLE_ENDPOINT') && IDO_LEAGUE_DISABLE_ENDPOINT) {
+            return 'Locked shut in wp-config.php. Nothing in these screens can open it.';
+        }
+        if (!self::enabled())                             return 'Closed: league play is off.';
+        if (IDO_Settings::int('league_endpoint') !== 1) {
+            return self::league() === null
+                ? 'Closed. It is off until you turn it on.'
+                : 'Closed. This site cannot receive marches or results until you turn it on in Settings.';
+        }
+        if (self::league() === null)                      return 'Closed: this site is not in a league.';
+        if (self::paused())                               return 'Open, but all league traffic is paused.';
+        return 'Open. Member sites of this league can deliver packets.';
+    }
+
     /** The kill switch is deliberately separate from leaving: it stops traffic and keeps the league. */
     public static function paused(): bool {
         $league = self::league();
