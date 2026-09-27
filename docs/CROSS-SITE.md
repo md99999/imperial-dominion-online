@@ -409,6 +409,182 @@ twenty-site league is hard because twenty administrators have to stay reachable,
 ruleset, keep their crons running and notice when a member's numbers look wrong. Watching is what
 keeps a league honest, and it does not scale as easily as the packets do.
 
+## Calling a muster: who starts a war, and how
+
+Everything below this point describes a march that is already assembled. This section covers what
+happens before that: who chooses the target, what they can see when they choose it, and how an army
+belonging to a dozen different rulers comes together in the first place.
+
+It is worth recording what the inter-BBS original actually did, because it answers this directly.
+The unit it called a *planet* is what this design calls a site: one board, one community of
+players, one team in the league. Read planet as WordPress site throughout and the precedent
+translates exactly.
+
+A group attack was started by a player, not by the board's administrator, and often by the
+strongest player or by an elected **BBS Coordinator**: a player representative for that board,
+chosen by the votes of the players on it, holding league functions the others did not. Once one
+player had started the attack, other barons joined it by committing part of their own military
+before the nightly processing ran, and the game combined those contributions into a single
+attacking force that fought as one normal attack. The important detail, and the one usually
+misremembered, is that the force was assembled from the barons who chose to join, not from
+everybody on the board automatically.
+
+Two things follow. The first is that a player starts it, which settles the question below. The
+second is that the assembly window was one processing cycle, because the boards ran a tick every
+night and that was the only clock available. This design has to stretch that window, since the
+players contributing are not all logged in on the same evening and the packet crosses the internet
+rather than a nightly mail run, and the length of the stretch is the one number here with no
+precedent behind it.
+
+The surviving documentation of the inter-BBS rules, including the coordinator role and the group
+attack, is at <https://andy5995.github.io/immortal-barons/inter-bbs/>.
+
+### One muster at a time, called by a player
+
+**Any ruler may call a muster, and a site may have only one open at a time.** Not the game master.
+An administrator who is away for a week should not be able to stop the site from playing, and a
+league war that only starts when an administrator logs in is a league that stops when one person
+gets busy.
+
+The site is small enough for this to work: twenty-five empires at most, who can see each other's
+standings and read the same gazette. A muster is public from the moment it is called, and a bad
+call is visible to everybody as it fails to attract an army.
+
+Calling one is priced so it is not a whim:
+
+- it costs turns, more than any local order
+- **the caller must commit the first force**, which cannot be nothing, so nobody starts a war they
+  are not personally in
+- while it is open, no second muster can be called, so the cost of a frivolous one is the site's
+  whole exchange for that stretch of days
+
+Who may call is a league setting, because a league that finds this too loose can tighten it: **any
+ruler** (the default), **the elected coordinator**, or **game master only**. The default is the
+loose one on the reasoning that the failure mode of the loose setting is a muster nobody joins, and
+the failure mode of the strict one is a site that cannot play.
+
+### The coordinator, and whether to elect one
+
+The original's answer was an elected coordinator, and it is a better answer than it first looks. A
+site fighting a league war has a coordination problem that the game does not otherwise create: five
+and twenty rulers who each hold part of one army, no way to talk except the gazette, and a decision
+that is worth more if it is made once than if it is made loudly. Electing somebody to make it is a
+reasonable thing for a board to want, and it gives a site an internal politics that costs nothing
+to run.
+
+If it is built, the shape that fits this game:
+
+- **One coordinator per site per round**, elected by the rulers of that site, one vote each, most
+  votes wins, ties broken by net worth and then by the earlier founding. A round boundary clears it,
+  which matches everything else here and means a bad coordinator is temporary by construction.
+- **The office is calling musters, and nothing else.** No command over other empires' armies, no
+  share of anyone's spoils, no ability to commit troops that are not theirs. The moment the role
+  can spend somebody else's army it becomes a way to lose a player.
+- **A recall**, or a re-election at any point on a petition of some fraction of the site, because an
+  elected officer who has stopped logging in is worse than no officer at all when the setting makes
+  them the only one who can call a war.
+
+Whether to build it is a judgement about the league rather than the code. The election is a screen,
+a table and a tick; the risk is that it makes the site's ability to play depend on one player
+remaining interested. So: **ship with any ruler able to call, and build the coordinator as the
+setting a league can move to once it has played a season and knows whether it wants one.** A site
+that never elects anybody still plays, which is the property worth protecting.
+
+Until it exists, the strongest player calling the war is what will happen in practice anyway, which
+is what happened on the boards too.
+
+The game master keeps a veto rather than the initiative: they can cancel an open muster, which
+returns every contribution intact, and the cancellation is recorded in the gazette with who did it.
+That is the right shape for a moderation power. It stops the abuse without being the thing standing
+between the site and a game.
+
+### Choosing a target, and what a site knows about one
+
+The caller picks from the league roster, not from a free-text field. For each member site the list
+shows what the league already circulates in its news packets:
+
+- the site's name and whether it is reachable
+- how many empires are playing there
+- the total net worth of the site, and the net worth of its largest empire
+- **as of when**: the date of the news packet those numbers came from
+- whether it is under a grace period, and until when, since a site under grace cannot be marched on
+- the record between the two sites: marches sent, marches received, and how they went
+
+That is enough to judge a target without being enough to plan against a defence, which is the line
+to hold. Two things about it matter more than the list itself.
+
+**The numbers are self-reported, and a site can lie.** A league member asserting its own strength
+is not evidence, it is a claim signed by the claimant. A site that understates itself to look like
+easy prey is running the oldest trick in the genre, and the design should not pretend otherwise. So
+the figures are always shown with their as-of date, never as a live reading, and the only numbers a
+site can fully trust about a peer are the ones it learned by fighting it. Displaying a stale,
+possibly dishonest figure with an honest label on it is better than displaying a confident one, and
+better than displaying nothing: it gives the caller a basis for judgement and tells them exactly
+how much that basis is worth.
+
+**Site size is not the whole picture anyway**, because what a march meets is what that site has
+standing at home on the day it lands, which is a different number from its net worth and unknowable
+in advance. A large site that has just sent its own army somewhere else is the softest target in
+the league, and nothing in the roster will say so. That is the game.
+
+### The muster window
+
+Once called, the muster stays open for a fixed number of days, a league setting, **five by
+default**. During that window any ruler on the site may contribute.
+
+Contributing costs a small number of turns and **moves the committed troops and siege weapons into
+escrow immediately**, not when the packet is sent. The same army cannot be pledged to a muster and
+also stand in defence at home, and it should be obvious to the contributor that the cost has
+already been paid. The exposure the escrow creates is the one described under *The army that is
+away is really away*: it simply starts five days earlier.
+
+**A contribution can be withdrawn while the muster is open**, returning the troops and forfeiting
+the turns. Five days of commitment before the army even leaves is a long time to be held to a
+decision made on the first day, and a site attacked locally during its own muster needs a way to
+defend itself that is not "wait for the packet to come back in a fortnight". Once the muster
+closes, nothing comes back until the result does.
+
+When the window closes, one of two things happens:
+
+- **The force meets the minimum and marches.** The packet is assembled, signed and sent, and
+  everything from *The sequence* onward applies unchanged. The delay clock starts now.
+- **It does not, and the muster fails.** Every contribution is returned intact, the turns stay
+  spent, and the gazette records that the site called for a war and did not raise one. A league
+  march by a token force is worse than no march: it feeds the target and teaches the site nothing.
+
+The minimum is a league setting expressed as a share of the target's known strength rather than a
+flat number, so it scales with what the site is trying to do.
+
+### What this costs the calendar
+
+The window is not free. It sits in front of a round trip that was already three to eight days out
+and the same back, so from the call to the return is **eleven to twenty-one days** with the default
+five-day muster. Against a 45-day round that is two exchanges; against the 90-day league round it
+is four. This is the strongest argument yet for the longer league round, and the cutoff before the
+end of a round has to include the window, not just the flight:
+
+    $cutoff_days = $league['muster_days'] + 2 * $league['delay_max_days'];
+
+A league that wants more exchanges per round shortens the muster before it shortens the delay. The
+delay is the suspense and the muster is only logistics, so the muster is the cheaper thing to lose.
+
+### Credit, and why it has to be visible during the window
+
+The contribution record described under *Tracking what each empire contributed* is created when a
+ruler commits, not when the packet is sent, and it is what the muster screen reads. While the
+window is open, every ruler on the site can see who has pledged and how much, and that visibility
+is doing real work: it is the only pressure available to get an army raised at all, in a game where
+nobody is online at the same time as anybody else. A muster that showed nothing until it closed
+would be a war called into silence.
+
+When the result comes home, the same record splits the survivors and the spoils in proportion to
+what each empire risked. It also feeds the standing of a ruler within their own site: marches
+joined, forces committed and spoils earned are shown on the League screen beside the roster, and a
+ruler who carried an exchange is named in the gazette when it returns. The spoils themselves are
+the material reward and they land in the empire that earned them, where they count toward net worth
+like anything else. The recognition is the other half, and on a board of twenty-five people who
+have to be persuaded to hand over their legions, it is not the lesser half.
+
 ## League war: how a march between sites resolves
 
 The shape, settled: a site marches on another site. Empires commit forces, the packet crosses,
@@ -484,8 +660,9 @@ with hardware and prisoners, and you have to invest before either becomes streng
 
 ### The sequence
 
-1. Empires commit forces. Troops leave the muster immediately and show as in transit, so the same
-   army cannot be committed twice while a packet is in flight.
+1. A ruler calls a muster against a chosen site and empires commit forces to it, over the days
+   described under *Calling a muster*. Troops leave the army immediately and show as committed, so
+   the same army cannot be pledged twice while a packet is in flight.
 2. The packet is signed and sent, and the delay is applied at the receiving end so the sender
    cannot shorten it.
 3. On the tick after the delay expires, the **defending site resolves the battle** against the
@@ -634,7 +811,8 @@ next logs in, which is exactly the feel worth having.
 ### What each side is allowed to know
 
 A round trip is therefore six to sixteen days: the march out, the battle, and the result coming
-home. Against a 45-day round that is a handful of league exchanges at most, which is the intended
+home. With the muster window in front of it, eleven to twenty-one from the moment the war is
+called. Against a 45-day round that is a handful of league exchanges at most, which is the intended
 weight. A league that wants more per round shortens the range rather than the round.
 
 The attacker knows the range, three to eight days, and never the draw. Waiting without knowing is
@@ -730,6 +908,7 @@ else, since everything else arrives with it.
 - pending enrolments awaiting approval, for an originator
 - the invitation generator, showing a token once and never again
 - the packet queues, inbound and outbound, with what is due and when
+- the open muster if there is one: the target, who has pledged what, and when the window closes
 - the next march: what has been committed so far, by whom, and against which site
 - a kill switch that stops sending and accepting without deactivating the plugin
 
@@ -796,9 +975,12 @@ This is the consequence that changes the calendar. A round trip is three to eigh
 same back, so an army can be away for sixteen days. A round is forty-five. A march begun on day
 forty cannot possibly resolve before the wipe.
 
-So a league **closes marching before the round ends**, by the worst-case round trip, calculated as
-twice the maximum delay rather than written down as a fixed number. With a three to eight day
-range that is the last sixteen days; narrow the range and the cutoff narrows with it. The last stretch
+So a league **closes marching before the round ends**, by the worst case from the call to the
+return, calculated from the settings rather than written down as a fixed number: the muster window
+plus twice the maximum delay. With a five day muster and a three to eight day range that is the
+last twenty-one days, and what closes is the calling of a muster rather than the marching, since a
+muster called on the last permitted day still has to raise an army before anything leaves. Narrow
+either setting and the cutoff narrows with it. The last stretch
 of a round becomes what it should be anyway, the part where sites consolidate and the standings
 settle, rather than a window where armies are committed and then deleted mid-flight.
 
@@ -844,12 +1026,15 @@ any length and is what the next one is for.
 
 ### Derive the cutoff, do not hardcode it
 
-The sixteen day close is two times the maximum delay, and it should be calculated that way rather
-than written down. A league that narrows its range to three to five days gets a ten day cutoff for
-free, and one that widens it to a fortnight gets a twenty-eight day cutoff without anyone having to
-remember to change a second number.
+The twenty-one day close is the muster window plus two times the maximum delay, and it should be
+calculated that way rather than written down. A league that narrows its range to three to five days
+gets a fifteen day cutoff for free, and one that widens it to a fortnight gets a thirty-three day
+cutoff without anyone having to remember to change a second number.
 
-    $cutoff_days = 2 * $league['delay_max_days'];
+    $cutoff_days = $league['muster_days'] + 2 * $league['delay_max_days'];
+
+Both terms have to be in it. Leaving the muster out is the easy mistake, and it produces a cutoff
+that looks right and still lets a site call a war whose army departs after the round has ended.
 
 ### The one that still needs deciding
 
