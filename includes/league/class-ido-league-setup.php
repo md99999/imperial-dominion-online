@@ -201,7 +201,11 @@ class IDO_League_Setup {
         $lid   = (string) ($data['lid'] ?? '');
         $hub   = (string) ($data['hub'] ?? '');
         $token = (string) ($data['token'] ?? '');
-        $name  = sanitize_text_field((string) ($data['name'] ?? ''));
+        // The same rule a name in a packet faces, rather than a second, looser
+        // one here. A league name that is not name-shaped is replaced with a
+        // placeholder rather than rejecting the whole invitation: the name is
+        // decoration, the league id and the hub are what matter.
+        $name  = (string) IDO_League_Packet::clean_name((string) ($data['name'] ?? ''));
 
         if (!preg_match('/^[0-9a-f-]{36}$/', $lid))   throw new IDO_Game_Exception('That invitation is not for a league this version understands.');
         if (!preg_match('/^[0-9a-f]{64}$/', $token))  throw new IDO_Game_Exception('That invitation carries no usable token.');

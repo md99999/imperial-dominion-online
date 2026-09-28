@@ -30,7 +30,7 @@ $wire   = IDO_League_Crypto::pack($body, $from, $secret);
 
 echo "=== a packet signed and read back ===\n";
 check('it verifies with the right secret', IDO_League_Crypto::verify($wire, $secret));
-check('the body survives the round trip', IDO_League_Crypto::body($wire) === $body);
+check('the body survives the round trip', IDO_League_Crypto::open($wire, $secret) === $body);
 check('the sender is readable without verifying', IDO_League_Crypto::split($wire)['from'] === $from);
 
 echo "\n=== what it refuses ===\n";
@@ -55,16 +55,25 @@ check('a packet over the size cap is refused',
     IDO_League_Crypto::split(str_repeat('a', IDO_League_Crypto::MAX_BYTES + 1)) === null);
 check('an empty string is refused', IDO_League_Crypto::split('') === null);
 
-echo "\n=== the parser is never reached by rubbish ===\n";
+echo "\n=== the parser is only reachable through a valid signature ===\n";
+// These are signed with the real secret, so they get past verification and
+// actually reach the parser. That is the point of testing them: a hostile or
+// compromised *peer* can do exactly this, and what stops it is the parser's own
+// limits rather than the signature.
+$signed = static function (string $json) use ($from, $secret): string {
+    $body = 'ido1.' . $from . '.' . IDO_League_Crypto::b64_encode($json);
+    return $body . '.' . hash_hmac('sha256', $body, $secret);
+};
+check('malformed JSON yields null rather than throwing',
+    IDO_League_Crypto::open($signed('{"broken": '), $secret) === null);
+check('a deeply nested body is refused by the depth cap',
+    IDO_League_Crypto::open($signed(str_repeat('[', 40) . str_repeat(']', 40)), $secret) === null);
+check('a body that is not an object is refused',
+    IDO_League_Crypto::open($signed('"just a string"'), $secret) === null);
 check('a non-base64 payload yields no body',
-    IDO_League_Crypto::body('ido1.' . $from . '.not base64!.' . str_repeat('a', 64)) === null);
-$bad = 'ido1.' . $from . '.' . IDO_League_Crypto::b64_encode('{"broken": ') . '.' . str_repeat('a', 64);
-check('malformed JSON yields null rather than throwing', IDO_League_Crypto::body($bad) === null);
-$deep = 'ido1.' . $from . '.' . IDO_League_Crypto::b64_encode(str_repeat('[', 40) . str_repeat(']', 40))
-      . '.' . str_repeat('a', 64);
-check('a deeply nested body is refused by the depth cap', IDO_League_Crypto::body($deep) === null);
-$scalar = 'ido1.' . $from . '.' . IDO_League_Crypto::b64_encode('"just a string"') . '.' . str_repeat('a', 64);
-check('a body that is not an object is refused', IDO_League_Crypto::body($scalar) === null);
+    IDO_League_Crypto::open('ido1.' . $from . '.not base64!.' . str_repeat('a', 64), $secret) === null);
+check('a valid body with the wrong secret never reaches the parser',
+    IDO_League_Crypto::open($signed('{"a":1}'), $other) === null);
 
 echo "\n=== secrets and tokens ===\n";
 check('a secret is 32 bytes', strlen(hex2bin(IDO_League_Crypto::secret())) === 32);
