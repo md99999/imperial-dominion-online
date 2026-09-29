@@ -338,9 +338,19 @@ check('only once it is fought does the defender learn the outcome',
 check('the attacker sees three states after the muster', [
     IDO_League_Status::label(IDO_League_Status::MARCHING),
     IDO_League_Status::label(IDO_League_Status::IN_BATTLE),
-    IDO_League_Status::label(IDO_League_Status::RESOLVED, true),
-    IDO_League_Status::label(IDO_League_Status::RESOLVED, false),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'won'),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'lost'),
 ] === ['Marching to the battlefield', 'In battle', 'Victory', 'Defeat']);
+// A battle has three endings, so the label takes the outcome rather than a
+// won/lost flag: two armies that could not break each other is neither.
+check('and a stalemate is named as one',
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'drawn') === 'Stalemate');
+check('with the other endings named too', [
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'held'),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'refused'),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'failed'),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, 'lost_contact'),
+] === ['The walls held', 'Turned away', 'The muster failed', 'No word ever came']);
 
 $march = static function (array $f) { return (object) array_merge(
     ['sent_at' => null, 'joined_at' => null, 'resolved_at' => null], $f); };

@@ -42,13 +42,30 @@ class IDO_League_Status {
         return [self::MUSTERING, self::MARCHING, self::IN_BATTLE, self::RESOLVED];
     }
 
-    /** What a ruler is told, for each state. */
-    public static function label(string $status, bool $won = false): string {
+    /**
+     * What a ruler is told, for each state.
+     *
+     * The ending takes the outcome rather than a won/lost flag, because a battle
+     * has three of them: two armies that could not break each other is neither a
+     * victory to celebrate nor a defeat to answer for.
+     */
+    public static function label(string $status, string $outcome = ''): string {
         switch ($status) {
             case self::MUSTERING: return 'Mustering';
             case self::MARCHING:  return 'Marching to the battlefield';
             case self::IN_BATTLE: return 'In battle';
-            case self::RESOLVED:  return $won ? 'Victory' : 'Defeat';
+            case self::RESOLVED:
+                switch ($outcome) {
+                    case 'won':          return 'Victory';
+                    case 'lost':         return 'Defeat';
+                    case 'drawn':        return 'Stalemate';
+                    case 'held':         return 'The walls held';
+                    case 'refused':      return 'Turned away';
+                    case 'failed':       return 'The muster failed';
+                    case 'cancelled':    return 'Cancelled';
+                    case 'lost_contact': return 'No word ever came';
+                }
+                return 'Over';
         }
         return 'Unknown';
     }
@@ -67,6 +84,9 @@ class IDO_League_Status {
                      . 'days to reach you.';
             case self::RESOLVED:
                 return 'The survivors are home and the dispatches have been read.';
+            case 'drawn':
+                return 'Neither side could break the other. The army came home with its dead and '
+                     . 'nothing else.';
         }
         return '';
     }

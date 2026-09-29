@@ -132,8 +132,10 @@ class IDO_League_March {
             'sent_at'     => IDO_League::now(),
             'joined_at'   => IDO_League::now(),
             'resolved_at' => IDO_League::now(),
-            // Recorded from the defender's point of view: they held or they did not.
-            'outcome'     => $result['outcome'] === 'won' ? 'lost' : 'held',
+            // Recorded from the defender's point of view: they held, they did
+            // not, or neither side could break the other.
+            'outcome'     => $result['outcome'] === 'drawn' ? 'drawn'
+                             : ($result['outcome'] === 'won' ? 'lost' : 'held'),
             'force_json'  => wp_json_encode(['force' => $force, 'weapons' => $weapons]),
             'spoils_json' => wp_json_encode($result),
             'created_at'  => IDO_League::now(),
@@ -419,6 +421,13 @@ class IDO_League_March {
             return sprintf('%s was rebuilding under a grace period and would not give battle. '
                 . 'The army turned around and came home intact.', $peer->site_name);
         }
+        if ((string) $body['outcome'] === 'drawn') {
+            return sprintf(
+                'Neither side could break the other at %s. The field was held until dark and the army '
+                . 'withdrew in order, leaving %s of the enemy dead and taking nothing.',
+                $peer->site_name, IDO_Game::fmt((int) $body['defender_dead'])
+            );
+        }
         $won = (string) $body['outcome'] === 'won';
         return sprintf(
             '%s %s. %s dead among their ranks. Carried off: %s gold, %s grain, %s iron and %s siege weapon(s).',
@@ -433,6 +442,12 @@ class IDO_League_March {
     }
 
     private static function announce_defence(object $peer, array $result): void {
+        if ($result['outcome'] === 'drawn') {
+            IDO_Log::news('league', sprintf(
+                '%s marched on us and neither side could break the other. They withdrew at dark, '
+                . 'and we buried our dead.', $peer->site_name));
+            return;
+        }
         IDO_Log::news('league', $result['outcome'] === 'won'
             ? sprintf('%s marched on us and carried the field. The granaries and treasuries are lighter.',
                 $peer->site_name)
@@ -441,6 +456,13 @@ class IDO_League_March {
 
     private static function announce_return(object $peer, string $outcome, array $spoils, int $weapons): void {
         if ($outcome === 'refused') return;
+
+        if ($outcome === 'drawn') {
+            IDO_Log::news('league', sprintf(
+                'The army is home from %s with nothing but its dead. Neither side could break the other.',
+                $peer->site_name));
+            return;
+        }
 
         IDO_Log::news('league', $outcome === 'won'
             ? sprintf('The army is home from %s in triumph, with %s gold, %s grain, %s iron and %s engines.',

@@ -107,7 +107,7 @@ class IDO_League_Packet {
             ],
             'result' => [
                 'march'          => ['uuid'],
-                'outcome'        => ['enum', ['won', 'lost', 'refused']],
+                'outcome'        => ['enum', ['won', 'lost', 'drawn', 'refused']],
                 'survivors'      => ['map', 'unit'],
                 'weapons_home'   => ['map', 'weapon'],
                 'spoils_gold'    => ['int', 0, IDO_Game::MAX_VALUE],

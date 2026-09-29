@@ -34,6 +34,30 @@ class IDO_League_Battle {
     const DEFENDER_HELD_LOSS = 0.03;
 
     /**
+     * How close counts as too close to call: within five percent either way.
+     *
+     * Without this a dead-even fight is decided by the random swing, which is a
+     * coin flip carrying the full consequences of a rout. One side takes plunder
+     * and seven percent casualties, the other takes eighteen and nothing, and the
+     * difference between those two outcomes was a dice roll on a day nobody could
+     * influence. After a week of waiting for an army to arrive, that reads as the
+     * game being arbitrary rather than tense.
+     *
+     * A draw is the honest answer to two armies that could not break each other.
+     * Neither side takes anything, both count their dead, and the army comes home.
+     * It costs the attacker the turns, the days and a tenth of the force, which is
+     * a real price for picking a fight they could not finish, without being the
+     * ruin that losing is.
+     *
+     * Five percent is narrow on purpose. It should be the genuinely even fight,
+     * not a consolation for being close.
+     */
+    const DRAW_BAND = 0.05;
+
+    /** What an inconclusive battle costs each side. */
+    const DRAW_LOSS = 0.10;
+
+    /**
      * Fights the battle and applies every consequence to this site.
      *
      * @param array<string,int> $force    what arrived, by unit key
@@ -61,24 +85,34 @@ class IDO_League_Battle {
         $offence = $offence_base * IDO_Military::swing();
         $defence = self::defended_power($defenders, $ballista_share, $wall_reduction) * IDO_Military::swing();
 
-        $attacker_won = $offence > $defence;
         $ratio = $defence > 0 ? $offence / $defence : 2.0;
 
+        $outcome = self::outcome_for($offence, $defence);
+        $drawn = $outcome === 'drawn';
+        $attacker_won = $outcome === 'won';
+
         $plunder = $attacker_won ? self::take_plunder($defenders, $ratio) : ['gold' => 0, 'grain' => 0, 'iron' => 0];
-        $weapons_taken = self::take_weapons($defenders, $attacker_won, $weapons);
-        $defender_dead = self::apply_defender_losses($defenders,
-            $attacker_won ? self::DEFENDER_LOST_LOSS : self::DEFENDER_HELD_LOSS);
+        $weapons_taken = $drawn ? 0 : self::take_weapons($defenders, $attacker_won, $weapons);
+
+        $defender_rate = $drawn ? self::DRAW_LOSS
+            : ($attacker_won ? self::DEFENDER_LOST_LOSS : self::DEFENDER_HELD_LOSS);
+        $defender_dead = self::apply_defender_losses($defenders, $defender_rate);
 
         foreach ($defenders as $row) IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($row));
 
         // What the attacker gets told, and what their site will hand out. Their
         // casualties are computed here because the defender is the one who knows
-        // whether the field was carried.
-        $survivors = self::survivors($force, $attacker_won ? self::ATTACKER_WON_LOSS : self::ATTACKER_LOST_LOSS);
-        $train_home = self::survivors($weapons, $attacker_won ? 0.0 : 0.25);
+        // how the day went.
+        $attacker_rate = $drawn ? self::DRAW_LOSS
+            : ($attacker_won ? self::ATTACKER_WON_LOSS : self::ATTACKER_LOST_LOSS);
+        $survivors = self::survivors($force, $attacker_rate);
+
+        // A drawn field is not a rout, so the siege train is dragged home rather
+        // than abandoned where it stood.
+        $train_home = self::survivors($weapons, $drawn ? 0.0 : ($attacker_won ? 0.0 : 0.25));
 
         return [
-            'outcome'        => $attacker_won ? 'won' : 'lost',
+            'outcome'        => $drawn ? 'drawn' : ($attacker_won ? 'won' : 'lost'),
             'survivors'      => $survivors,
             'weapons_home'   => $train_home,
             'spoils_gold'    => (int) $plunder['gold'],
@@ -90,6 +124,28 @@ class IDO_League_Battle {
                                 : ($agent_result['success'] ? 'success'
                                     : ($agent_result['lost'] ? 'hanged' : 'failed')),
         ];
+    }
+
+    /**
+     * Who carried the day: won, lost, or neither.
+     *
+     * Pulled out of the battle so the rule can be read and tested on its own,
+     * because it is the rule most likely to be argued about and the one a player
+     * will feel hardest. Everything else in a battle is arithmetic on numbers;
+     * this is the line between a triumph and a ruin.
+     */
+    public static function outcome_for(float $offence, float $defence): string {
+        if ($defence <= 0) return $offence > 0 ? 'won' : 'drawn';
+
+        // The epsilon is not decoration. In binary floating point 1050/1000 - 1
+        // comes out as 0.050000000000000044, so a fight sitting exactly on a five
+        // percent band fell just outside it and was scored a win. The band is
+        // documented as inclusive and should behave that way rather than
+        // depending on which numbers happen to be representable.
+        $ratio = $offence / $defence;
+        if (abs($ratio - 1.0) <= self::DRAW_BAND + 1e-9) return 'drawn';
+
+        return $offence > $defence ? 'won' : 'lost';
     }
 
     /** Every empire standing on this site. */

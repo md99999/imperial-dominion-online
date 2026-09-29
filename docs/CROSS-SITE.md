@@ -730,6 +730,29 @@ rules for a march that lands on a board under grace are unchanged from the secti
 is returned home intact with a plain reason, because the attacker committed days before the reset
 happened and should lose the turns and the time but not the army.
 
+### 2b. A battle has three endings
+
+Two armies that cannot break each other is a real outcome, and without it a fight
+decided by a tenth of a percent hands one side plunder and seven percent
+casualties and the other eighteen percent and nothing. The difference between
+those two is a dice roll on a day nobody could see coming, after a week of
+waiting for the army to arrive. That reads as the game being arbitrary rather
+than tense.
+
+**Within five percent either way is a draw.** Neither side takes anything, both
+count their dead at ten percent, and the army comes home. The attacker still pays
+the turns, the days and a tenth of the force, which is the right price for
+picking a fight they could not finish, without being the ruin that losing is. The
+siege train is dragged home rather than abandoned, because a drawn field is not a
+rout.
+
+Five percent is narrow on purpose: it should be the genuinely even fight, not a
+consolation for being close. A tenth ahead is still a win.
+
+Of nine hundred legionnaires sent, eight hundred and thirty-seven come home from
+a victory, eight hundred and ten from a stalemate, and seven hundred and
+thirty-eight from a defeat.
+
 ### 3. Spoils: the local tables, minus land
 
 **A league march uses the same percentages as a local raid**, applied to the defending side rather
