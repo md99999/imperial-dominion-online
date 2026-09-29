@@ -89,25 +89,14 @@ class IDO_Kingdom {
                 : 'Another ruler in this round already goes by that name. Choose another.');
         }
 
-        $protection = IDO_Settings::int('protection_hours');
-        $data = [
-            'round_id'         => (int) $round->id,
-            'user_id'          => $user_id,
-            'kingdom_name'       => $kingdom_name,
-            'ruler_name'       => $ruler_name,
-            'turns'            => IDO_Settings::int('starting_turns'),
-            'last_turn_grant'  => IDO_Game::today(),
-            'land'             => IDO_Settings::int('starting_land'),
-            'gold'             => IDO_Settings::int('starting_gold'),
-            'grain'            => IDO_Settings::int('starting_grain'),
-            'iron'             => IDO_Settings::int('starting_iron'),
-            'peasants'         => IDO_Settings::int('starting_peasants'),
-            'u_pawn'           => IDO_Settings::int('starting_pawns'),
-            'u_legionnaire'    => IDO_Settings::int('starting_legionnaires'),
-            'protection_until' => date('Y-m-d H:i:s', current_time('timestamp') + $protection * HOUR_IN_SECONDS),
-            'created_at'       => IDO_Game::now(),
-            'last_seen'        => IDO_Game::now(),
-        ];
+        $data = array_merge([
+            'round_id'     => (int) $round->id,
+            'user_id'      => $user_id,
+            'kingdom_name' => $kingdom_name,
+            'ruler_name'   => $ruler_name,
+            'created_at'   => IDO_Game::now(),
+            'last_seen'    => IDO_Game::now(),
+        ], self::starting_package());
         // A starting empire arrives with a little of everything already standing.
         $land = (int) $data['land'];
         $data['b_homestead']      = (int) round($land * 0.24);
@@ -131,6 +120,35 @@ class IDO_Kingdom {
         self::recalc_networth($kingdom);
         IDO_Log::news('founding', sprintf('%s of %s has claimed a seat among the empires.', $ruler_name, $kingdom_name));
         return self::reload($kingdom);
+    }
+
+    /**
+     * What an empire is founded with, and what a board reset restores.
+     *
+     * One definition, used by both, because a reset that handed out a different
+     * package from a founding would be two games: a board beaten flat and
+     * refounded has to start exactly where a new player starts, or "reset" means
+     * whatever the reset code happened to say that week.
+     *
+     * The truce is part of the package for the same reason. A new ruler gets time
+     * to build before anybody can touch them, and a whole board that has just
+     * been flattened needs precisely that, for precisely as long.
+     */
+    public static function starting_package(): array {
+        $protection = IDO_Settings::int('protection_hours');
+
+        return [
+            'turns'            => IDO_Settings::int('starting_turns'),
+            'last_turn_grant'  => IDO_Game::today(),
+            'land'             => IDO_Settings::int('starting_land'),
+            'gold'             => IDO_Settings::int('starting_gold'),
+            'grain'            => IDO_Settings::int('starting_grain'),
+            'iron'             => IDO_Settings::int('starting_iron'),
+            'peasants'         => IDO_Settings::int('starting_peasants'),
+            'u_pawn'           => IDO_Settings::int('starting_pawns'),
+            'u_legionnaire'    => IDO_Settings::int('starting_legionnaires'),
+            'protection_until' => date('Y-m-d H:i:s', current_time('timestamp') + $protection * HOUR_IN_SECONDS),
+        ];
     }
 
     /**

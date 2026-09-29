@@ -180,7 +180,11 @@ class IDO_Maintenance {
             $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('news') . ' WHERE created_at < %s', $cutoff));
 
             $rollover = IDO_Rounds::maybe_roll_over();
+            // After the league traffic, so an army that came home tonight counts
+            // toward whether the board can still stand.
             $league_note = trim(self::league_traffic(true) . ' ' . self::league_news());
+            $reset_note = IDO_Board::reset_if_ruined((int) $round->id);
+            if ($reset_note !== '') $league_note = trim($league_note . ' ' . $reset_note);
 
             self::record('daily', $source);
             // Saying how many were skipped matters: pressing Run now after the

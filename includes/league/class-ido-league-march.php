@@ -112,7 +112,7 @@ class IDO_League_March {
         // A site under a grace period is not marched on. The force goes home
         // intact: the attacker committed days before the reset happened and
         // should lose the turns and the time, but not the army.
-        if ($league->round_starts_at && self::under_grace($league)) {
+        if (IDO_Board::under_grace()) {
             IDO_League_Queue::enqueue($peer, 'result', self::refusal_result((string) $body['march']));
             return '';
         }
@@ -360,17 +360,6 @@ class IDO_League_March {
             $kingdom = IDO_Kingdom::find($kingdom_id);
             if ($kingdom) IDO_Kingdom::pay($kingdom, ['agents' => 1]);
         }
-    }
-
-    /** Whether this site is inside a grace period and may not be fought. */
-    private static function under_grace(object $league): bool {
-        global $wpdb;
-        $until = $wpdb->get_var($wpdb->prepare(
-            'SELECT grace_until FROM ' . IDO_DB::t('sites')
-            . ' WHERE league_id = %d AND site_uuid = %s LIMIT 1',
-            (int) $league->id, (string) $league->site_uuid
-        ));
-        return $until && strtotime((string) $until . ' UTC') > time();
     }
 
     /** A result that fights nothing, for a march that arrived during a grace period. */

@@ -18,6 +18,7 @@ CREATE TABLE {prefix}ido_leagues (
   max_sites int(11) NOT NULL DEFAULT 12,
   status varchar(16) NOT NULL DEFAULT 'active',
   paused tinyint(1) NOT NULL DEFAULT 0,
+  grace_until datetime DEFAULT NULL,
   enrol_token varchar(64) NOT NULL DEFAULT '',
   enrol_note varchar(190) NOT NULL DEFAULT '',
   created_at datetime DEFAULT NULL,

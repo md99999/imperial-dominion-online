@@ -137,6 +137,10 @@ class IDO_Settings {
             'delete_data_on_uninstall' => 0,
             // League play is opt in and off by default: a site that never joins
             // one should carry none of its tables, routes or attack surface.
+            // A board worth less than this share of its founding grants is
+            // finished, and is refounded on the next daily tick. 0 turns the
+            // automatic reset off and leaves it to the game master.
+            'board_ruin_percent'     => 25,
             'league_enabled'         => 0,
             // Whether this site exposes the route other league members deliver
             // to. Off by default, like every other switch here that opens
@@ -182,6 +186,7 @@ class IDO_Settings {
         $current['max_agents']         = max(1, (int) $current['max_agents']);
         $current['target_max_percent'] = max((int) $current['target_min_percent'], (int) $current['target_max_percent']);
         $current['market_tax_percent'] = min(50, (int) $current['market_tax_percent']);
+        $current['board_ruin_percent'] = min(90, (int) $current['board_ruin_percent']);
         $current['delete_data_on_uninstall'] = !empty($current['delete_data_on_uninstall']) ? 1 : 0;
         $current['league_enabled']           = !empty($current['league_enabled']) ? 1 : 0;
         $current['league_endpoint']          = !empty($current['league_endpoint']) ? 1 : 0;

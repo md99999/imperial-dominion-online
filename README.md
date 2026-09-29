@@ -264,11 +264,29 @@ can be sent by anybody who has seen the form once.
 The War Room says so and points at the League page, where armies are actually raised. Leaving a
 league gives local war back.
 
-**Current state:** league play is complete and playable: opting in, founding, invitations, the
-enrolment handshake, the packet queues, news, the muster with its window and escrow, the march,
-battle resolution, spoils, the agent who rides ahead, the return leg, the escrow timeout, the league
-table and page, local war standing down, the cron workers, leaving and the kill switch. The board
-reset and its grace period are designed and not yet built.
+### Starting the board over
+
+A board can be beaten flat: every empire in ruins, nothing to build from, no way back inside a round.
+When every empire together is worth less than a quarter of what they were founded with, the board
+**refounds itself** on the next daily run. A game master can also do it from **Settings**, behind two
+confirmations.
+
+**It is a new install with the players kept.** Every empire keeps its name and its account and loses
+everything else: land, buildings, armies, treasury, siege weapons and agents are replaced by the same
+founding grant a new ruler gets, and everyone gets the same opening truce at the same moment. The
+Hall of Fame is not touched, because a board being beaten flat is part of its history.
+
+**All rank and all scores are forfeit**, and in a league the record goes too: every exchange that
+round stops counting toward this site's score. A site that could take a fresh founding grant and keep
+its league points would have found the best move in the game. While the truce holds, the site cannot
+be marched on and cannot march — protection is not a shield to attack from behind — and a march
+already in flight is turned away with the attacker's force returned intact.
+
+**Current state:** Phase 2 is complete. Opting in, founding, invitations, the enrolment handshake,
+the packet queues, news, the muster with its window and escrow, the march, battle resolution, spoils,
+the agent who rides ahead, the return leg, the escrow timeout, the league table and page, local war
+standing down, the board reset and its grace period, the cron workers, leaving and the kill switch
+are all built and tested.
 
 ---
 

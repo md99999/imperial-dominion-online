@@ -61,16 +61,25 @@ class IDO_League_News {
             }
         }
 
-        return [
+        $body = [
             'site_name'        => IDO_League::own_name(),
             'round_id'         => $round ? (int) $round->id : 0,
             'round_day'        => min(100000, $round_day),
             'empire_count'     => min(100000, $count),
             'networth'         => IDO_Game::clamp($total),
             'largest_networth' => IDO_Game::clamp($largest),
-            'accepting'        => $league !== null && IDO_League::active(),
+            'accepting'        => $league !== null && IDO_League::active() && !IDO_Board::under_grace(),
             'as_of'            => IDO_League::now(),
         ];
+
+        // A site rebuilding says so, so peers can see not to march on it rather
+        // than finding out days later when their army is turned away at the gate.
+        $grace = IDO_Board::grace_until();
+        if ($grace !== null && strtotime($grace . ' UTC') > time()) {
+            $body['grace_until'] = $grace;
+        }
+
+        return $body;
     }
 
     /** Queues this site's figures to every paired peer. */

@@ -212,6 +212,30 @@ class IDO_Admin {
                 $notice = IDO_League_Setup::leave();
                 break;
 
+            case 'reset_board':
+                // Both confirmations are checked here as well as in the markup.
+                // A required attribute is a courtesy to the browser, and this is
+                // the most destructive thing the plugin can do.
+                $typed = isset($_POST['confirm_word'])
+                    ? strtoupper(trim(sanitize_text_field(wp_unslash($_POST['confirm_word'])))) : '';
+                if (empty($_POST['confirm_reset']) || $typed !== 'REFOUND') {
+                    $notice = 'The board was not refounded: the confirmation was not completed.';
+                    break;
+                }
+                $round = IDO_Rounds::current();
+                if (!$round) {
+                    $notice = 'No round is running, so there is no board to refound.';
+                    break;
+                }
+                $result = IDO_Board::reset((int) $round->id, 'Refounded by the game master.');
+                $notice = sprintf(
+                    'The board is refounded. %d empires begin again with a founding grant and the opening '
+                    . 'truce, %d in-flight orders were cleared, and %d league march(es) stood down. '
+                    . 'All rank and scores are forfeit.',
+                    $result['empires'], $result['cleared'], $result['marches']
+                );
+                break;
+
             case 'delete_kingdom':
                 $kingdom_id = isset($_POST['kingdom_id']) ? (int) $_POST['kingdom_id'] : 0;
                 $notice = self::delete_kingdom($kingdom_id);

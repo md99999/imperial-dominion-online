@@ -181,6 +181,17 @@ class IDO_League_Muster {
             ));
         }
 
+        // A site rebuilding under its opening truce cannot march either.
+        // Protection is not a shield to attack from behind, which is the same
+        // rule the local crown truce follows.
+        if (IDO_Board::under_grace()) {
+            throw new IDO_Game_Exception(sprintf(
+                'This site is rebuilding under a truce until %s and cannot march while it holds. '
+                . 'Protection is not a shield to attack from behind.',
+                IDO_League::when(IDO_Board::grace_until())
+            ));
+        }
+
         $round = IDO_Rounds::current();
         if (!$round) throw new IDO_Game_Exception('No round is running.');
 

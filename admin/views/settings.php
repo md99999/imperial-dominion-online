@@ -1,6 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 $settings = IDO_Settings::all();
+$round    = IDO_Rounds::current();
 
 /** Grouped for readability; every key still comes from IDO_Settings::defaults(). */
 $groups = [
@@ -130,6 +131,34 @@ $help = [
             </tr>
         </table>
 
+        <h2>Starting over</h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><label for="ido_board_ruin_percent">Ruined board</label></th>
+                <td>
+                    <input name="settings[board_ruin_percent]" id="ido_board_ruin_percent" type="number"
+                           min="0" max="90" value="<?php echo esc_attr((string) (int) $settings['board_ruin_percent']); ?>"
+                           class="small-text">%
+                    <p class="description">
+                        When every empire together is worth less than this share of what they were founded
+                        with, the board is finished and refounds itself on the next daily run. Set it to 0
+                        to switch that off and decide yourself.
+                    </p>
+                    <?php $report = IDO_Board::ruin_report((int) ($round->id ?? 0)); ?>
+                    <p class="description">
+                        <strong>Now:</strong>
+                        <?php echo esc_html(sprintf('%d empires worth %s together; the board is called finished below %s.',
+                            $report['empires'], number_format_i18n($report['worth']),
+                            number_format_i18n($report['threshold']))); ?>
+                        <?php if ($report['ruined']) : ?>
+                            <br><strong style="color:#b32d2e">This board is below the line and will refound itself
+                            on the next daily run.</strong>
+                        <?php endif; ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
         <h2>League play</h2>
         <table class="form-table" role="presentation">
             <tr>
@@ -210,4 +239,49 @@ $help = [
 
         <p><button type="submit" class="button button-primary">Save settings</button></p>
     </form>
+
+    <hr>
+
+    <h2>Refound the board now</h2>
+    <div class="notice notice-error inline" style="max-width:46em">
+        <p><strong>This starts the whole board again, and it cannot be undone.</strong></p>
+        <p>
+            Every empire keeps its name and its player and loses everything else: land, buildings,
+            armies, treasury, siege weapons and agents are replaced by the same founding grant a new
+            ruler gets, and every empire is given the same opening truce at the same moment.
+        </p>
+        <p>
+            <strong>All rank and all scores are forfeit.</strong> Net worth goes back to a founding
+            figure for everybody, so the standings start from nothing. In a league, the record goes with
+            it: every exchange this round stops counting toward this site's score, because a site that
+            could take a fresh founding grant and keep its league points would have found the best move
+            in the game.
+        </p>
+        <p>
+            The Hall of Fame is not touched. Completed rounds are history and stay that way.
+        </p>
+        <p>
+            Armies away on a league march do not come back, and an open muster is returned before the
+            reset. A march already heading for this site is turned away while the truce holds, and the
+            attacker gets their force home intact.
+        </p>
+    </div>
+    <?php echo IDO_Admin::form_open('reset_board', 'ido_settings'); ?>
+        <p>
+            <label>
+                <input type="checkbox" name="confirm_reset" value="1" required>
+                I understand this cannot be undone, and that all rank and scores are forfeit.
+            </label>
+        </p>
+        <p>
+            <label>Type <code>REFOUND</code> to confirm:
+                <input type="text" name="confirm_word" class="regular-text" style="max-width:12em" required>
+            </label>
+        </p>
+        <button type="submit" class="button button-link-delete"
+                onclick="return confirm('Refound the board? Every empire starts again and all scores are forfeit. This cannot be undone.');">
+            Refound the board
+        </button>
+    </form>
+
 </div>
