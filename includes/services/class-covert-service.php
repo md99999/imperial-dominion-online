@@ -92,6 +92,36 @@ class IDO_Covert {
      *
      * @return array flash lines
      */
+    /**
+     * How one side's size compares with the other's, bounded.
+     *
+     * Extracted so the league mission uses this rule rather than a copy of it.
+     * Two versions of the same arithmetic in two files is how they end up
+     * disagreeing: somebody tunes one, and a mission that reads identically on
+     * screen quietly behaves differently depending on where it was ordered.
+     */
+    public static function ratio(int $mine, int $theirs): float {
+        return max(0.5, min(2.0, ($mine + 1) / max(1, $theirs)));
+    }
+
+    /** A base chance bent by that ratio, and never a certainty either way. */
+    public static function odds(int $base_chance, float $ratio, int $ceiling = 95): int {
+        return (int) round(min($ceiling, max(10, $base_chance * (0.75 + 0.25 * $ratio))));
+    }
+
+    /**
+     * The two rolls every mission makes: did it work, and if not, was he taken.
+     *
+     * An agent who succeeds is never lost. That is the rule, in one place, and
+     * both the local court and the league march read it from here.
+     *
+     * @return array{success:bool,lost:bool}
+     */
+    public static function attempt(int $chance, int $risk): array {
+        $success = wp_rand(1, 100) <= $chance;
+        return ['success' => $success, 'lost' => !$success && wp_rand(1, 100) <= $risk];
+    }
+
     public static function run(object $kingdom, int $target_id, string $op_key): array {
         global $wpdb;
 
@@ -124,9 +154,11 @@ class IDO_Covert {
         $kingdom = IDO_Kingdom::reload($kingdom);
 
         // Larger empires are harder to move against, smaller ones easier.
-        $size_ratio = max(0.5, min(2.0, ((int) $kingdom->networth + 1) / max(1, (int) $target->networth)));
-        $chance = (int) round(min(95, max(10, $op['chance'] * (0.75 + 0.25 * $size_ratio))));
-        $success = wp_rand(1, 100) <= $chance;
+        $size_ratio = self::ratio((int) $kingdom->networth, (int) $target->networth);
+        $chance = self::odds((int) $op['chance'], $size_ratio);
+
+        $attempt = self::attempt($chance, (int) $op['risk']);
+        $success = $attempt['success'];
 
         $agent_lost = false;
         $actor_report = [];
@@ -161,7 +193,7 @@ class IDO_Covert {
                     break;
             }
         } else {
-            $agent_lost = wp_rand(1, 100) <= (int) $op['risk'];
+            $agent_lost = $attempt['lost'];
             $actor_report[] = $agent_lost
                 ? sprintf('The mission against %s failed and your agent was taken. They will not be seen again.', $target->kingdom_name)
                 : sprintf('The mission against %s failed. Your agent slipped away unrecognised.', $target->kingdom_name);

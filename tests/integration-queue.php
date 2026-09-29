@@ -166,15 +166,18 @@ say('=== the delay is a coded value, drawn per packet ===');
 $seen = [];
 for ($i = 0; $i < 400; $i++) $seen[IDO_League::delay_days()] = true;
 ksort($seen);
-check('every value from 3 to 7 comes up', array_keys($seen) === [3, 4, 5, 6, 7],
+check('every value from 3 to 6 comes up', array_keys($seen) === [3, 4, 5, 6],
     implode(',', array_keys($seen)));
 check('and nothing outside that range ever does',
     min(array_keys($seen)) === IDO_League::DELAY_MIN_DAYS && max(array_keys($seen)) === IDO_League::DELAY_MAX_DAYS);
 check('the floor is three days, for three daily ticks', IDO_League::DELAY_MIN_DAYS === 3);
-check('the ceiling is seven', IDO_League::DELAY_MAX_DAYS === 7);
+check('the ceiling is six, leaving the seventh day for the ride home',
+    IDO_League::DELAY_MAX_DAYS === 6);
+check('so no exchange runs longer than a week of travel',
+    IDO_League::DELAY_MAX_DAYS + IDO_League::RESULT_DELAY_DAYS === 7);
 check('the result rides home in a day', IDO_League::RESULT_DELAY_DAYS === 1);
 check('the longest exchange is the muster, the march out and the ride home',
-    IDO_League::longest_exchange_days(5) === 5 + 7 + 1, (string) IDO_League::longest_exchange_days(5));
+    IDO_League::longest_exchange_days(5) === 5 + 6 + 1, (string) IDO_League::longest_exchange_days(5));
 
 // A war packet is staged with a real wait; news is not delayed at all.
 clear_rate_limits();

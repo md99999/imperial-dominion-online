@@ -186,11 +186,11 @@ Nothing happens inside the request that asks for it. A packet is signed and queu
 it; an arriving packet is verified, staged, and applied by cron when its wait is over. Three things
 follow from that, and all three are deliberate:
 
-- **The delay belongs to the receiver, and is not a setting.** Three to seven days, drawn fresh for
+- **The delay belongs to the receiver, and is not a setting.** Three to six days, drawn fresh for
   every packet from the CSPRNG by the site receiving it, so a sender cannot shorten its own march or
   know what the defender will have standing when it lands. Three is the floor because the wait is
-  counted in daily cron runs: a packet arriving today lands on the third daily tick after it. The
-  result rides home in a day, so a ruler sees the army in battle one morning and reads the dispatches
+  counted in daily cron runs: a packet arriving today is fought on the third daily tick after it, and
+  the seventh day belongs to the ride home. The result rides home in a day, so a ruler sees the army in battle one morning and reads the dispatches
   the next. News waits for nothing, and only the daily run may land a march, so the dispatches arrive
   overnight rather than at any hour.
 - **A defender learns nothing until the battle is fought**, including the administrator. Not that a

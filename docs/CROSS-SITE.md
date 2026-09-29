@@ -174,7 +174,7 @@ a repeat, in the same guarded write that applies the effect, so a duplicate arri
 cannot slip through between the check and the write.
 
 The usual advice is a tight timestamp window, and that is wrong here: the design deliberately
-delays packets three to seven days in each direction, so a window has to be long, three weeks
+delays packets three to six days in each direction, so a window has to be long, three weeks
 or so. The UUID record is what actually prevents replay; the timestamp only discards the absurdly
 old.
 
@@ -296,7 +296,7 @@ members accepting it.
   starting turns and resources, building and training costs, explore yield, combat percentages,
   target bands, truce length, agent cost and limit, market tax.
 - **The round calendar**, which matters more than it sounds. See below.
-- **Exchange cadence and the delay range**, the three to seven days, so every member waits the same.
+- **Exchange cadence and the delay range**, the three to six days, so every member waits the same.
 
 Each ruleset carries a **version number**, bumped whenever the originator changes anything, and a
 **fingerprint**, the hash that rides in every packet. A member running version 4 against a league
@@ -570,8 +570,8 @@ flat number, so it scales with what the site is trying to do.
 
 ### What this costs the calendar
 
-The window is not free. It sits in front of a round trip that was already three to seven days out
-and the same back, so from the call to the return is **nine to thirteen days** with the default
+The window is not free. It sits in front of a round trip that was already three to six days out
+and the same back, so from the call to the return is **nine to twelve days** with the default
 five-day muster. Against a 45-day round that is two exchanges; against the 90-day league round it
 is four. This is the strongest argument yet for the longer league round, and the cutoff before the
 end of a round has to include the window, not just the flight:
@@ -768,7 +768,7 @@ packet is in flight. That is not a rule anybody added: the escrow exists so the 
 committed twice, and the exposure falls out of it. It is also the best thing about the mechanic,
 and the reason a league march should feel like a decision rather than a click.
 
-**The exposure is long.** Three to seven days out, a battle, and the result the next morning: an army
+**The exposure is long.** Three to six days out, a battle, and the result the next morning: an army
 can be away for as much as fourteen days, and an empire that sent most of its legions is a soft
 target for that whole time. Not only to other league sites, but to its own neighbours, who can see
 the standings and can work out who has just marched.
@@ -851,7 +851,7 @@ cheap and hard to abuse.
                       attempts, last_attempt_at, status, payload
 
 `status` on the inbound side moves through `staged`, `processed`, `rejected` and `expired`.
-`process_after` carries the delay, three to seven days, **set by the receiver on arrival**. A sender
+`process_after` carries the delay, three to six days, **set by the receiver on arrival**. A sender
 cannot shorten its own attack by lying about when it sent, because the clock that matters is the
 defender's and it starts when the packet lands.
 
@@ -869,19 +869,20 @@ administrator see an incoming march, and it makes a disputed result reviewable a
 
 **Whole days, drawn by the receiver, stored as an absolute instant.**
 
-    $days = random_int(3, 7);                       // CSPRNG, not rand()
+    $days = random_int(3, 6);                       // CSPRNG, not rand()
     $process_after = gmdate('Y-m-d H:i:s', time() + $days * DAY_IN_SECONDS);
 
-**Three to seven days, evenly, and not a setting.** The range is a coded game
+**Three to six days, evenly, and not a setting.** The range is a coded game
 value on both sides. The wait is not a tuning knob, it is the mechanic, and a
 league able to shorten it to nothing would be playing a different and worse game.
 Leaving it settable also left a hole: the calendar arrives from the hub at
 enrolment, so a hostile or careless hub could have published a range of zero and
 made every march instant. A constant cannot be pushed anywhere.
 
-Three is the floor because the wait is counted in daily cron runs. A packet
-arriving today is acted on by the third daily tick after it, so a ruler logs in on
-the third morning and the dispatches are waiting.
+Three is the floor because the wait is counted in daily cron runs: a packet
+arriving today is fought on the third daily tick after it. Six is the ceiling, and
+the seventh day belongs to the ride home, so no exchange runs longer than a week
+from the army leaving to the dispatches being read.
 
 Three decisions sit in those two lines.
 
@@ -918,12 +919,12 @@ next logs in, which is exactly the feel worth having.
 
 ### What each side is allowed to know
 
-A round trip is therefore four to eight days: the march out, the battle, and the result coming
-home. With the muster window in front of it, nine to thirteen from the moment the war is
+A round trip is therefore four to seven days: the march out, the battle, and the result coming
+home. With the muster window in front of it, nine to twelve from the moment the war is
 called. Against a 45-day round that is a handful of league exchanges at most, which is the intended
 weight. A league that wants more per round shortens the range rather than the round.
 
-The attacker knows the range, three to seven days, and never the draw. Waiting without knowing is
+The attacker knows the range, three to six days, and never the draw. Waiting without knowing is
 the mechanic, not an absence of one.
 
 The defender knows **nothing at all** until the battle has been fought, and this is the strictest
@@ -1084,6 +1085,50 @@ a site commits an army for a fortnight. Recommended, but a decision rather than 
 Enabling league play changes the rules under players who planned around the old ones, so it takes
 effect the same way league settings do: **at the next round boundary**. Leaving a league restores
 local war the same way. A site does not flip between the two games mid-round.
+
+## Sending the agent with the army
+
+A ruler committing to a muster may send their agent along with their legions. He rides ahead, and
+on the night before the battle tries to open the way from the inside: cut the hoists, fire the
+stores under the wall, buy a watch officer. Succeed and the enemy fortifications count for less
+when the assault comes. Fail and he may be taken, and an agent taken behind enemy lines is an agent
+hanged.
+
+**The rules are the local ones.** Same chance bent by the same ratio, the same two rolls, the same
+record in the same ops table, read from `IDO_Covert` rather than copied into a second file. Two
+versions of one piece of arithmetic is how they end up disagreeing: somebody tunes one, and a
+mission that reads identically on screen quietly behaves differently depending on where it was
+ordered.
+
+Three things make it a decision rather than a free extra. An empire keeps **one agent** and he costs
+a great deal, so sending him is spending the only one there is. He is **escrowed with the army**,
+gone for the whole march and unavailable for anything at home. And **failure is total**: no partial
+credit, no consolation, and a ruler who loses him starts saving again.
+
+### What it is worth, and what it cannot do
+
+Half the fortification bonus for the first agent through, and diminishing after that, capped at
+three quarters however many get in. The cap is the point. A siege the attacker has already won
+before arriving is not a siege, and a large site able to field a dozen agents should not be able to
+switch a defender's walls off.
+
+The odds are worse than any local mission and the rope is likelier: a local agent works a neighbour
+he could ride to, and this one is deep in another realm on a night the garrison is already nervous.
+
+The chance is bent by the ratio of the force that actually arrived to the defence actually standing.
+It is deliberately **not** bent by net worth, which is what the local game uses, because the only
+figure this site holds about the other one is what that site chose to publish about itself. A
+mechanic resting on a self-reported number is a mechanic a peer can tune by lying. Both the force
+and the defence are known first hand by the site doing the resolving.
+
+### Where it resolves, and why that matters
+
+On the defending site, at the moment of the battle, out of the war packet. Not before.
+
+That is not tidiness. A covert attempt resolved at any other time would have to be announced
+somehow, and announcing it would tell a defender that a march was coming, which is the one thing
+they must not learn. Here the attempt, the battle, and the defender's first knowledge of any of it
+are the same event.
 
 ## The league table: what a score can honestly be built from
 
@@ -1332,13 +1377,13 @@ report.
 
 ## Marches and the end of a round
 
-This is the consequence that changes the calendar. A round trip is three to seven days out and the
-same back, so an army can be away for eight days. A round is forty-five. A march begun on day
+This is the consequence that changes the calendar. A round trip is three to six days out and the
+same back, so an army can be away for seven days. A round is forty-five. A march begun on day
 forty cannot possibly resolve before the wipe.
 
 So a league **closes marching before the round ends**, by the worst case from the call to the
 return, calculated from the settings rather than written down as a fixed number: the muster window
-plus twice the maximum delay. With a five day muster and a three to seven day range that is the
+plus twice the maximum delay. With a five day muster and a three to six day range that is the
 last nineteen days, and what closes is the calling of a muster rather than the marching, since a
 muster called on the last permitted day still has to raise an army before anything leaves. Narrow
 either setting and the cutoff narrows with it. The last stretch
@@ -1353,7 +1398,7 @@ contribute, and whose reward was to watch it disappear.
 ## League rounds need to be longer
 
 A local round of 45 days works because a local march resolves instantly: a ruler can fight on the
-last afternoon of the round. A league march cannot. Three to seven days out, a battle, three to
+last afternoon of the round. A league march cannot. Three to six days out, a battle, three to
 eight days home, and marching has to close a full round trip before the wipe or armies are deleted
 in flight.
 
@@ -1387,7 +1432,7 @@ any length and is what the next one is for.
 
 ### Derive the cutoff, do not hardcode it
 
-The thirteen day close is the muster window plus the longest march out plus the day the result takes to ride home, and it should be
+The twelve day close is the muster window plus the longest march out plus the day the result takes to ride home, and it should be
 calculated that way rather than written down. A league that shortens its muster window to three days gets a
 seventeen day cutoff for free, without anyone having to remember to change a second number. The delay
 term is fixed, so the muster window is the only thing that moves it.

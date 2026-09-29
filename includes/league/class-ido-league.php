@@ -29,8 +29,8 @@ class IDO_League {
     const ADVISED_SITES = 20;
 
     /**
-     * How long a march or a result waits, in whole days. Three to seven, and
-     * **not a setting.**
+     * How long a march waits before it is fought, in whole days. Three to six,
+     * and **not a setting.**
      *
      * Deliberately in the code rather than in the league's hands. The wait is not
      * a tuning knob, it is the mechanic: the attacker commits blind and finds out
@@ -41,11 +41,13 @@ class IDO_League {
      * instant. A constant on both sides cannot be pushed anywhere.
      *
      * Three days is the floor because the wait is counted in daily cron runs: a
-     * packet arriving today is acted on by the third daily tick after it, so a
-     * ruler logs in on the third morning and the dispatches are waiting.
+     * packet arriving today is fought on the third daily tick after it. Six is
+     * the ceiling, and the seventh day belongs to the ride home, so no exchange
+     * runs longer than a week from the army leaving to the dispatches being
+     * read.
      */
     const DELAY_MIN_DAYS = 3;
-    const DELAY_MAX_DAYS = 7;
+    const DELAY_MAX_DAYS = 6;
 
     /**
      * How long the dispatches take to ride home: one day, always.
@@ -66,7 +68,7 @@ class IDO_League {
     const RESULT_DELAY_DAYS = 1;
 
     /**
-     * The draw for one packet: 3, 4, 5, 6 or 7 days, evenly.
+     * The draw for one packet: 3, 4, 5 or 6 days, evenly.
      *
      * random_int, so it is drawn from the CSPRNG rather than from something an
      * attacker could predict or grind. Drawn by the receiver, per packet, and
