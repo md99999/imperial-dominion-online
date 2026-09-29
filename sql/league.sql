@@ -9,6 +9,7 @@ CREATE TABLE {prefix}ido_leagues (
   is_originator tinyint(1) NOT NULL DEFAULT 0,
   ruleset_version int(11) NOT NULL DEFAULT 1,
   ruleset longtext,
+  ruleset_in_force longtext,
   fingerprint varchar(64) NOT NULL DEFAULT '',
   round_starts_at datetime DEFAULT NULL,
   round_days int(11) NOT NULL DEFAULT 90,

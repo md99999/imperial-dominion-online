@@ -251,6 +251,34 @@ every site would empty its garrison and the only skill left would be guessing wh
 Losing scores zero rather than negative, so nobody profits from arranging somebody else's defeat.
 Repeat exchanges with the same peer decay, so the weakest member cannot be farmed.
 
+### The league owns the calendar and the rules
+
+**One season, one instant.** Seasons are computed from the league's founding moment in fixed steps of
+its round length, in UTC, so every member arrives at the same two timestamps from the same two
+numbers with nothing to coordinate and nothing to drift. A member offline through a rollover still
+lands on the right season. A season ending at each site's local midnight would end up to a day apart,
+and for that day one site would be playing a fresh round while another finished the old one, with
+packets crossing between them.
+
+A site joining mid-round adopts the shared calendar at its next tick: the local round ends and the
+next one is aligned to the season.
+
+**The numbers that decide who wins belong to the league**, not to the site: turns a day, starting
+resources, costs, combat percentages, the market tax. They are laid over this site's settings at every
+read rather than copied into them, so the league row stays the single source of truth and the game
+master's own values wait untouched for when the site leaves. Those fields show as the league's on the
+Settings screen, and are ignored on save as well as disabled, because a disabled input is a courtesy
+to the browser rather than a rule.
+
+A joining member adopts them at the next round boundary, never mid-round: changing turns a day under
+players who planned around them is unfair in a way that has nothing to do with cheating. The
+originator's own settings *are* the ruleset, so they are in force from the start.
+
+Every packet carries a fingerprint of those settings. A march or a result whose fingerprint does not
+match is refused, because both are arithmetic over shared numbers. News is accepted anyway: it asserts
+nothing about the rules, and refusing it would blind both sites to each other for as long as the drift
+lasted.
+
 ### What league mode does to local play
 
 **There is no war within a site while its league runs.** Every ruler is on the same side, and the

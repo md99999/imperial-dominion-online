@@ -147,6 +147,28 @@ class IDO_League_Endpoint {
             return self::refuse(422);
         }
 
+        // The rules fingerprint rides in every packet, and a mismatch means the
+        // two sites are not playing the same game.
+        //
+        // A march or a result is refused on a mismatch, because both are
+        // arithmetic over shared numbers: resolving a battle under rules the
+        // sender does not have produces a result they will read as wrong, and
+        // neither side would be able to say which of them was.
+        //
+        // News is accepted anyway. It asserts nothing about the rules, refusing
+        // it would blind both sites to each other for as long as the drift lasted,
+        // and the mismatch is worth *seeing* on the League screen rather than
+        // being the reason nothing appears there. The fingerprint is stored
+        // against the peer either way.
+        if (!hash_equals((string) $league->fingerprint, (string) $envelope['fp'])
+            && IDO_League_Status::is_secret_until_resolved((string) $envelope['type'])) {
+            self::log(sprintf(
+                'Refused a packet from %s: its ruleset fingerprint does not match this league\'s.',
+                (string) $peer->site_name
+            ));
+            return self::refuse(409);
+        }
+
         $result = IDO_League_Queue::stage($peer, $envelope, $wire);
         if ($result === 'error') return self::refuse(500);
 

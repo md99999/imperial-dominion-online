@@ -195,13 +195,20 @@ class IDO_League_Muster {
         $round = IDO_Rounds::current();
         if (!$round) throw new IDO_Game_Exception('No round is running.');
 
-        // The calendar refuses a march that cannot finish inside the round.
+        // The calendar refuses a march that cannot finish inside the season.
+        //
+        // Measured against the league's season rather than this round's own end
+        // date, because in a league the season is the deadline everybody shares
+        // and the local date is whatever it happened to be when the site joined.
         $cutoff = IDO_League::longest_exchange_days((int) $league->muster_days);
-        $ends = $round->ends_at ? strtotime((string) $round->ends_at) : 0;
+        $ends = IDO_League::season_ends_at();
+        if ($ends === null) {
+            $ends = $round->ends_at ? strtotime((string) $round->ends_at) : 0;
+        }
         if ($ends && $ends - time() < $cutoff * DAY_IN_SECONDS) {
             throw new IDO_Game_Exception(sprintf(
-                'Too late in the round. A muster takes up to %d days to call, march and come home, and '
-                . 'this round ends before that. The last stretch is for settling the standings.',
+                'Too late in the season. A muster takes up to %d days to call, march and come home, and '
+                . 'the season ends before that. The last stretch is for settling the standings.',
                 $cutoff
             ));
         }

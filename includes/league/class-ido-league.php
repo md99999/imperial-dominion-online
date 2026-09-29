@@ -92,6 +92,7 @@ class IDO_League {
 
     private static ?object $league = null;
     private static bool $loaded = false;
+    private static ?array $in_force = null;
 
     /**
      * Whether the game master has opted in. This is a switch on the machinery,
@@ -202,6 +203,7 @@ class IDO_League {
     public static function forget(): void {
         self::$loaded = false;
         self::$league = null;
+        self::$in_force = null;
     }
 
     // -- Tables ------------------------------------------------------------
@@ -303,6 +305,79 @@ class IDO_League {
         return hash('sha256', implode('&', $parts));
     }
 
+    /**
+     * The governed values actually in force here, or an empty array.
+     *
+     * Read straight from the league row and cached, and deliberately *not*
+     * through IDO_Settings, because IDO_Settings is the caller: the settings
+     * overlay asks this method what to overlay. Going back through it would be a
+     * loop.
+     *
+     * Empty until the first round boundary after joining. That is the whole
+     * reason this is a separate column from `ruleset`: a member adopts the
+     * league's numbers at a boundary, not the moment it enrols, because changing
+     * turns a day or training costs under players who planned around them is
+     * unfair in a way that has nothing to do with cheating.
+     */
+    public static function settings_in_force(): array {
+        global $wpdb;
+
+        if (self::$in_force !== null) return self::$in_force;
+        self::$in_force = [];
+
+        if (!self::tables_exist()) return self::$in_force;
+
+        $json = $wpdb->get_var(
+            'SELECT ruleset_in_force FROM ' . IDO_DB::t('leagues')
+            . " WHERE status = 'active' ORDER BY id DESC LIMIT 1"
+        );
+        if (!$json) return self::$in_force;
+
+        $decoded = json_decode((string) $json, true);
+        if (!is_array($decoded)) return self::$in_force;
+
+        $governed = self::governed_keys();
+        foreach ($decoded as $key => $value) {
+            if (in_array($key, $governed, true) && is_numeric($value)) {
+                self::$in_force[$key] = (int) $value;
+            }
+        }
+        return self::$in_force;
+    }
+
+    /** Whether one setting is the league's to decide rather than this site's. */
+    public static function governs(string $key): bool {
+        return array_key_exists($key, self::settings_in_force());
+    }
+
+    /**
+     * Brings the league's published ruleset into force. Called at a round boundary.
+     *
+     * The originator's own settings are the ruleset, so for the hub this is a
+     * formality that keeps both sides on the same code path rather than a special
+     * case nobody exercises.
+     */
+    public static function apply_ruleset(): string {
+        global $wpdb;
+
+        $league = self::league();
+        if (!$league) return '';
+
+        $published = json_decode((string) $league->ruleset, true);
+        if (!is_array($published) || !$published) return '';
+
+        $wpdb->update(IDO_DB::t('leagues'),
+            ['ruleset_in_force' => wp_json_encode($published)], ['id' => (int) $league->id]);
+
+        self::forget();
+        IDO_Log::admin('league', sprintf(
+            'The league ruleset (version %d) is now in force: %d settings are the league\'s.',
+            (int) $league->ruleset_version, count($published)
+        ));
+
+        return sprintf('The league ruleset now governs %d settings.', count($published));
+    }
+
     /** @return string[] the settings that differ, for telling a member why they are being ignored */
     public static function ruleset_diff(array $theirs): array {
         $ours = self::ruleset();
@@ -316,6 +391,67 @@ class IDO_League {
     }
 
     // -- This site's identity in a league ----------------------------------
+
+    // -- The calendar ------------------------------------------------------
+
+    /**
+     * When the season this site is playing started and ends, as absolute instants.
+     *
+     * **Computed, never stored, and never advanced by anybody.** Seasons run from
+     * the league's founding instant in fixed steps of `round_days`, so season
+     * three begins at start + 2 x days whoever is asking and whenever they ask.
+     * Every member arrives at the same two timestamps from the same two numbers
+     * with no message passing, no agreement to reach, and nothing to drift.
+     *
+     * The alternative was to advance a stored date at each boundary, which needs
+     * every member to do it, exactly once, at the same time. A member that was
+     * offline for a rollover would wake up a season behind and fight people who
+     * had already wiped.
+     *
+     * UTC, because that is the whole point. A season that ended at each member's
+     * local midnight would end up to a day apart for members in different
+     * countries, and for that day one site would be playing a fresh round while
+     * another finished the old one, with packets crossing between them. It is the
+     * same mistake the daily turn grant made, at a larger scale.
+     *
+     * @return array{start:int,end:int,season:int}|null
+     */
+    public static function season(): ?array {
+        $league = self::league();
+        if (!$league || empty($league->round_starts_at)) return null;
+
+        $days = max(1, (int) $league->round_days);
+        $length = $days * DAY_IN_SECONDS;
+
+        $start = strtotime((string) $league->round_starts_at . ' UTC');
+        if ($start === false) return null;
+
+        $now = time();
+        $season = 1;
+        if ($now > $start) {
+            $season += (int) floor(($now - $start) / $length);
+            $start += ($season - 1) * $length;
+        }
+
+        return ['start' => $start, 'end' => $start + $length, 'season' => $season];
+    }
+
+    /** When the current season ends, or null when this site is not in a league. */
+    public static function season_ends_at(): ?int {
+        $season = self::season();
+        return $season ? $season['end'] : null;
+    }
+
+    /**
+     * Whether the league calendar, rather than the local one, decides the round.
+     *
+     * A pending enrolment does not count: a site that has not finished joining is
+     * still playing its own game and should keep its own calendar until it is
+     * actually a member.
+     */
+    public static function owns_calendar(): bool {
+        return self::active() && self::season() !== null;
+    }
 
     // -- Time --------------------------------------------------------------
 

@@ -57,7 +57,12 @@ $help = [
         <?php foreach ($groups as $title => $keys) : ?>
             <h2><?php echo esc_html($title); ?></h2>
             <table class="form-table" role="presentation">
-                <?php foreach ($keys as $key) : ?>
+                <?php foreach ($keys as $key) :
+                    // A setting the league governs is shown as the league's, and
+                    // is ignored on save as well as disabled here: a disabled
+                    // input is a courtesy to the browser, not a rule.
+                    $governed = class_exists('IDO_League') && IDO_League::governs($key);
+                ?>
                     <tr>
                         <th scope="row">
                             <label for="ido_<?php echo esc_attr($key); ?>">
@@ -68,7 +73,14 @@ $help = [
                             <input type="number" min="0" step="1"
                                    id="ido_<?php echo esc_attr($key); ?>"
                                    name="settings[<?php echo esc_attr($key); ?>]"
-                                   value="<?php echo esc_attr((string) $settings[$key]); ?>">
+                                   value="<?php echo esc_attr((string) $settings[$key]); ?>"
+                                   <?php disabled($governed); ?>>
+                            <?php if ($governed) : ?>
+                                <p class="description">
+                                    <strong>Set by the league.</strong> Every member plays the same number,
+                                    or a site could grant its own rulers more and win without fighting well.
+                                </p>
+                            <?php endif; ?>
                             <?php if (!empty($help[$key])) : ?>
                                 <p class="description"><?php echo esc_html($help[$key]); ?></p>
                             <?php endif; ?>

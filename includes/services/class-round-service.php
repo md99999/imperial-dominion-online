@@ -94,9 +94,40 @@ class IDO_Rounds {
     }
 
     /** True once the clock has run out on the open round. */
+    /**
+     * Whether the round is over.
+     *
+     * In a league the answer comes from the league's calendar rather than this
+     * round's own dates, and that is the difference between a shared season and
+     * a coincidence. Members wipe at one instant, computed from the league's
+     * founding and its round length, whatever timezone each site keeps and
+     * whenever each site's cron happens to run.
+     */
     public static function is_expired(?object $round = null): bool {
         $round = $round ?: self::current();
-        if (!$round || !$round->ends_at) return false;
+        if (!$round) return false;
+
+        if (class_exists('IDO_League') && IDO_League::owns_calendar()) {
+            // Not "has the season ended", which can never be true: seasons chain,
+            // so the moment one ends the next has begun and now is always inside
+            // one. The question is whether *this round* belongs to a season that
+            // has passed.
+            //
+            // Getting that wrong meant a league round would simply never roll
+            // over, which the test caught by winding the calendar forward and
+            // finding the round still running.
+            $season = IDO_League::season();
+            if ($season === null || empty($round->starts_at)) return false;
+
+            // The round's start is stored in site-local time and the season's in
+            // UTC, so one has to be converted rather than compared as though a
+            // timestamp were a timestamp. That is the same trap this whole change
+            // exists to close.
+            $started = strtotime(get_gmt_from_date((string) $round->starts_at) . ' UTC');
+            return $started !== false && $started < $season['start'];
+        }
+
+        if (!$round->ends_at) return false;
         return strtotime($round->ends_at) <= current_time('timestamp');
     }
 
@@ -155,10 +186,38 @@ class IDO_Rounds {
     public static function maybe_roll_over(): ?string {
         $round = self::current();
         if (!$round || !self::is_expired($round)) return null;
+
+        $league_season = class_exists('IDO_League') && IDO_League::owns_calendar()
+            ? IDO_League::season() : null;
+
         $summary = self::conclude($round);
-        if (IDO_Settings::int('auto_start_next_round')) {
-            $next = self::start();
+
+        // A league member always opens the next round. Waiting for a game master
+        // to press a button would leave the site out of a season its peers have
+        // already started, and there is nothing for them to decide: the league
+        // owns the calendar.
+        $auto = IDO_Settings::int('auto_start_next_round') || $league_season !== null;
+        if ($auto) {
+            // The new round ends when the league's season does, so every screen
+            // that shows days remaining shows the shared deadline rather than a
+            // local count that happens to be close.
+            $days = 0;
+            if ($league_season !== null) {
+                $next_season = IDO_League::season();
+                if ($next_season !== null) {
+                    $days = max(1, (int) ceil(($next_season['end'] - time()) / DAY_IN_SECONDS));
+                }
+            }
+            $next = self::start($days);
             $summary .= sprintf(' %s has begun.', $next->round_name);
+
+            // And the league's rules for the new season come into force now,
+            // which is the one moment they are allowed to change under the
+            // players' feet: at a boundary, where everybody expects it.
+            if ($league_season !== null) {
+                $applied = IDO_League::apply_ruleset();
+                if ($applied !== '') $summary .= ' ' . $applied;
+            }
         }
         IDO_Log::admin('round_end', $summary);
         return $summary;

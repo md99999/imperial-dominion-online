@@ -61,6 +61,16 @@ class IDO_Lock {
 class IDO_Settings {
     const OPTION = 'ido_settings';
 
+    /**
+     * Guards against the one loop this class can create.
+     *
+     * The overlay asks IDO_League what the league governs, and IDO_League asks
+     * IDO_Settings whether league play is switched on. Without this flag that is
+     * infinite. With it, the inner call gets the site's own settings, which is
+     * exactly what it needs to answer the question.
+     */
+    private static bool $overlaying = false;
+
     public static function defaults(): array {
         return [
             // Blank means "name it after the WordPress site": see IDO_Game::dominion().
@@ -163,9 +173,31 @@ class IDO_Settings {
         return ['dominion_name', 'menu_location'];
     }
 
+    /**
+     * Every setting, with the league's own values overlaid where it governs.
+     *
+     * A site in a league does not get to decide the numbers that decide who wins.
+     * Rather than copying the league's values into this site's settings row, where
+     * they could be edited back, they are laid over the top at every read: the
+     * league row is the single source of truth and the local row keeps whatever
+     * the game master had, ready for when the site leaves.
+     */
     public static function all(): array {
         $saved = get_option(self::OPTION, []);
-        return wp_parse_args(is_array($saved) ? $saved : [], self::defaults());
+        $settings = wp_parse_args(is_array($saved) ? $saved : [], self::defaults());
+
+        if (!self::$overlaying && class_exists('IDO_League')) {
+            self::$overlaying = true;
+            try {
+                foreach (IDO_League::settings_in_force() as $key => $value) {
+                    if (array_key_exists($key, $settings)) $settings[$key] = $value;
+                }
+            } finally {
+                self::$overlaying = false;
+            }
+        }
+
+        return $settings;
     }
 
     public static function get(string $key) {
@@ -177,10 +209,21 @@ class IDO_Settings {
         return (int) self::get($key);
     }
 
+    /**
+     * Saves settings, ignoring any the league governs.
+     *
+     * Ignored rather than refused, so a game master pressing Save does not lose
+     * the twenty changes they are allowed to make because one field on the screen
+     * belongs to the league. The screen shows those fields as the league's, and
+     * this makes sure that is true rather than merely displayed.
+     */
     public static function update(array $values): array {
-        $current = self::all();
+        $current = get_option(self::OPTION, []);
+        $current = wp_parse_args(is_array($current) ? $current : [], self::defaults());
+
         foreach (self::defaults() as $key => $default) {
             if (!array_key_exists($key, $values)) continue;
+            if (class_exists('IDO_League') && IDO_League::governs($key)) continue;
             if (in_array($key, self::text_keys(), true)) {
                 $current[$key] = sanitize_text_field((string) $values[$key]);
             } else {

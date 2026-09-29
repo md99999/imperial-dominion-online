@@ -105,6 +105,11 @@ class IDO_League_Setup {
             'is_originator'   => 1,
             'ruleset_version' => 1,
             'ruleset'         => wp_json_encode($ruleset),
+            // The originator's own settings *are* the ruleset, so they are in
+            // force from the start. A joining member waits for a round boundary,
+            // because for them the numbers would be changing under players who
+            // planned around the old ones.
+            'ruleset_in_force' => wp_json_encode($ruleset),
             'fingerprint'     => IDO_League::fingerprint($ruleset),
             'round_starts_at' => $now,
             'round_days'      => $round,
