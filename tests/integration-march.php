@@ -324,6 +324,51 @@ check('the agent is accounted for either way',
     'outcome ' . (string) $march->agent_outcome . ', agents ' . $caller_after->agents);
 
 say('');
+say('=== the site is one empire, except where a cap says otherwise ===');
+// In league mode the site really is one empire, so the battle adds it up and
+// runs the local rules on the total. That is exact for anything linear and
+// wrong for anything capped, and the difference is big enough to matter.
+$defenders = IDO_League_Battle::defenders((int) $round->id);
+$sheet = IDO_League_Battle::site_sheet($defenders);
+
+$summed_units = 0.0;
+$summed_weapons = 0.0;
+foreach ($defenders as $row) {
+    $summed_units   += IDO_Units::defence_power($row);
+    $summed_weapons += IDO_Weapons::defence_power($row);
+}
+check('troop defence aggregates exactly',
+    abs(IDO_Units::defence_power($sheet) - $summed_units) < 0.001,
+    sprintf('%.1f vs %.1f', IDO_Units::defence_power($sheet), $summed_units));
+check('siege weapon defence too',
+    abs(IDO_Weapons::defence_power($sheet) - $summed_weapons) < 0.001);
+check('so the site sheet is the site, for those',
+    abs(IDO_League_Battle::defence_power($defenders) - ($summed_units + $summed_weapons)) < 0.001);
+
+// Walls are the exception, and the sheet deliberately does not carry them.
+check('the sheet holds no fortifications to be tempted by',
+    !isset($sheet->b_fortification) || (int) $sheet->b_fortification === 0);
+
+$ten = [];
+for ($i = 0; $i < 10; $i++) {
+    $ten[] = (object) ['b_fortification' => 20, 'u_pawn' => 1000, 'u_legionnaire' => 500,
+                       'u_centurion' => 0, 'u_ballista_legion' => 0,
+                       'catapults' => 0, 'catapults_in_progress' => 0];
+}
+$per_empire = 0.0;
+foreach ($ten as $e) $per_empire += IDO_Units::defence_power($e) * IDO_Buildings::fortification_bonus($e);
+$naive = (object) ['b_fortification' => 200, 'u_pawn' => 10000, 'u_legionnaire' => 5000,
+                   'u_centurion' => 0, 'u_ballista_legion' => 0,
+                   'catapults' => 0, 'catapults_in_progress' => 0];
+$aggregated = IDO_Units::defence_power($naive) * IDO_Buildings::fortification_bonus($naive);
+check('aggregating walls would make a site stronger for being numerous',
+    $aggregated > $per_empire * 1.2,
+    sprintf('%.0f vs %.0f, %.1f%% more', $aggregated, $per_empire, ($aggregated / $per_empire - 1) * 100));
+check('so the battle counts them per empire instead',
+    abs(IDO_League_Battle::defended_power($ten, 0.0, 0.0) - $per_empire) < 0.001,
+    sprintf('%.0f vs %.0f', IDO_League_Battle::defended_power($ten, 0.0, 0.0), $per_empire));
+
+say('');
 say('=== a dispatch cannot be read twice ===');
 $gold_before_replay = (int) IDO_Kingdom::reload($caller)->gold;
 IDO_League_March::receive_result($peer, $body);

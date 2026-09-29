@@ -608,6 +608,31 @@ is the BRE inter-BBS idea, and the delay is the point.
 Three decisions inside that shape change the game entirely, and they are worth making deliberately
 rather than discovering.
 
+### 0. The site is one empire, except where a cap says otherwise
+
+Worth stating first, because it is the shape of everything below and it is easy to reach for the
+wrong half of it.
+
+In league mode a site really is one empire. Local war is off, nobody on the board is anybody else's
+rival, the army is pooled and a march is fought by everybody. So the natural way to run a league
+battle is to add the site up and hand the total to the rules a single empire already uses, and that
+is what happens: `IDO_League_Battle::site_sheet()` sums the site and the local helpers run on it.
+
+**That is exact for anything linear and wrong for anything capped**, and the difference is not
+academic. Troop and siege-weapon defence power are sums, so adding the empires and then computing is
+identical to computing and then adding. The fortification bonus caps at fifty percent, so ten
+empires with twenty fortifications each aggregate to two hundred, max the cap, and the site comes out
+**34% stronger** than the same empires defending as themselves. Numerous is not the same as
+fortified, and a rule that rewarded it would hand every large site free walls.
+
+So the site sheet deliberately does not carry the capped buildings at all: a sheet that held them
+would invite exactly that mistake, and leaving them out means it cannot be made by accident.
+
+The same split governs the rest of league play. Aggregate what adds: resources, troops, engines, net
+worth. Compute per empire what caps or what has a floor: fortifications, the barracks discount, and
+"an empire cannot pay more gold than it holds", which is why plunder is apportioned by each empire's
+share of the resource rather than taken from a pooled total.
+
 ### 1. Compare committed forces, not whole sites
 
 Tempting to weigh site against site. It does not survive contact: a league with a fifty-empire

@@ -102,22 +102,72 @@ class IDO_League_Battle {
         ));
     }
 
-    /** Raw defensive strength, before walls. */
-    public static function defence_power(array $defenders): float {
-        $power = 0.0;
-        foreach ($defenders as $row) {
-            $power += IDO_Units::defence_power($row) + IDO_Weapons::defence_power($row);
+    /**
+     * The whole site as a single empire, for the parts where that is true.
+     *
+     * In league mode the site really is one empire: nobody on the board is
+     * anybody else's rival, the army is pooled, and a march is fought by
+     * everybody. So the natural way to run a battle is to add the site up and
+     * hand it to the same rules a local empire uses, which is what this does.
+     *
+     * **It only works for the linear parts, and that limit is measured rather
+     * than assumed.** Troop and siege-weapon defence power are sums, so adding
+     * the empires and then computing is identical to computing and then adding.
+     * Anything with a cap in it is not: ten empires with twenty fortifications
+     * each aggregate to two hundred, which maxes a bonus that tops out at fifty
+     * percent, and the site comes out **34% stronger** than the same empires
+     * defending as themselves. That is not a rounding difference, it is a free
+     * upgrade for being numerous.
+     *
+     * The rule this leaves behind, and it applies to the league table and the
+     * board reset as much as here: **aggregate what adds, compute per empire what
+     * caps.**
+     */
+    public static function site_sheet(array $defenders): object {
+        $sheet = ['gold' => 0, 'grain' => 0, 'iron' => 0, 'peasants' => 0, 'land' => 0, 'networth' => 0];
+        foreach (IDO_Units::keys() as $key)     $sheet[IDO_Units::column($key)] = 0;
+        foreach (IDO_Weapons::keys() as $key) {
+            $sheet[IDO_Weapons::column($key)] = 0;
+            $sheet[IDO_Weapons::progress_column($key)] = 0;
         }
-        return $power;
+
+        foreach ($defenders as $row) {
+            foreach ($sheet as $column => $_) {
+                $sheet[$column] += max(0, (int) ($row->{$column} ?? 0));
+            }
+        }
+        foreach ($sheet as $column => $value) $sheet[$column] = IDO_Game::clamp($value);
+
+        // Deliberately absent: b_fortification and the other capped buildings.
+        // A sheet that carried them would invite exactly the mistake above, and
+        // leaving them out means the mistake cannot be made by accident.
+        return (object) $sheet;
+    }
+
+    /**
+     * Raw defensive strength, before walls.
+     *
+     * One call against the site sheet rather than a loop, because troop and
+     * weapon power are linear and this is the local rule applied to the site as a
+     * single empire, which is what it is.
+     */
+    public static function defence_power(array $defenders): float {
+        $sheet = self::site_sheet($defenders);
+        return IDO_Units::defence_power($sheet) + IDO_Weapons::defence_power($sheet);
     }
 
     /**
      * Defensive strength with each empire's own walls counted.
      *
-     * Per empire rather than a site-wide average, because fortifications belong
-     * to the ruler who built them. An empire that spent on walls defends better
-     * than the neighbour who did not, and summing an average would quietly move
-     * that advantage from the one to the other.
+     * Per empire, and this is the one place the site cannot be treated as a
+     * single empire. The fortification bonus caps at fifty percent, so a sheet
+     * summing ten empires of twenty fortifications reaches two hundred and maxes
+     * it, and the site defends 34% better than the same empires would have
+     * individually. Numerous is not the same as fortified.
+     *
+     * It is also fairer this way round: walls belong to the ruler who built them,
+     * and an average would quietly move that advantage from the empire that paid
+     * for it to the neighbour who did not.
      */
     public static function defended_power(array $defenders, float $ballista_share, float $wall_reduction): float {
         $power = 0.0;
