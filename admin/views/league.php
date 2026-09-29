@@ -155,13 +155,13 @@ if ($invite) delete_transient('ido_league_invitation');
                     <tr>
                         <th scope="row">March delay</th>
                         <td>
-                            <input name="delay_min_days" type="number" min="0" max="30" value="3" class="small-text">
-                            to
-                            <input name="delay_max_days" type="number" min="0" max="30" value="8" class="small-text">
-                            days
+                            <strong><?php echo esc_html(sprintf('%d to %d days',
+                                IDO_League::DELAY_MIN_DAYS, IDO_League::DELAY_MAX_DAYS)); ?></strong>, each way
                             <p class="description">
-                                Drawn by the <em>receiving</em> site, each way, so an attacker cannot choose when
-                                their army lands. The wait is the point of the mechanic, not a limitation.
+                                Not a setting. Drawn fresh for every packet by the <em>receiving</em> site, so an
+                                attacker cannot choose when their army lands and cannot know what will be standing
+                                when it does. The wait is the mechanic rather than a limitation, and a league that
+                                could shorten it to nothing would be playing a worse game.
                             </p>
                         </td>
                     </tr>
@@ -201,7 +201,7 @@ if ($invite) delete_transient('ido_league_invitation');
     $members  = IDO_League_Setup::members($league);
     $invites  = IDO_League::is_originator() ? IDO_League_Setup::open_invites($league) : [];
     $pending  = (string) $league->status === 'pending';
-    $round_trip = (int) $league->muster_days + 2 * (int) $league->delay_max_days;
+    $round_trip = IDO_League::longest_exchange_days((int) $league->muster_days);
     ?>
 
     <?php if ($pending) : ?>
@@ -271,7 +271,7 @@ if ($invite) delete_transient('ido_league_invitation');
                 <td><?php echo esc_html(sprintf('%d days', (int) $league->muster_days)); ?></td></tr>
             <tr><th scope="row">March delay</th>
                 <td><?php echo esc_html(sprintf('%d to %d days each way, drawn by the receiving site',
-                    (int) $league->delay_min_days, (int) $league->delay_max_days)); ?></td></tr>
+                    IDO_League::DELAY_MIN_DAYS, IDO_League::DELAY_MAX_DAYS)); ?></td></tr>
             <tr><th scope="row">Longest exchange</th>
                 <td><?php echo esc_html(sprintf('%d days from calling a muster to the army coming home', $round_trip)); ?></td></tr>
             <tr><th scope="row">Incoming packets</th>

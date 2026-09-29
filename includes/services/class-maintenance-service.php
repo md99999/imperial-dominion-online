@@ -111,13 +111,17 @@ class IDO_Maintenance {
      * idempotent at the receiver, so that would be survivable rather than
      * harmful, but it would also be a waste and would muddle the counts.
      */
-    public static function league_traffic(): string {
+    public static function league_traffic(bool $daily_tick = false): string {
         if (!IDO_League::active()) return '';
         if (!IDO_Lock::acquire('league_traffic', 0)) return 'League traffic skipped: already running.';
 
         try {
             $sent      = IDO_League_Queue::flush();
-            $processed = IDO_League_Queue::process();
+            // Only the daily run may land a march or a result. The hourly run
+            // moves news and keeps the outbound queue going, which makes it the
+            // safety net the design asks for without turning the dispatches into
+            // something that arrives at any hour.
+            $processed = IDO_League_Queue::process($daily_tick);
 
             $parts = [];
             if ($sent['sent'])            $parts[] = sprintf('%d packet(s) sent', $sent['sent']);
@@ -169,7 +173,7 @@ class IDO_Maintenance {
             $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('news') . ' WHERE created_at < %s', $cutoff));
 
             $rollover = IDO_Rounds::maybe_roll_over();
-            $league_note = self::league_news();
+            $league_note = trim(self::league_traffic(true) . ' ' . self::league_news());
 
             self::record('daily', $source);
             // Saying how many were skipped matters: pressing Run now after the

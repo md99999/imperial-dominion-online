@@ -174,7 +174,7 @@ a repeat, in the same guarded write that applies the effect, so a duplicate arri
 cannot slip through between the check and the write.
 
 The usual advice is a tight timestamp window, and that is wrong here: the design deliberately
-delays packets three to eight days in each direction, so a window has to be long, three weeks
+delays packets three to seven days in each direction, so a window has to be long, three weeks
 or so. The UUID record is what actually prevents replay; the timestamp only discards the absurdly
 old.
 
@@ -296,7 +296,7 @@ members accepting it.
   starting turns and resources, building and training costs, explore yield, combat percentages,
   target bands, truce length, agent cost and limit, market tax.
 - **The round calendar**, which matters more than it sounds. See below.
-- **Exchange cadence and the delay range**, the three to eight days, so every member waits the same.
+- **Exchange cadence and the delay range**, the three to seven days, so every member waits the same.
 
 Each ruleset carries a **version number**, bumped whenever the originator changes anything, and a
 **fingerprint**, the hash that rides in every packet. A member running version 4 against a league
@@ -570,13 +570,13 @@ flat number, so it scales with what the site is trying to do.
 
 ### What this costs the calendar
 
-The window is not free. It sits in front of a round trip that was already three to eight days out
-and the same back, so from the call to the return is **eleven to twenty-one days** with the default
+The window is not free. It sits in front of a round trip that was already three to seven days out
+and the same back, so from the call to the return is **eleven to nineteen days** with the default
 five-day muster. Against a 45-day round that is two exchanges; against the 90-day league round it
 is four. This is the strongest argument yet for the longer league round, and the cutoff before the
 end of a round has to include the window, not just the flight:
 
-    $cutoff_days = $league['muster_days'] + 2 * $league['delay_max_days'];
+    $cutoff_days = IDO_League::longest_exchange_days($league['muster_days']);
 
 A league that wants more exchanges per round shortens the muster before it shortens the delay. The
 delay is the suspense and the muster is only logistics, so the muster is the cheaper thing to lose.
@@ -768,8 +768,8 @@ packet is in flight. That is not a rule anybody added: the escrow exists so the 
 committed twice, and the exposure falls out of it. It is also the best thing about the mechanic,
 and the reason a league march should feel like a decision rather than a click.
 
-**The exposure is long.** Three to eight days out, a battle, then three to eight days back: an army
-can be away for as much as sixteen days, and an empire that sent most of its legions is a soft
+**The exposure is long.** Three to seven days out, a battle, then three to seven days back: an army
+can be away for as much as fourteen days, and an empire that sent most of its legions is a soft
 target for that whole time. Not only to other league sites, but to its own neighbours, who can see
 the standings and can work out who has just marched.
 
@@ -851,7 +851,7 @@ cheap and hard to abuse.
                       attempts, last_attempt_at, status, payload
 
 `status` on the inbound side moves through `staged`, `processed`, `rejected` and `expired`.
-`process_after` carries the delay, three to eight days, **set by the receiver on arrival**. A sender
+`process_after` carries the delay, three to seven days, **set by the receiver on arrival**. A sender
 cannot shorten its own attack by lying about when it sent, because the clock that matters is the
 defender's and it starts when the packet lands.
 
@@ -869,8 +869,19 @@ administrator see an incoming march, and it makes a disputed result reviewable a
 
 **Whole days, drawn by the receiver, stored as an absolute instant.**
 
-    $days = random_int(3, 8);                       // CSPRNG, not rand()
+    $days = random_int(3, 7);                       // CSPRNG, not rand()
     $process_after = gmdate('Y-m-d H:i:s', time() + $days * DAY_IN_SECONDS);
+
+**Three to seven days, evenly, and not a setting.** The range is a coded game
+value on both sides. The wait is not a tuning knob, it is the mechanic, and a
+league able to shorten it to nothing would be playing a different and worse game.
+Leaving it settable also left a hole: the calendar arrives from the hub at
+enrolment, so a hostile or careless hub could have published a range of zero and
+made every march instant. A constant cannot be pushed anywhere.
+
+Three is the floor because the wait is counted in daily cron runs. A packet
+arriving today is acted on by the third daily tick after it, so a ruler logs in on
+the third morning and the dispatches are waiting.
 
 Three decisions sit in those two lines.
 
@@ -907,12 +918,12 @@ next logs in, which is exactly the feel worth having.
 
 ### What each side is allowed to know
 
-A round trip is therefore six to sixteen days: the march out, the battle, and the result coming
-home. With the muster window in front of it, eleven to twenty-one from the moment the war is
+A round trip is therefore six to fourteen days: the march out, the battle, and the result coming
+home. With the muster window in front of it, eleven to nineteen from the moment the war is
 called. Against a 45-day round that is a handful of league exchanges at most, which is the intended
 weight. A league that wants more per round shortens the range rather than the round.
 
-The attacker knows the range, three to eight days, and never the draw. Waiting without knowing is
+The attacker knows the range, three to seven days, and never the draw. Waiting without knowing is
 the mechanic, not an absence of one.
 
 The defender should know less still, and this is worth stating because the staging table makes it
@@ -1236,14 +1247,14 @@ report.
 
 ## Marches and the end of a round
 
-This is the consequence that changes the calendar. A round trip is three to eight days out and the
-same back, so an army can be away for sixteen days. A round is forty-five. A march begun on day
+This is the consequence that changes the calendar. A round trip is three to seven days out and the
+same back, so an army can be away for fourteen days. A round is forty-five. A march begun on day
 forty cannot possibly resolve before the wipe.
 
 So a league **closes marching before the round ends**, by the worst case from the call to the
 return, calculated from the settings rather than written down as a fixed number: the muster window
-plus twice the maximum delay. With a five day muster and a three to eight day range that is the
-last twenty-one days, and what closes is the calling of a muster rather than the marching, since a
+plus twice the maximum delay. With a five day muster and a three to seven day range that is the
+last nineteen days, and what closes is the calling of a muster rather than the marching, since a
 muster called on the last permitted day still has to raise an army before anything leaves. Narrow
 either setting and the cutoff narrows with it. The last stretch
 of a round becomes what it should be anyway, the part where sites consolidate and the standings
@@ -1257,7 +1268,7 @@ contribute, and whose reward was to watch it disappear.
 ## League rounds need to be longer
 
 A local round of 45 days works because a local march resolves instantly: a ruler can fight on the
-last afternoon of the round. A league march cannot. Three to eight days out, a battle, three to
+last afternoon of the round. A league march cannot. Three to seven days out, a battle, three to
 eight days home, and marching has to close a full round trip before the wipe or armies are deleted
 in flight.
 
@@ -1291,12 +1302,12 @@ any length and is what the next one is for.
 
 ### Derive the cutoff, do not hardcode it
 
-The twenty-one day close is the muster window plus two times the maximum delay, and it should be
-calculated that way rather than written down. A league that narrows its range to three to five days
-gets a fifteen day cutoff for free, and one that widens it to a fortnight gets a thirty-three day
-cutoff without anyone having to remember to change a second number.
+The nineteen day close is the muster window plus two times the maximum delay, and it should be
+calculated that way rather than written down. A league that shortens its muster window to three days gets a
+seventeen day cutoff for free, without anyone having to remember to change a second number. The delay
+term is fixed, so the muster window is the only thing that moves it.
 
-    $cutoff_days = $league['muster_days'] + 2 * $league['delay_max_days'];
+    $cutoff_days = IDO_League::longest_exchange_days($league['muster_days']);
 
 Both terms have to be in it. Leaving the muster out is the easy mistake, and it produces a cutoff
 that looks right and still lets a site call a war whose army departs after the round has ended.

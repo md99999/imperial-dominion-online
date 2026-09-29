@@ -77,15 +77,13 @@ class IDO_League_Setup {
         $max_sites = (int) ($in['max_sites'] ?? 12);
         $max_sites = max(2, min(IDO_League::MAX_SITES, $max_sites));
 
-        $muster    = max(1, min(30, (int) ($in['muster_days'] ?? 5)));
-        $delay_min = max(0, min(30, (int) ($in['delay_min_days'] ?? 3)));
-        $delay_max = max($delay_min, min(30, (int) ($in['delay_max_days'] ?? 8)));
-        $round     = max(1, min(365, (int) ($in['round_days'] ?? 90)));
+        $muster = max(1, min(30, (int) ($in['muster_days'] ?? 5)));
+        $round  = max(1, min(365, (int) ($in['round_days'] ?? 90)));
 
         // The round has to be long enough for an exchange to finish inside it.
         // A league whose round is shorter than the worst case from calling a
         // muster to the army coming home is a league where nobody can fight.
-        $round_trip = $muster + 2 * $delay_max;
+        $round_trip = IDO_League::longest_exchange_days($muster);
         if ($round <= $round_trip) {
             throw new IDO_Game_Exception(sprintf(
                 'A round of %d days is too short for these delays: calling a muster and getting the '
@@ -111,8 +109,10 @@ class IDO_League_Setup {
             'round_starts_at' => $now,
             'round_days'      => $round,
             'muster_days'     => $muster,
-            'delay_min_days'  => $delay_min,
-            'delay_max_days'  => $delay_max,
+            // Recorded for reference only. The delay is a coded game value, not
+            // a league setting: see IDO_League::DELAY_MIN_DAYS.
+            'delay_min_days'  => IDO_League::DELAY_MIN_DAYS,
+            'delay_max_days'  => IDO_League::DELAY_MAX_DAYS,
             'max_sites'       => $max_sites,
             'status'          => 'active',
             'paused'          => 0,

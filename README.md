@@ -186,9 +186,12 @@ Nothing happens inside the request that asks for it. A packet is signed and queu
 it; an arriving packet is verified, staged, and applied by cron when its wait is over. Three things
 follow from that, and all three are deliberate:
 
-- **The delay belongs to the receiver.** `process_after` is drawn on arrival, so a sender cannot
-  shorten its own march or choose what the defender will have standing when it lands. News waits for
-  nothing; war and results wait the league's three to eight days.
+- **The delay belongs to the receiver, and is not a setting.** Three to seven days, drawn fresh for
+  every packet from the CSPRNG by the site receiving it, so a sender cannot shorten its own march or
+  know what the defender will have standing when it lands. Three is the floor because the wait is
+  counted in daily cron runs: a packet arriving today lands on the third daily tick after it. News
+  waits for nothing, and only the daily run may land a march, so the dispatches arrive overnight
+  rather than at any hour.
 - **The endpoint stays cheap.** It writes one row and returns. A battle cannot resolve half way
   through an HTTP timeout, and a request that only stages is hard to abuse.
 - **A peer being down loses nothing.** The outbound queue retries with backoff and gives up after

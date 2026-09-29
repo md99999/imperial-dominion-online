@@ -27,6 +27,48 @@ class IDO_League {
     /** Recommended rather than enforced: past this, nobody reads the standings. */
     const ADVISED_SITES = 20;
 
+    /**
+     * How long a march or a result waits, in whole days. Three to seven, and
+     * **not a setting.**
+     *
+     * Deliberately in the code rather than in the league's hands. The wait is not
+     * a tuning knob, it is the mechanic: the attacker commits blind and finds out
+     * days later, and a league that could shorten it to nothing would be playing
+     * a different and worse game. Leaving it settable also left a real hole,
+     * since the calendar arrives from the hub at enrolment and a hostile or
+     * careless hub could have pushed a range of zero and made every march
+     * instant. A constant on both sides cannot be pushed anywhere.
+     *
+     * Three days is the floor because the wait is counted in daily cron runs: a
+     * packet arriving today is acted on by the third daily tick after it, so a
+     * ruler logs in on the third morning and the dispatches are waiting.
+     */
+    const DELAY_MIN_DAYS = 3;
+    const DELAY_MAX_DAYS = 7;
+
+    /**
+     * The draw for one packet: 3, 4, 5, 6 or 7 days, evenly.
+     *
+     * random_int, so it is drawn from the CSPRNG rather than from something an
+     * attacker could predict or grind. Drawn by the receiver, per packet, and
+     * never derived from anything in the packet itself: a sender who could
+     * influence the draw would be choosing when its own army lands, which is the
+     * one part of the fight it must not control.
+     */
+    public static function delay_days(): int {
+        return random_int(self::DELAY_MIN_DAYS, self::DELAY_MAX_DAYS);
+    }
+
+    /**
+     * The worst case from calling a muster to the army coming home.
+     *
+     * Derived, never written down, so a change to the muster window moves the
+     * end-of-round cutoff with it.
+     */
+    public static function longest_exchange_days(int $muster_days): int {
+        return max(0, $muster_days) + 2 * self::DELAY_MAX_DAYS;
+    }
+
     private static ?object $league = null;
     private static bool $loaded = false;
 

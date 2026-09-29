@@ -393,8 +393,10 @@ class IDO_League_Endpoint {
                 'round_starts_at' => (string) $league->round_starts_at,
                 'round_days'      => (int) $league->round_days,
                 'muster_days'     => (int) $league->muster_days,
-                'delay_min_days'  => (int) $league->delay_min_days,
-                'delay_max_days'  => (int) $league->delay_max_days,
+                // The delay is not in here on purpose. It is a coded game value
+                // on both sides, so there is nothing for a hub to push and
+                // nothing for a member to have to sanity-check.
+                'longest_exchange_days' => IDO_League::longest_exchange_days((int) $league->muster_days),
             ],
         ]);
     }

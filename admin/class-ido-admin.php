@@ -131,8 +131,6 @@ class IDO_Admin {
                         'max_sites'      => isset($_POST['max_sites']) ? (int) $_POST['max_sites'] : 12,
                         'round_days'     => isset($_POST['round_days']) ? (int) $_POST['round_days'] : 90,
                         'muster_days'    => isset($_POST['muster_days']) ? (int) $_POST['muster_days'] : 5,
-                        'delay_min_days' => isset($_POST['delay_min_days']) ? (int) $_POST['delay_min_days'] : 3,
-                        'delay_max_days' => isset($_POST['delay_max_days']) ? (int) $_POST['delay_max_days'] : 8,
                     ]);
                     $notice = sprintf('%s has been founded. Invite the other sites next.', $league->league_name);
                 } catch (IDO_Game_Exception $e) {
@@ -199,7 +197,10 @@ class IDO_Admin {
                 break;
 
             case 'league_run_traffic':
-                $notice = trim(IDO_Maintenance::league_traffic() . ' ' . IDO_Maintenance::league_news());
+                // The button stands in for the daily run, so a game master
+                // testing a league does not have to wait for midnight to see a
+                // march land.
+                $notice = trim(IDO_Maintenance::league_traffic(true) . ' ' . IDO_Maintenance::league_news());
                 if ($notice === '') $notice = 'Nothing was waiting in either queue.';
                 break;
 

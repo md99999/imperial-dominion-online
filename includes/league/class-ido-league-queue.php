@@ -174,7 +174,7 @@ class IDO_League_Queue {
         $league = IDO_League::league();
         if (!$league) return 'error';
 
-        $delay = self::delay_days_for((string) $envelope['type'], $league);
+        $delay = self::delay_days_for((string) $envelope['type']);
 
         // Suppress the duplicate-key warning: a duplicate is an expected
         // outcome here, not an error worth logging as one.
@@ -221,12 +221,9 @@ class IDO_League_Queue {
      * rather than a number written here, drawn per packet so an attacker learns
      * nothing from watching.
      */
-    private static function delay_days_for(string $type, object $league): int {
+    private static function delay_days_for(string $type): int {
         if ($type === 'news') return 0;
-
-        $min = max(0, (int) $league->delay_min_days);
-        $max = max($min, (int) $league->delay_max_days);
-        return $min === $max ? $min : random_int($min, $max);
+        return IDO_League::delay_days();
     }
 
     /**
@@ -237,18 +234,33 @@ class IDO_League_Queue {
      * re-checking costs nothing next to the alternative of applying something
      * this site no longer considers valid.
      */
-    public static function process(): array {
+    public static function process(bool $daily_tick = false): array {
         global $wpdb;
 
         $league = IDO_League::league();
         if (!$league || !IDO_League::active()) return ['processed' => 0, 'rejected' => 0];
 
-        $due = (array) $wpdb->get_results($wpdb->prepare(
-            'SELECT * FROM ' . IDO_DB::t('packets_in')
-            . " WHERE league_id = %d AND status = 'staged' AND process_after <= %s"
-            . ' ORDER BY id ASC LIMIT %d',
-            (int) $league->id, IDO_League::now(), self::BATCH
-        ));
+        // A march and a result land on the daily tick and nothing else, which is
+        // the whole ritual: you log in, and the dispatches from days ago are
+        // waiting. Spreading them across the hourly run would make them arrive
+        // whenever, which is more responsive and less of an event.
+        //
+        // News is exempt. It is a site describing its own past, nobody is waiting
+        // on it, and holding it back would only make every member's view of the
+        // league staler than it needs to be.
+        $types = $daily_tick ? [] : ['news'];
+
+        $sql = 'SELECT * FROM ' . IDO_DB::t('packets_in')
+             . " WHERE league_id = %d AND status = 'staged' AND process_after <= %s";
+        $args = [(int) $league->id, IDO_League::now()];
+        if ($types !== []) {
+            $sql .= ' AND packet_type IN (' . implode(',', array_fill(0, count($types), '%s')) . ')';
+            $args = array_merge($args, $types);
+        }
+        $sql .= ' ORDER BY id ASC LIMIT %d';
+        $args[] = self::BATCH;
+
+        $due = (array) $wpdb->get_results($wpdb->prepare($sql, $args));
 
         $processed = 0;
         $rejected = 0;

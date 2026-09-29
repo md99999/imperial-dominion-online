@@ -162,6 +162,32 @@ check('with the sender\'s sequence number', $staged && (int) $staged->sequence =
 check('and a process_after the receiver set', $staged && $staged->process_after !== null);
 
 say('');
+say('=== the delay is a coded value, drawn per packet ===');
+$seen = [];
+for ($i = 0; $i < 400; $i++) $seen[IDO_League::delay_days()] = true;
+ksort($seen);
+check('every value from 3 to 7 comes up', array_keys($seen) === [3, 4, 5, 6, 7],
+    implode(',', array_keys($seen)));
+check('and nothing outside that range ever does',
+    min(array_keys($seen)) === IDO_League::DELAY_MIN_DAYS && max(array_keys($seen)) === IDO_League::DELAY_MAX_DAYS);
+check('the floor is three days, for three daily ticks', IDO_League::DELAY_MIN_DAYS === 3);
+check('the ceiling is seven', IDO_League::DELAY_MAX_DAYS === 7);
+check('the longest exchange is the muster plus both legs',
+    IDO_League::longest_exchange_days(5) === 5 + 14, (string) IDO_League::longest_exchange_days(5));
+
+// A war packet is staged with a real wait; news is not delayed at all.
+clear_rate_limits();
+$war_wire = IDO_League_Crypto::pack([
+    'v' => 1, 'type' => 'war', 'league' => $league->league_uuid, 'from' => $peer_uuid,
+    'to' => $league->site_uuid, 'uuid' => IDO_League_Crypto::uuid(), 'seq' => 9,
+    'ts' => time(), 'fp' => $league->fingerprint, 'body' => ['force' => []],
+], $peer_uuid, $secret);
+check('a war packet is still refused, since its body has no specification yet',
+    code(IDO_League_Endpoint::packet(packet_request($war_wire))) === 422);
+check('news was staged with no wait',
+    strtotime((string) $staged->process_after . ' UTC') <= strtotime((string) $staged->received_at . ' UTC') + 5);
+
+say('');
 say('=== a replay is accepted and applied once ===');
 clear_rate_limits();
 $again = IDO_League_Endpoint::packet(packet_request($inbound));

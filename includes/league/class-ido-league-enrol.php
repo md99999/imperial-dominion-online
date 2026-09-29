@@ -129,10 +129,8 @@ class IDO_League_Enrol {
         // A hub that pushes absurd numbers is refused by the member rather than
         // obeyed: range-checked here, the same way a ruleset arriving in a packet
         // would be.
-        $days      = self::bounded($calendar['round_days'] ?? 0, 1, 365, 90);
-        $muster    = self::bounded($calendar['muster_days'] ?? 0, 1, 30, 5);
-        $delay_min = self::bounded($calendar['delay_min_days'] ?? 0, 0, 30, 3);
-        $delay_max = self::bounded($calendar['delay_max_days'] ?? 0, $delay_min, 30, 8);
+        $days   = self::bounded($calendar['round_days'] ?? 0, 1, 365, 90);
+        $muster = self::bounded($calendar['muster_days'] ?? 0, 1, 30, 5);
 
         $wpdb->update(IDO_DB::t('sites'), [
             'site_uuid'        => $hub_uuid,
@@ -154,8 +152,8 @@ class IDO_League_Enrol {
             'fingerprint'    => $fingerprint,
             'round_days'     => $days,
             'muster_days'    => $muster,
-            'delay_min_days' => $delay_min,
-            'delay_max_days' => $delay_max,
+            'delay_min_days' => IDO_League::DELAY_MIN_DAYS,
+            'delay_max_days' => IDO_League::DELAY_MAX_DAYS,
         ], ['id' => (int) $league->id]);
 
         IDO_League::forget();
