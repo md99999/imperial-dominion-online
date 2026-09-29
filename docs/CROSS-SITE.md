@@ -753,6 +753,41 @@ Of nine hundred legionnaires sent, eight hundred and thirty-seven come home from
 a victory, eight hundred and ten from a stalemate, and seven hundred and
 thirty-eight from a defeat.
 
+### 2c. A victory has to be worth having
+
+The percentages alone do not guarantee that, and a game where winning can leave
+you poorer is a game where the sensible move is never to march. Nine percent of a
+poor site's gold can be worth less than the men it cost to take it, and the
+attacker has already paid the turns, the days and the risk before any of that.
+
+**A won battle takes at least what the attacker's casualties were worth, plus
+seven percent**, valued in the coin the game values everything else in: net
+worth. Troops at half their training cost, gold at a fiftieth, grain at a two
+hundredth, iron at a twentieth. Captured engines count toward it, so a haul of
+siege weapons reduces what has to come out of the granaries. Reusing the game's
+own measure means "that was worth it" means the same thing here as on the
+rankings screen.
+
+**With a ceiling, because the floor needs one.** A quarter of any one resource is
+the most a single march takes, whatever the arithmetic asks for. Without it a
+rich attacker beating a poor site would strip it bare to cover casualties that
+site could never have inflicted.
+
+So there are three cases, and all three are honest:
+
+- A rich site pays more than it owes on the percentages alone, and they are left
+  alone.
+- A middling site would not have covered it, so the haul is topped up in the same
+  proportion across all three resources until it does. Draining one resource
+  first would be stranger to explain than losing a slice of everything.
+- A poor site cannot cover it even at the ceiling, and is not stripped trying.
+  You beat a pauper, and the dispatch says as much.
+
+Worked example: nine hundred legionnaires, victory, sixty-three dead, worth
+10,710. The victory owes 11,460. A site holding 25m gold pays 53,750 without
+being asked twice; one holding 3m would have paid 6,660 and is topped up to
+11,460; one holding 200k pays what it can and keeps three quarters of everything.
+
 ### 3. Spoils: the local tables, minus land
 
 **A league march uses the same percentages as a local raid**, applied to the defending side rather

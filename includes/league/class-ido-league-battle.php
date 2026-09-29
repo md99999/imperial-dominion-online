@@ -58,6 +58,34 @@ class IDO_League_Battle {
     const DRAW_LOSS = 0.10;
 
     /**
+     * A victory has to be worth having.
+     *
+     * The percentages alone do not guarantee that. Nine percent of a poor site's
+     * gold can be worth less than the men it cost to take it, and a game where
+     * winning can leave you poorer is a game where the sensible move is never to
+     * march at all. The wait, the turns and the risk are already the price; the
+     * plunder has to clear them.
+     *
+     * So a won battle takes at least what the attacker's casualties were worth,
+     * plus this margin, valued in the coin the game values everything else in:
+     * net worth. Troops at half their training cost, gold at a fiftieth, grain at
+     * a two-hundredth, iron at a twentieth. Reusing the game's own measure means
+     * "that was worth it" means the same thing here as on the rankings screen.
+     */
+    const VICTORY_MARGIN = 0.07;
+
+    /**
+     * And a ceiling, because the floor needs one.
+     *
+     * Without it a rich attacker beating a poor site would strip it bare to cover
+     * casualties that site could never have inflicted. A quarter of any one
+     * resource is the most a single march takes, whatever the arithmetic asks
+     * for. A site that cannot cover the margin simply does not: you beat a
+     * pauper, and the dispatch says as much.
+     */
+    const MAX_PLUNDER_SHARE = 0.25;
+
+    /**
      * Fights the battle and applies every consequence to this site.
      *
      * @param array<string,int> $force    what arrived, by unit key
@@ -91,8 +119,18 @@ class IDO_League_Battle {
         $drawn = $outcome === 'drawn';
         $attacker_won = $outcome === 'won';
 
-        $plunder = $attacker_won ? self::take_plunder($defenders, $ratio) : ['gold' => 0, 'grain' => 0, 'iron' => 0];
+        // Weapons first, then plunder, because the plunder tops the haul up to
+        // what a victory has to be worth and needs to know what the captured
+        // engines already covered.
         $weapons_taken = $drawn ? 0 : self::take_weapons($defenders, $attacker_won, $weapons);
+
+        $plunder = ['gold' => 0, 'grain' => 0, 'iron' => 0];
+        if ($attacker_won) {
+            $casualties = self::casualties($force, self::ATTACKER_WON_LOSS);
+            $owed = self::worth_of_troops($casualties) * (1.0 + self::VICTORY_MARGIN)
+                  - self::worth_of_weapons($weapons_taken);
+            $plunder = self::take_plunder($defenders, $ratio, max(0.0, $owed));
+        }
 
         $defender_rate = $drawn ? self::DRAW_LOSS
             : ($attacker_won ? self::DEFENDER_LOST_LOSS : self::DEFENDER_HELD_LOSS);
@@ -250,35 +288,123 @@ class IDO_League_Battle {
      * share, a ruler with no gold pays no gold, and the large empires still pay
      * most because they hold most.
      */
-    private static function take_plunder(array $defenders, float $ratio): array {
+    private static function take_plunder(array $defenders, float $ratio, float $owed = 0.0): array {
         $modifier = max(0.6, min(1.4, $ratio));
         $taken = ['gold' => 0, 'grain' => 0, 'iron' => 0];
 
+        $pool = [];
+        foreach (self::PLUNDER as $resource => $share) {
+            $total = 0;
+            foreach ($defenders as $row) $total += max(0, (int) $row->{$resource});
+            $pool[$resource] = $total;
+        }
+        $wanted = self::plunder_wanted($pool, $modifier, $owed);
+
         foreach (self::PLUNDER as $resource => $share) {
             $held = [];
-            $total = 0;
-            foreach ($defenders as $row) {
-                $have = max(0, (int) $row->{$resource});
-                $held[(int) $row->id] = $have;
-                $total += $have;
-            }
-            if ($total <= 0) continue;
+            foreach ($defenders as $row) $held[(int) $row->id] = max(0, (int) $row->{$resource});
+            if ($pool[$resource] <= 0) continue;
 
-            $wanted = (int) floor($total * $share * $modifier);
-            $wanted = min($wanted, $total);
-            if ($wanted <= 0) continue;
+            $wanted_here = (int) $wanted[$resource];
+            if ($wanted_here <= 0) continue;
 
-            $split = IDO_League_Share::split($wanted, $held);
-            if (!IDO_League_Share::reconciles($wanted, $split)) continue;   // never apply an approximate split
+            $split = IDO_League_Share::split($wanted_here, $held);
+            if (!IDO_League_Share::reconciles($wanted_here, $split)) continue;   // never apply an approximate split
 
             foreach ($split as $kingdom_id => $amount) {
                 if ($amount <= 0) continue;
                 $kingdom = IDO_Kingdom::find((int) $kingdom_id);
                 if ($kingdom) IDO_Kingdom::pay($kingdom, [$resource => -$amount]);
             }
-            $taken[$resource] = $wanted;
+            $taken[$resource] = $wanted_here;
         }
         return $taken;
+    }
+
+    /**
+     * How much of each resource a victory takes.
+     *
+     * Two steps. The percentages decide the baseline, scaled by how decisive the
+     * day was. Then, if that baseline is worth less than the victory owes, every
+     * resource is scaled up in the same proportion until it clears the bar or
+     * hits the ceiling, whichever comes first.
+     *
+     * In the same proportion rather than draining one resource first, because a
+     * site stripped of all its iron and none of its gold is a stranger thing to
+     * explain than a site that lost a quarter of everything.
+     *
+     * Pure, and separated from the writing so the arithmetic can be tested
+     * without a database: this is the rule that decides whether marching is worth
+     * doing at all.
+     *
+     * @param array<string,int> $pool what the defending site holds
+     * @param float $modifier how decisive the victory was, 0.6 to 1.4
+     * @param float $owed the value the victory has to clear
+     * @return array<string,int>
+     */
+    public static function plunder_wanted(array $pool, float $modifier, float $owed = 0.0): array {
+        $wanted = [];
+        foreach (self::PLUNDER as $resource => $share) {
+            $held = max(0, (int) ($pool[$resource] ?? 0));
+            $wanted[$resource] = min($held, (int) floor($held * $share * $modifier));
+        }
+
+        $value = self::worth_of_plunder($wanted);
+        if ($owed <= $value || $value <= 0) return $wanted;
+
+        // Rounded up, then clamped. Flooring three resources after scaling loses
+        // a fraction of each and lands the haul just under the very bar it was
+        // scaled to clear, which is an odd thing to explain to a player who won:
+        // the victory owed 11,460 and paid 11,459. Rounding up costs the defender
+        // at most one extra unit of each, and the ceiling still holds.
+        $scale = $owed / $value;
+        foreach ($wanted as $resource => $amount) {
+            $held = max(0, (int) ($pool[$resource] ?? 0));
+            $ceiling = (int) floor($held * self::MAX_PLUNDER_SHARE);
+            $wanted[$resource] = (int) max(0, min($ceiling, $held, ceil($amount * $scale)));
+        }
+        return $wanted;
+    }
+
+    /**
+     * What a force is worth, in the coin the game values everything else in.
+     *
+     * Half the training cost per soldier, which is exactly what the rankings use,
+     * so "this victory was worth it" means the same thing as "my net worth went
+     * up".
+     */
+    public static function worth_of_troops(array $force): float {
+        $worth = 0.0;
+        foreach ($force as $key => $qty) {
+            if (!IDO_Units::exists($key)) continue;
+            $unit = IDO_Units::get($key);
+            $worth += round(((int) $unit['gold']) / 2) * max(0, (int) $qty);
+        }
+        return $worth;
+    }
+
+    /** The same, for captured siege engines. */
+    public static function worth_of_weapons(int $count): float {
+        if ($count < 1) return 0.0;
+        $keys = IDO_Weapons::keys();
+        if (!$keys) return 0.0;
+        return round(((int) IDO_Weapons::cost($keys[0], 1)['gold']) / 2) * $count;
+    }
+
+    /** And for a haul of plunder, at the weights net worth uses. */
+    public static function worth_of_plunder(array $plunder): float {
+        return ((int) ($plunder['gold'] ?? 0)) / 50
+             + ((int) ($plunder['grain'] ?? 0)) / 200
+             + ((int) ($plunder['iron'] ?? 0)) / 20;
+    }
+
+    /** What a casualty rate removes from a force. */
+    private static function casualties(array $force, float $rate): array {
+        $out = [];
+        foreach ($force as $key => $qty) {
+            $out[$key] = (int) round(max(0, (int) $qty) * $rate);
+        }
+        return $out;
     }
 
     /**

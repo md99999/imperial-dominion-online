@@ -14,11 +14,13 @@ class IDO_Game { const MAX_VALUE = 9000000000000000;
     public static function clamp($n): int { return (int) min(self::MAX_VALUE, max(0, $n)); }
     public static function fmt($n): string { return number_format((float) $n); } }
 class IDO_Game_Exception extends Exception {}
-class IDO_Units { public static function keys(): array { return ['pawn', 'legionnaire']; }
-    public static function column(string $k): string { return 'u_' . $k; } }
-class IDO_Weapons { public static function keys(): array { return ['catapult']; }
-    public static function column(string $k): string { return $k . 's'; }
-    public static function progress_column(string $k): string { return $k . 's_in_progress'; } }
+// The real data classes, because the victory floor values troops the way the
+// rankings do and a stub would let the two drift apart.
+class IDO_Settings { public static function int(string $k): int { return 0; } }
+class IDO_Buildings { const MAX_BARRACKS_DISCOUNT = 0.35;
+    public static function barracks_discount(object $k): float { return 0.0; } }
+require __DIR__ . '/../includes/data/class-ido-units.php';
+require __DIR__ . '/../includes/data/class-ido-weapons.php';
 
 require __DIR__ . '/../includes/league/class-ido-league-battle.php';
 
@@ -76,6 +78,69 @@ check('810 on a draw', $home($draw) === 810, (string) $home($draw));
 check('738 on a defeat', $home($loss) === 738, (string) $home($loss));
 check('so a draw is the middle outcome it should be',
     $home($loss) < $home($draw) && $home($draw) < $home($win));
+
+echo "\n=== a victory has to be worth having ===\n";
+// Sending 900 legionnaires and winning costs 63 of them. The plunder has to clear
+// what they were worth, plus the margin, or marching is a bad bet and the
+// sensible play is never to march at all.
+$lost = ['legionnaire' => (int) round(900 * IDO_League_Battle::ATTACKER_WON_LOSS)];
+$cost = IDO_League_Battle::worth_of_troops($lost);
+$owed = $cost * (1 + IDO_League_Battle::VICTORY_MARGIN);
+check('the dead are valued as the rankings value them',
+    abs($cost - 63 * round(IDO_Units::get('legionnaire')['gold'] / 2)) < 0.001, (string) $cost);
+check('and the victory owes that plus the margin', $owed > $cost,
+    sprintf('%.0f vs %.0f', $owed, $cost));
+
+$rich     = ['gold' => 25000000, 'grain' => 5000000, 'iron' => 2000000];
+$middling = ['gold' => 3000000,  'grain' => 600000,  'iron' => 300000];
+$poor     = ['gold' => 200000,   'grain' => 50000,   'iron' => 20000];
+
+$from_rich = IDO_League_Battle::plunder_wanted($rich, 1.0, $owed);
+check('a rich site already pays more than it owes',
+    IDO_League_Battle::worth_of_plunder($from_rich) >= $owed,
+    number_format(IDO_League_Battle::worth_of_plunder($from_rich)));
+check('so the percentages are left alone',
+    $from_rich === IDO_League_Battle::plunder_wanted($rich, 1.0, 0.0));
+
+$base_middling = IDO_League_Battle::plunder_wanted($middling, 1.0, 0.0);
+$from_middling = IDO_League_Battle::plunder_wanted($middling, 1.0, $owed);
+check('a middling site would not have covered it on the percentages alone',
+    IDO_League_Battle::worth_of_plunder($base_middling) < $owed,
+    number_format(IDO_League_Battle::worth_of_plunder($base_middling)));
+check('so the haul is topped up until it does',
+    IDO_League_Battle::worth_of_plunder($from_middling) >= $owed,
+    number_format(IDO_League_Battle::worth_of_plunder($from_middling)));
+check('and every resource grew, not just the cheapest',
+    $from_middling['gold'] > $base_middling['gold']
+    && $from_middling['grain'] > $base_middling['grain']
+    && $from_middling['iron'] > $base_middling['iron']);
+
+$from_poor = IDO_League_Battle::plunder_wanted($poor, 1.0, $owed);
+check('a poor site cannot cover it and is not stripped trying',
+    IDO_League_Battle::worth_of_plunder($from_poor) < $owed);
+foreach (['gold', 'grain', 'iron'] as $resource) {
+    check("  and never loses more than a quarter of its $resource",
+        $from_poor[$resource] <= (int) floor($poor[$resource] * IDO_League_Battle::MAX_PLUNDER_SHARE),
+        $from_poor[$resource] . ' of ' . $poor[$resource]);
+}
+
+echo "\n=== the ceiling holds whatever is asked of it ===\n";
+$absurd = IDO_League_Battle::plunder_wanted($middling, 1.4, 1000000000.0);
+foreach (['gold', 'grain', 'iron'] as $resource) {
+    check("a vast debt still takes only a quarter of the $resource",
+        $absurd[$resource] === (int) floor($middling[$resource] * IDO_League_Battle::MAX_PLUNDER_SHARE),
+        $absurd[$resource] . ' of ' . $middling[$resource]);
+}
+check('an empty site yields nothing rather than dividing by zero',
+    IDO_League_Battle::plunder_wanted(['gold' => 0, 'grain' => 0, 'iron' => 0], 1.0, $owed)
+    === ['gold' => 0, 'grain' => 0, 'iron' => 0]);
+check('and a battle that owes nothing takes the plain percentages',
+    IDO_League_Battle::plunder_wanted($middling, 1.0, 0.0) === $base_middling);
+
+echo "\n=== a decisive win still takes more than a narrow one ===\n";
+check('the modifier has not been flattened by the floor',
+    IDO_League_Battle::plunder_wanted($rich, 1.4, 0.0)['gold']
+    > IDO_League_Battle::plunder_wanted($rich, 0.6, 0.0)['gold']);
 
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");
 exit($fails === 0 ? 0 : 1);
