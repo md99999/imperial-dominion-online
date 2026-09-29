@@ -406,7 +406,14 @@ class IDO_Military {
     }
 
     /** A 5% swing either way, so evenly matched armies are a gamble. */
-    private static function swing(): float {
+    /**
+     * The small random swing that keeps a narrow win uncertain.
+     *
+     * Public because a league battle is the same battle at a different scale and
+     * should be decided by the same luck. A second copy of this in the league
+     * code would be a second thing to tune, and the two would drift.
+     */
+    public static function swing(): float {
         return 0.95 + (wp_rand(0, 1000) / 10000);
     }
 

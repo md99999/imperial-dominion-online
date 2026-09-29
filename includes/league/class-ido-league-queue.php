@@ -311,6 +311,10 @@ class IDO_League_Queue {
         switch ((string) $envelope['type']) {
             case 'news':
                 return IDO_League_News::apply($peer, (array) $envelope['body']);
+            case 'war':
+                return IDO_League_March::receive_war($peer, (array) $envelope['body']);
+            case 'result':
+                return IDO_League_March::receive_result($peer, (array) $envelope['body']);
         }
         return sprintf('This build cannot apply a "%s" packet.', (string) $envelope['type']);
     }

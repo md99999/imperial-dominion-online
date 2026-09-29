@@ -209,10 +209,34 @@ marches in flight, because a league table must not become an early-warning syste
 a claim signed by the claimant, so they are stored with the date claimed, shown as claims, and
 nothing is ever ranked on them.
 
+### A march, start to finish
+
+1. A ruler **calls a muster** against a member site, and commits the first force. One muster to a
+   site at a time.
+2. Other rulers **join** over the next five days. Committing takes the troops out of the empire
+   immediately, so the same army cannot stand at home and march at once. A pledge can be withdrawn
+   while the window is open, and not after.
+3. One ruler may **send their agent** with the army. One agent to a march: the first to offer takes
+   the slot. He rides ahead and tries to open the walls, and if he is caught he hangs.
+4. The window closes. If the army clears the minimum it **marches**; if not, everything is returned
+   and the gazette records a war called and not raised.
+5. Three to six days later the defending site **fights it**, against whatever happened to be
+   standing, and sends the result back. A loss is paid by every empire on the defending site, in
+   proportion to each one's share of what is taken.
+6. The dispatch arrives and waits a day. That is the day a ruler sees the army **in battle**: the
+   news is in hand and not yet read.
+7. The next daily tick opens it. **Survivors go back to whoever sent them**, unit by unit, and
+   spoils are split by what each ruler risked.
+
+If no dispatch ever comes, the army is given up for lost after a fortnight and what remains of it
+comes home. Losing an army to a network failure is worse than the small risk of settling one twice,
+and settling twice cannot happen anyway.
+
 **Current state:** opting in, founding, invitations, the full enrolment handshake, approval, secret
-issue, the packet queues in both directions, news packets, the cron workers, leaving and the kill
-switch are built and tested. Musters and marches are designed and not yet built, so two sites can now
-pair and exchange signed packets, but not yet fight.
+issue, the packet queues in both directions, news packets, the muster, the march, battle resolution,
+spoils, the return leg, the escrow timeout, the cron workers, leaving and the kill switch are built
+and tested. What remains is the player-facing screens for all of it, the league table, and the board
+reset.
 
 ---
 

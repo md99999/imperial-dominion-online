@@ -58,7 +58,7 @@ class IDO_League_Packet {
     private static function envelope_spec(): array {
         return [
             'v'      => ['int', self::VERSION, self::VERSION],
-            'type'   => ['enum', ['news']],
+            'type'   => ['enum', ['news', 'war', 'result']],
             'league' => ['uuid'],
             'from'   => ['uuid'],
             'to'     => ['uuid'],
@@ -95,6 +95,28 @@ class IDO_League_Packet {
                 'accepting'        => ['bool'],
                 'grace_until'      => ['datetime', 'optional'],
                 'as_of'            => ['datetime'],
+            ],
+            'war' => [
+                'march'   => ['uuid'],
+                // Counts only. The packet says what left; what it achieves is
+                // decided by the site it lands on, from numbers that site holds
+                // first hand.
+                'force'   => ['map', 'unit'],
+                'weapons' => ['map', 'weapon'],
+                'agent'   => ['bool'],
+            ],
+            'result' => [
+                'march'          => ['uuid'],
+                'outcome'        => ['enum', ['won', 'lost', 'refused']],
+                'survivors'      => ['map', 'unit'],
+                'weapons_home'   => ['map', 'weapon'],
+                'spoils_gold'    => ['int', 0, IDO_Game::MAX_VALUE],
+                'spoils_grain'   => ['int', 0, IDO_Game::MAX_VALUE],
+                'spoils_iron'    => ['int', 0, IDO_Game::MAX_VALUE],
+                'spoils_weapons' => ['int', 0, 1000000],
+                'defender_dead'  => ['int', 0, IDO_Game::MAX_VALUE],
+                'agent'          => ['enum', ['none', 'success', 'failed', 'hanged']],
+                'resolved_at'    => ['datetime'],
             ],
         ];
         return $specs[$type] ?? null;
@@ -235,6 +257,29 @@ class IDO_League_Packet {
                 if (!is_array($value)) $fail('must be a structure');
                 if (count($value) > 64) $fail('has too many fields');
                 return $value;
+
+            case 'map':
+                // A count of things this game has, keyed by a name this game
+                // knows. An unknown key is an error rather than something
+                // ignored: a peer naming a unit this build has never heard of is
+                // running different rules, and applying the rest of their packet
+                // as though nothing were wrong is how two sites end up disagreeing
+                // about what an army was.
+                if (!is_array($value)) $fail('must be a list of counts');
+                if (count($value) > 64) $fail('lists too many kinds of thing');
+
+                $known = $rule[1] === 'unit' ? IDO_Units::keys() : IDO_Weapons::keys();
+                $out = [];
+                foreach ($value as $name => $count) {
+                    if (!is_string($name) || !in_array($name, $known, true)) {
+                        $fail('names something this game does not have');
+                    }
+                    if (!is_int($count) || $count < 0 || $count > IDO_Game::MAX_VALUE) {
+                        $fail('counts something with a number that is not one');
+                    }
+                    if ($count > 0) $out[$name] = $count;
+                }
+                return $out;
         }
 
         $fail('has no specification');   // unreachable: a spec typo, not a packet

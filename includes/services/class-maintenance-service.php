@@ -123,7 +123,14 @@ class IDO_Maintenance {
             // something that arrives at any hour.
             $processed = IDO_League_Queue::process($daily_tick);
 
+            // The muster closes and armies come home on the daily tick, beside
+            // the packets. Both are things that happen to a ruler overnight.
+            $closed  = $daily_tick ? IDO_League_Muster::close_due() : '';
+            $lost    = $daily_tick ? IDO_League_March::release_timed_out() : 0;
+
             $parts = [];
+            if ($closed !== '')           $parts[] = $closed;
+            if ($lost > 0)                $parts[] = sprintf('%d army/armies given up for lost and returned', $lost);
             if ($sent['sent'])            $parts[] = sprintf('%d packet(s) sent', $sent['sent']);
             if ($sent['failed'])          $parts[] = sprintf('%d send(s) failed', $sent['failed']);
             if ($processed['processed'])  $parts[] = sprintf('%d packet(s) applied', $processed['processed']);
