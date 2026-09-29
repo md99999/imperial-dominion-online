@@ -112,6 +112,26 @@ foreach (['8.8.8.8', '1.1.1.1', '93.184.216.34', '2606:4700:4700::1111'] as $add
     check("allows $address", IDO_League_URL::is_public_ip($address));
 }
 
+echo "\n=== the development allowance for local-network pairing ===\n";
+// The whole matrix in one process, which is why the decision is a pure function:
+// a constant cannot be undefined once set, so reading it directly would test one
+// case per run, and "defined but on a production site" is the case that matters
+// most and the one such a test would be least likely to reach.
+foreach ([
+    [false, 'production',  false, 'no constant, production'],
+    [false, 'local',       false, 'no constant, local'],
+    [true,  'production',  false, 'a constant copied to a production site is ignored'],
+    [true,  'staging',     false, 'a constant on staging is ignored'],
+    [true,  'local',       true,  'a constant on a local site'],
+    [true,  'development', true,  'a constant on a development site'],
+] as [$constant, $environment, $expected, $label]) {
+    check('  ' . $label, IDO_League_URL::dev_mode_for($constant, $environment) === $expected);
+}
+check('it is off on this test run', !IDO_League_URL::dev_mode());
+check('and says nothing while it is off', IDO_League_URL::dev_notice() === '');
+// The allowance covers addresses only. HTTPS is mandatory in every mode.
+check('plain http is refused whatever the environment', IDO_League_URL::normalize('http://imperial-a.local') === null);
+
 echo "\n=== a hostname is judged by where it points ===\n";
 IDO_League_URL::$resolver = static function (string $host): array {
     return [

@@ -25,6 +25,64 @@ class IDO_League_URL {
     public static $resolver = null;
 
     /**
+     * Whether this install may pair with sites on the local network.
+     *
+     * League play needs two sites that can call each other, which makes it
+     * untestable on one machine unless something gives: two Local sites are
+     * `https://something.local` on a private address, and every rule in this
+     * class exists to refuse exactly that.
+     *
+     * So there is a development mode, and it is deliberately awkward to turn on.
+     * Two things must both be true:
+     *
+     *   1. `IDO_LEAGUE_ALLOW_PRIVATE_HOSTS` is defined true in wp-config.php.
+     *      A constant in a file, not a setting, so it cannot be switched on
+     *      through the admin screens by anybody who has taken an account.
+     *   2. WordPress says this is not a production site. `wp_get_environment_type()`
+     *      must be `local` or `development`, which on a production install means
+     *      the constant is read and ignored.
+     *
+     * The second condition is the one that matters. A constant alone would
+     * eventually be copied into a production wp-config.php along with everything
+     * else in it, and the whole SSRF defence would be gone silently. Requiring
+     * the environment to agree means a copied constant is inert.
+     *
+     * **HTTPS is still required, in development as in production.** Only the
+     * address rules relax, never the transport: Local can issue a trusted
+     * certificate for a .local site, so there is no need to accept plain http to
+     * test this, and a test that ran over http would be exercising a code path
+     * that does not exist in production. A URL still cannot carry credentials or
+     * a query string either, and the admin screens say loudly that this is on.
+     */
+    public static function dev_mode(): bool {
+        return self::dev_mode_for(
+            defined('IDO_LEAGUE_ALLOW_PRIVATE_HOSTS') && IDO_LEAGUE_ALLOW_PRIVATE_HOSTS,
+            function_exists('wp_get_environment_type') ? wp_get_environment_type() : 'production'
+        );
+    }
+
+    /**
+     * The decision itself, separated from where its two inputs come from.
+     *
+     * Split out so the whole matrix can be tested in one process. A constant
+     * cannot be undefined once set, so a test that read the constant directly
+     * could only ever check one case per run, and the case that matters most,
+     * "defined but on a production site", is the one such a test would be least
+     * likely to cover.
+     */
+    public static function dev_mode_for(bool $constant_set, string $environment): bool {
+        if (!$constant_set) return false;
+        return in_array($environment, ['local', 'development'], true);
+    }
+
+    /** What to tell an administrator when it is on. Empty when it is not. */
+    public static function dev_notice(): string {
+        if (!self::dev_mode()) return '';
+        return 'Development mode: this site will pair with league members on the local network. '
+             . 'HTTPS is still required. Never run a real league this way.';
+    }
+
+    /**
      * A peer URL reduced to scheme, host, port and path, or null if it is not
      * one we will ever call.
      *
@@ -87,6 +145,12 @@ class IDO_League_URL {
 
         $host = (string) (wp_parse_url($normal, PHP_URL_HOST) ?? '');
         $host = trim($host, '[]');
+
+        // A development install pairing with another site on the same machine is
+        // the one case where a private address is the right answer. The host
+        // still has to parse, and the URL still had to survive normalize(),
+        // which means HTTPS and no credentials: only the address rule is lifted.
+        if (self::dev_mode()) return true;
 
         $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : self::resolve($host);
         if ($addresses === []) return false;

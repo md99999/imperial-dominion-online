@@ -19,6 +19,16 @@ if ($invite) delete_transient('ido_league_invitation');
 <div class="wrap">
     <h1>League Play</h1>
 
+    <?php if (IDO_League_URL::dev_notice() !== '') : ?>
+        <div class="notice notice-error"><p>
+            <strong><?php echo esc_html(IDO_League_URL::dev_notice()); ?></strong><br>
+            Set by <code>IDO_LEAGUE_ALLOW_PRIVATE_HOSTS</code> in <code>wp-config.php</code>, and honoured
+            because WordPress reports this as a
+            <?php echo esc_html(function_exists('wp_get_environment_type') ? wp_get_environment_type() : 'production'); ?>
+            environment. On a production site the constant is read and ignored.
+        </p></div>
+    <?php endif; ?>
+
     <?php if ($notice !== '') : ?>
         <div class="notice notice-info is-dismissible"><p><?php echo esc_html($notice); ?></p></div>
     <?php endif; ?>

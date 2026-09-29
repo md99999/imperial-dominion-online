@@ -64,6 +64,14 @@ endorsed by its creators or rights holders.
 - WordPress 7.0 or newer
 - PHP 8.0 or newer
 - MySQL or MariaDB (InnoDB recommended)
+- **HTTPS, with a valid certificate.** Every host worth using insists on it, most issue one free
+  through Let's Encrypt, and players are signing in to your site with a password.
+
+Local play will run over plain http and nothing stops you, but it means a ruler's WordPress login
+crosses the network in the clear. **League play requires HTTPS and will not accept an `http://`
+address for itself or for a peer**, because a league carries signed packets and a shared secret
+between sites. That rule holds in development as well as production: there is no setting that turns
+it off.
 
 ## Installing
 
@@ -151,7 +159,9 @@ A few things worth knowing before you enable it:
   leaving the league.
 
 The full design, including the packet format, the threat model and what is still undecided, is in
-[docs/CROSS-SITE.md](docs/CROSS-SITE.md).
+[docs/CROSS-SITE.md](docs/CROSS-SITE.md). To try it on two Local sites on one machine, see
+[docs/TWO-SITE-TESTING.md](docs/TWO-SITE-TESTING.md): it needs one deliberate, environment-gated
+allowance for private addresses, and HTTPS is still required even there.
 
 **Current state:** opting in, founding, invitations, joining and leaving are built. The handshake,
 packet exchange, musters and marches are designed and not yet built, so a league can be set up but

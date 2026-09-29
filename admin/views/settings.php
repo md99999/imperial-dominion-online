@@ -147,6 +147,11 @@ $help = [
                     <p class="description">
                         <strong>Status: <?php echo esc_html(IDO_League::endpoint_status()); ?></strong>
                     </p>
+                    <?php if (IDO_League_URL::dev_notice() !== '') : ?>
+                        <p class="description" style="color:#b32d2e">
+                            <strong><?php echo esc_html(IDO_League_URL::dev_notice()); ?></strong>
+                        </p>
+                    <?php endif; ?>
                     <p class="description">
                         <strong>Off by default.</strong> This is the one public, unauthenticated surface
                         league play adds, so nothing opens it on your behalf. Even with it on it is only
