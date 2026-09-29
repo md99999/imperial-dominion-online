@@ -1,10 +1,18 @@
-# Phase 2: inter-site war (design notes, not implemented)
+# Phase 2: inter-site war (design notes)
 
 The goal is to let the empires of one WordPress site combine their forces and march on a game
 hosted by a *different* WordPress site, with each site keeping authority over its own empires.
 
-Nothing here is built yet. These are the questions that have to be answered first, written down
-while the Phase 1 design is fresh.
+**Status: built.** As of 2.10.0 league play is in the plugin: opting in, founding, invitations and
+the enrolment handshake, the packet queues, news, the muster, the war and result packets, battle
+resolution and spoils, the agent who rides with the army, the escrow timeout, the league table,
+local war standing down, the board reset and its grace period, and relief for a ruined empire. The
+[README](../README.md#league-play-optional-off-by-default) describes it as a site owner sees it.
+
+This document started as the questions that had to be answered first, and it is kept as the
+reasoning behind what was built. Where the code settled a number or a rule, the section says so.
+What is still open, eviction and succession among it, is listed under
+[Gaps](#gaps-what-this-design-has-not-answered).
 
 ## The hard part is not the transport
 
@@ -1565,11 +1573,14 @@ single ruined empire: the game knows, so the game should act, and a player shoul
 
 ### The grace period
 
-A reset board then gets **X days in which it cannot be attacked**, so its players can rebuild
-before anybody arrives. Without it a reset is pointless: the site that flattened them is still
-strong, still in range, and would simply do it again on day one.
+A reset board then gets **a grace period in which it cannot be attacked**, so its players can
+rebuild before anybody arrives. Without it a reset is pointless: the site that flattened them is
+still strong, still in range, and would simply do it again on day one.
 
-The grace period is a setting, and it applies to **local and league play alike**.
+The grace period is the same length as the opening crown truce, set by `protection_hours`, and it
+applies to **local and league play alike**: locally every empire gets that truce at the same
+moment, and in a league the site records `grace_until` on its own league row and announces it in
+its news.
 
 ### League play has to honour it, and prove that it does
 
@@ -1608,6 +1619,9 @@ At the ceiling that is 254 sites times 25 empires, so a league-wide standings ta
 rather than render six thousand rows.
 
 ## Evicting a member
+
+**Not built yet.** The originator can approve or decline an enrolment, and declining destroys the
+secret, but there is no way to remove a member once it is paired. What follows is the design for it.
 
 The member list is already specified. What was missing is how a league removes somebody caught
 cheating, and it needs to be explicit rather than improvised, because it will be used in anger.
@@ -1717,9 +1731,9 @@ attack:
   and watch for a change in behaviour, and makes a version mismatch fail silently rather than
   clearly. The validated array is also rebuilt from the specification rather than passed through, so
   nothing undeclared survives even by accident.
-- **A packet type with no specification is refused.** `war` and `result` are designed and not yet
-  built, so a packet claiming to be one is turned away. A handler that accepts a type it cannot
-  validate is worse than one that admits it does not know the type yet.
+- **A packet type with no specification is refused.** The envelope admits exactly three types,
+  `news`, `war` and `result`, and each has its own declared body. Anything else is turned away. A
+  handler that accepts a type it cannot validate is worse than one that admits it does not know it.
 - **Types are checked, not coerced.** `is_int()`, not `is_numeric()`: the string `"14"`, the float
   `14.5` and `true` are all refused where a number belongs. A peer sending a string where a number
   goes is running different code, which is worth knowing rather than papering over.
@@ -1783,9 +1797,10 @@ most likely to be wrong and least likely to be exercised.
 
 ## Gaps: what this design has not answered
 
-Everything above is settled enough to build from. What follows is not, and is written down so it
-is found deliberately rather than discovered halfway through an implementation. Roughly in the
-order they would hurt.
+Everything above was settled enough to build from, and has been built except where a section says
+otherwise. What follows is not, and is written down so it is found deliberately rather than
+discovered halfway through an implementation. Roughly in the order they would hurt. The first two
+have since been decided, along with one of the smaller things, and are marked so.
 
 ### 1. Who pays on the defending side — decided
 
@@ -1814,21 +1829,29 @@ Two things follow, and both are now in the design rather than pending:
   `board_ruin_percent` of the founding package, a quarter by default, refounds the board on the next
   daily tick and starts the grace period.
 
-### 2. Numbers that are referred to but never set
+### 2. Numbers that are referred to but never set — decided
 
-Each of these is currently a phrase where a value has to be:
+Each of these was a phrase where a value had to be. The code now sets every one, and most of them
+as constants rather than settings, for the same reason the march delay is a constant: a number a
+league could tune is a number the argument moves to.
 
-- **The escrow timeout.** "Released with a timeout if it never does" appears three times with no
-  number. It is security-relevant, not cosmetic: too short and a slow peer causes a double release,
-  too long and an army is hostage to a dead site. It has to be derived from the settings rather
-  than typed, something like the outbound delay plus the inbound delay plus a margin, and the
-  release must stay idempotent so a result arriving afterwards is a no-op.
-- **What league actions cost in turns.** Calling a muster costs "more than any local order",
-  contributing costs "a small number". Both belong in the league ruleset, since a site that made
-  them free would be buying exchanges.
-- **The minimum force a muster must raise** to march rather than fail.
-- **The scoring constants**: what a win is worth, how the decay on repeat exchanges works.
-- **Packet size and rate limits**, which the threat model names without quantifying.
+- **The escrow timeout** is derived, not typed: the longest march out plus the day the result
+  rides home plus a week's margin, fourteen days in all (`IDO_League_March::escrow_timeout_days()`).
+  Release is keyed on the march, so a result arriving afterwards finds the army home and does
+  nothing.
+- **What league actions cost in turns**: calling a muster costs 5, joining one costs 1
+  (`IDO_League_Muster::CALL_TURN_COST`, `JOIN_TURN_COST`). They are constants in the code rather
+  than entries in the ruleset, which closes the same door: no site can make them free.
+- **The minimum force a muster must raise** is 5% of the calling site's own standing army
+  (`IDO_League_Muster::MIN_FORCE_PERCENT`), measured against this site because the only figure held
+  about a target is what the target claims.
+- **The scoring constants** are in `IDO_League_Table`: a win and a repelled march are each worth
+  100, a draw 25, beating a bigger army multiplies up to twice, and each repeat exchange with the
+  same peer is worth half the one before.
+- **Packet size and rate limits**: a packet is capped at 64 KB and a nesting depth of 8
+  (`IDO_League_Crypto`), an enrolment body at 8 KB, and an address may make 30 enrolment calls an
+  hour (`IDO_League_Endpoint`). The outbound queue moves 20 packets a tick and gives up after 8
+  attempts.
 
 ### 3. The round boundary needs an absolute instant, not each site's midnight
 
@@ -1882,21 +1905,24 @@ probably a report that is accurate *as of days ago*, which is useful and still n
 
 - **A site joining mid-season** has no league record and starts at the bottom of a table it could
   not have competed in. Whether a late joiner is scored, unranked, or provisional is undecided.
-- **Grace periods and the table.** A site under grace cannot fight; whether it still publishes news
-  and appears in the standings is unsaid.
+- **Grace periods and the table — decided.** A site under grace keeps publishing news, with
+  `accepting` false and the date its grace ends. Other sites' league pages leave it out of the
+  targets on offer, and a muster called against it anyway is refused by name. Marches turned away by a grace period, and everything a reset
+  forfeits, are left out of the record rather than counted as battles.
 - **What the defending players see, and when.** The attacker's experience is described in detail.
   The defender's is not: whether a repelled march is news, how a ruler learns their garrison fought
   overnight, and what the gazette says.
-- **Two-site integration testing.** The threat model calls for fuzzing the handler, which is the
-  security half. The other half is a harness that runs two installs and puts a real exchange
-  through both, and that is the only way the escrow, the delay and the settlement get exercised
-  together before a league does it for real.
+- **Two-site integration testing — partly answered.** `tests/integration-march.php` puts a whole
+  exchange through the real code against a real database, from the muster to the result being
+  opened, playing both sides on one install. What is still missing is the same exchange across two
+  genuinely separate installs; [TWO-SITE-TESTING.md](TWO-SITE-TESTING.md) covers pairing two Local
+  sites, and a live march between them waits out real daily ticks.
 - **Leaving with an army in flight** is described for eviction and removal but not for a member who
   simply resigns mid-exchange.
 - **The gazette and packet strings.** Second-order injection is covered; what is not decided is how
   much of another site's business appears in the local gazette at all.
 
-## What Phase 1 already provides
+## What Phase 1 provided
 
 - Combat resolution is one service (`IDO_Military::attack()`) that takes an explicit force array,
   so a remote force can be fed into the same maths without duplicating it.
@@ -1906,11 +1932,15 @@ probably a report that is accurate *as of days ago*, which is useful and still n
 - Battles are already persisted with both reports, which is the natural place to record a remote
   battle's UUID.
 
-## What would need adding
+## What was added
+
+Everything on this list is now in the plugin, the last item only in part. It is kept as the map
+from the design to the code.
 
 - A `ido_leagues` table: league id and name, hub URL, ruleset version, ruleset, fingerprint, round
   calendar, the member cap, and whether this site is the originator.
 - A `ido_sites` table: peer site URL, shared secret, sequence counters, trust status.
+- A `ido_invites` table: each invitation's token, stored hashed, with its expiry and who spent it.
 - The league ruleset applied locally, with those settings locked in the admin and a fingerprint
   recomputed whenever they change.
 - `ido_packets_in` and `ido_packets_out`: the inbound staging table and the outbound retry
@@ -1922,8 +1952,9 @@ probably a report that is accurate *as of days ago*, which is useful and still n
 - An admin screen for pairing with another site, which must require an explicit confirmation from
   *both* administrators before any packet is accepted.
 - A player-facing league page, `[ido_league]`, created only while league play is on.
-- A two-site test harness, since the escrow, the delay and the settlement can only be exercised
-  together by running a real exchange between two installs.
+- A two-site test harness. `tests/integration-march.php` exercises the escrow, the delay and the
+  settlement together on one install playing both sides; a harness across two separate installs is
+  still listed under the gaps above.
 
 ## A caution
 

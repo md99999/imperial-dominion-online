@@ -72,13 +72,15 @@ becomes an active member, and A's list shows it as `paired`.
 
 ## What is testable today, and what is not
 
-Built and tested: opting in, founding, invitations, the whole handshake, approval and declining,
-secret issue, the endpoint gate, the rate limit, leaving, and the kill switch. Two sites exercise all
-of it end to end.
+Pairing is the part two sites exercise quickly: opting in, founding, invitations, the whole
+handshake, approval and declining, secret issue, the endpoint gate, the rate limit, leaving, and the
+kill switch all run end to end in minutes.
 
-Not built yet: musters, marches, and the packet exchange those drive. The pairing is the foundation
-for them, and once two sites are paired a signed packet between them already verifies and passes the
-schema, which is the part worth having in place first.
+Everything after pairing is built too: news, musters, marches, the result coming home and the league
+table. Two paired sites can play it, but a march is slow by design: it is fought on the third to
+sixth daily tick after it arrives, and the dispatches are read a day after that. For the whole exchange in one sitting,
+`tests/integration-march.php` puts a muster, a march and its result through the real code against a
+real database, with one site playing both sides.
 
 ## When you are finished
 
