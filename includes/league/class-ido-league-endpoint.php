@@ -67,6 +67,81 @@ class IDO_League_Endpoint {
             'callback'            => [__CLASS__, 'enrol_status'],
             'permission_callback' => '__return_true',
         ]);
+        register_rest_route(self::NAMESPACE_V1, '/packet', [
+            'methods'             => 'POST',
+            'callback'            => [__CLASS__, 'packet'],
+            'permission_callback' => '__return_true',   // the HMAC is the gate
+        ]);
+    }
+
+    // -- packet ------------------------------------------------------------
+
+    /**
+     * Where signed packets arrive.
+     *
+     * The order of operations is the security property, and it is the whole of
+     * this method:
+     *
+     *   length, peer lookup, signature, parse, schema, stage.
+     *
+     * Nothing is written before the signature verifies. Logging an unverified
+     * body would hand an anonymous caller a write primitive and a way to fill a
+     * disk; only counters move before that point.
+     *
+     * Nothing is *applied* at all. The packet is staged and the cron worker acts
+     * on it when its wait is over, which keeps this request to a single row and
+     * means a battle cannot resolve half way through an HTTP timeout.
+     *
+     * A duplicate is answered as success. A sender told "error" retries forever;
+     * a sender told "accepted" stops. A replay and a network retry are
+     * indistinguishable from here and both deserve the same answer.
+     */
+    public static function packet(WP_REST_Request $request) {
+        if (!self::within_rate_limit('packet')) return self::refuse(429);
+
+        $league = IDO_League::league();
+        if (!$league || !IDO_League::active()) return self::refuse(404);
+
+        // Length first, from the header and then from the bytes.
+        $declared = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+        if ($declared > IDO_League_Crypto::MAX_BYTES) return self::refuse(413);
+
+        $wire = trim((string) $request->get_body());
+        if ($wire === '' || strlen($wire) > IDO_League_Crypto::MAX_BYTES) return self::refuse(413);
+
+        // Split the envelope to find out which peer claims to have sent this.
+        // The claim is worth nothing until the signature agrees with it.
+        $parts = IDO_League_Crypto::split($wire);
+        if ($parts === null) return self::refuse(400);
+
+        $peer = IDO_League_Queue::peer_by_uuid($parts['from']);
+        if (!$peer || (string) $peer->secret === '') {
+            // An unknown peer and a bad signature get the same answer, so this
+            // cannot be used to discover who a site's peers are.
+            return self::refuse(401);
+        }
+
+        if (!IDO_League_Crypto::verify($wire, (string) $peer->secret)) return self::refuse(401);
+
+        // Verified. Only now does a parser see these bytes.
+        $opened = IDO_League_Crypto::open($wire, (string) $peer->secret);
+        if ($opened === null) return self::refuse(400);
+
+        try {
+            $envelope = IDO_League_Packet::read($opened, (string) $peer->site_uuid, (string) $league->site_uuid);
+        } catch (IDO_Game_Exception $e) {
+            self::log(sprintf('Refused a packet from %s: %s', (string) $peer->site_name, $e->getMessage()));
+            return self::refuse(422);
+        }
+
+        if (!hash_equals((string) $league->league_uuid, (string) $envelope['league'])) {
+            return self::refuse(422);
+        }
+
+        $result = IDO_League_Queue::stage($peer, $envelope, $wire);
+        if ($result === 'error') return self::refuse(500);
+
+        return self::answer(202, ['status' => 'accepted']);
     }
 
     // -- hello -------------------------------------------------------------

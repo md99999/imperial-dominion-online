@@ -198,6 +198,11 @@ class IDO_Admin {
                 }
                 break;
 
+            case 'league_run_traffic':
+                $notice = trim(IDO_Maintenance::league_traffic() . ' ' . IDO_Maintenance::league_news());
+                if ($notice === '') $notice = 'Nothing was waiting in either queue.';
+                break;
+
             case 'league_pause':
                 $notice = IDO_League_Setup::set_paused(!empty($_POST['paused']));
                 break;

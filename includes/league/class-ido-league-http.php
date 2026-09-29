@@ -32,6 +32,12 @@ class IDO_League_HTTP {
      * @return array{ok:bool,status:int,data:array,error:string}
      */
     public static function post_json(string $base, string $route, array $body): array {
+        $json = wp_json_encode($body);
+        if (!is_string($json)) return self::fail('That request could not be encoded.');
+        return self::send($base, $route, $json, 'application/json; charset=utf-8');
+    }
+
+    private static function send(string $base, string $route, string $payload, string $content_type): array {
         $normal = IDO_League_URL::normalize($base);
         if ($normal === null) {
             return self::fail('That address is not one this site will call.');
@@ -43,9 +49,7 @@ class IDO_League_HTTP {
             return self::fail('Bad route.');   // never from a packet; a programming error
         }
 
-        $url  = $normal . '/wp-json/ido/v1/' . $route;
-        $json = wp_json_encode($body);
-        if (!is_string($json)) return self::fail('That request could not be encoded.');
+        $url = $normal . '/wp-json/ido/v1/' . $route;
 
         // On a development install pairing with another site on this machine,
         // WordPress's own validation would refuse the private address before our
@@ -63,8 +67,8 @@ class IDO_League_HTTP {
             'timeout'     => self::TIMEOUT,
             'redirection' => 0,          // a redirect is where a validated host stops being the host
             'sslverify'   => true,
-            'headers'     => ['Content-Type' => 'application/json; charset=utf-8'],
-            'body'        => $json,
+            'headers'     => ['Content-Type' => $content_type],
+            'body'        => $payload,
             'user-agent'  => 'ImperialDominionOnline/' . IDO_VERSION,
         ]);
 
@@ -101,6 +105,20 @@ class IDO_League_HTTP {
             'data'   => $data,
             'error'  => $status >= 200 && $status < 300 ? '' : self::message($data, $status),
         ];
+    }
+
+    /**
+     * POSTs a signed packet, which travels as text rather than JSON.
+     *
+     * text/plain on purpose. With application/json WordPress parses the body into
+     * parameters before a handler runs, which is work done on unverified input,
+     * and the signature covers the exact bytes so nothing must re-serialise them
+     * on the way past.
+     *
+     * @return array{ok:bool,status:int,data:array,error:string}
+     */
+    public static function post_text(string $base, string $route, string $wire): array {
+        return self::send($base, $route, $wire, 'text/plain; charset=utf-8');
     }
 
     /**

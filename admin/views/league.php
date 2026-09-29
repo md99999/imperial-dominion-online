@@ -287,16 +287,27 @@ if ($invite) delete_transient('ido_league_invitation');
 
     <h2>Member sites</h2>
     <table class="widefat striped" style="max-width:60em">
-        <thead><tr><th>Site</th><th>Address</th><th>Status</th><th>Last heard</th><th></th></tr></thead>
+        <thead><tr><th>Site</th><th>Address</th><th>Status</th><th>Empires</th><th>Net worth</th>
+                   <th>As of</th><th>Last heard</th><th></th></tr></thead>
         <tbody>
         <?php if (!$members) : ?>
-            <tr><td colspan="5">No other sites yet. Create an invitation below and send it to another administrator.</td></tr>
+            <tr><td colspan="8">No other sites yet. Create an invitation below and send it to another administrator.</td></tr>
         <?php else : foreach ($members as $member) : ?>
             <tr>
                 <td><?php echo esc_html($member->site_name); ?>
                     <?php if ((int) $member->is_hub === 1) : ?><span class="description">(hub)</span><?php endif; ?></td>
                 <td><code><?php echo esc_html($member->site_url); ?></code></td>
                 <td><?php echo esc_html($member->status); ?></td>
+                <?php /* Dimmed and stamped, because these are what that site says
+                          about itself: the signature proves the packet came from
+                          them unaltered and proves nothing about whether it is
+                          true. Nothing is ever ranked on them. */ ?>
+                <td class="ido-claimed" style="opacity:.7"><?php
+                    echo $member->news_as_of ? esc_html(number_format_i18n((int) $member->empire_count)) : '&mdash;'; ?></td>
+                <td class="ido-claimed" style="opacity:.7"><?php
+                    echo $member->news_as_of ? esc_html(number_format_i18n((int) $member->networth)) : '&mdash;'; ?></td>
+                <td class="ido-claimed" style="opacity:.7"><?php
+                    echo esc_html($member->news_as_of ? IDO_League::when($member->news_as_of) : 'never'); ?></td>
                 <td><?php echo esc_html(IDO_League::when($member->last_contact_at)); ?></td>
                 <td>
                     <?php if (IDO_League::is_originator() && (int) $member->is_hub === 0
@@ -360,6 +371,40 @@ if ($invite) delete_transient('ido_league_invitation');
                 </tbody>
             </table>
         <?php endif; ?>
+    <?php endif; ?>
+
+    <?php $queues = IDO_League_Queue::summary(); ?>
+    <?php if ($queues) : ?>
+        <h2>Packet queues</h2>
+        <table class="widefat striped" style="max-width:40em">
+            <thead><tr><th>Queue</th><th>Waiting</th><th>Done</th><th>Trouble</th></tr></thead>
+            <tbody>
+                <tr>
+                    <th scope="row">Outbound</th>
+                    <td><?php echo esc_html((string) (int) ($queues['out']['queued'] ?? 0)); ?></td>
+                    <td><?php echo esc_html((string) (int) ($queues['out']['sent'] ?? 0)); ?> sent</td>
+                    <td><?php echo esc_html(sprintf('%d failed, %d abandoned',
+                        (int) ($queues['out']['failed'] ?? 0), (int) ($queues['out']['abandoned'] ?? 0))); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row">Inbound</th>
+                    <td><?php echo esc_html((string) (int) ($queues['in']['staged'] ?? 0)); ?> staged</td>
+                    <td><?php echo esc_html((string) (int) ($queues['in']['processed'] ?? 0)); ?> applied</td>
+                    <td><?php echo esc_html((string) (int) ($queues['in']['rejected'] ?? 0)); ?> rejected</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="description" style="max-width:46em">
+            Packets move on the hourly tick and news is published on the daily one. A staged war packet
+            deliberately shows only that it exists and roughly when it is due, never what is in it: an
+            administrator who is also a player would otherwise read the force out of this screen and
+            reinforce against it.
+        </p>
+        <p>
+            <?php echo IDO_Admin::form_open('league_run_traffic', 'ido_league'); ?>
+                <button type="submit" class="button">Move the queues now</button>
+            </form>
+        </p>
     <?php endif; ?>
 
     <h2>Controls</h2>

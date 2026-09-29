@@ -180,9 +180,31 @@ allowance for private addresses, and HTTPS is still required even there.
 
 What a human handles is a token that expires. What the software handles is the long-term key.
 
+### Packets, and the queues either side of them
+
+Nothing happens inside the request that asks for it. A packet is signed and queued, and cron sends
+it; an arriving packet is verified, staged, and applied by cron when its wait is over. Three things
+follow from that, and all three are deliberate:
+
+- **The delay belongs to the receiver.** `process_after` is drawn on arrival, so a sender cannot
+  shorten its own march or choose what the defender will have standing when it lands. News waits for
+  nothing; war and results wait the league's three to eight days.
+- **The endpoint stays cheap.** It writes one row and returns. A battle cannot resolve half way
+  through an HTTP timeout, and a request that only stages is hard to abuse.
+- **A peer being down loses nothing.** The outbound queue retries with backoff and gives up after
+  eight attempts with the reason recorded, rather than dropping a packet or hammering a dead site.
+
+**News packets** are the first exchange, and the least dangerous: how many empires are playing, what
+the site is worth in total, its largest empire, whether it is accepting marches, and when it read its
+own database. Never player names, never per-empire figures, and never anything about musters or
+marches in flight, because a league table must not become an early-warning system. Those figures are
+a claim signed by the claimant, so they are stored with the date claimed, shown as claims, and
+nothing is ever ranked on them.
+
 **Current state:** opting in, founding, invitations, the full enrolment handshake, approval, secret
-issue, leaving and the kill switch are built and tested. Musters, marches and packet exchange are
-designed and not yet built, so a league can now be formed and paired but not yet fought.
+issue, the packet queues in both directions, news packets, the cron workers, leaving and the kill
+switch are built and tested. Musters and marches are designed and not yet built, so two sites can now
+pair and exchange signed packets, but not yet fight.
 
 ---
 

@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.1.1
+Version: 2.2.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -24,7 +24,7 @@ See the GNU General Public License for more details. A copy is included in LICEN
 */
 if (!defined('ABSPATH')) exit;
 
-define('IDO_VERSION', '2.1.1');
+define('IDO_VERSION', '2.2.0');
 define('IDO_DB_VERSION', '11');
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
@@ -56,6 +56,8 @@ require_once IDO_PATH . 'includes/league/class-ido-league.php';
 require_once IDO_PATH . 'includes/league/class-ido-league-setup.php';
 require_once IDO_PATH . 'includes/league/class-ido-league-http.php';
 require_once IDO_PATH . 'includes/league/class-ido-league-enrol.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-queue.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-news.php';
 require_once IDO_PATH . 'includes/league/class-ido-league-endpoint.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-ui.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-actions.php';

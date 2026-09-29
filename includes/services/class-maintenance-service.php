@@ -72,8 +72,13 @@ class IDO_Maintenance {
 
     /** Market lots expire and a finished round is wound up. */
     public static function hourly(bool $force = false, string $source = 'WP-Cron'): string {
+        // League traffic first, and before the round check, because packets have
+        // to keep moving whether or not a round happens to be running here: a
+        // peer waiting on a result should not be held up by this site's calendar.
+        $league_note = self::league_traffic();
+
         $round = IDO_Rounds::current();
-        if (!$round) return 'No round is running.';
+        if (!$round) return trim('No round is running. ' . $league_note);
 
         if (!IDO_Lock::acquire('maintenance_hourly', 0)) {
             return 'Hourly upkeep skipped: another run is already in progress.';
@@ -91,11 +96,48 @@ class IDO_Maintenance {
             $rollover = IDO_Rounds::maybe_roll_over();
 
             self::record('hourly', $source);
-            return sprintf('Hourly upkeep: %d market lots returned to their owners.%s',
-                $expired, $rollover ? ' ' . $rollover : '');
+            return trim(sprintf('Hourly upkeep: %d market lots returned to their owners.%s %s',
+                $expired, $rollover ? ' ' . $rollover : '', $league_note));
         } finally {
             IDO_Lock::release('maintenance_hourly');
         }
+    }
+
+    /**
+     * Moves the league queues: sends what is due and applies what has waited.
+     *
+     * Its own lock, because it runs from both ticks and from the admin button,
+     * and two runs at once would try to send the same packet twice. A packet is
+     * idempotent at the receiver, so that would be survivable rather than
+     * harmful, but it would also be a waste and would muddle the counts.
+     */
+    public static function league_traffic(): string {
+        if (!IDO_League::active()) return '';
+        if (!IDO_Lock::acquire('league_traffic', 0)) return 'League traffic skipped: already running.';
+
+        try {
+            $sent      = IDO_League_Queue::flush();
+            $processed = IDO_League_Queue::process();
+
+            $parts = [];
+            if ($sent['sent'])            $parts[] = sprintf('%d packet(s) sent', $sent['sent']);
+            if ($sent['failed'])          $parts[] = sprintf('%d send(s) failed', $sent['failed']);
+            if ($processed['processed'])  $parts[] = sprintf('%d packet(s) applied', $processed['processed']);
+            if ($processed['rejected'])   $parts[] = sprintf('%d packet(s) rejected', $processed['rejected']);
+
+            return $parts ? 'League: ' . implode(', ', $parts) . '.' : '';
+        } finally {
+            IDO_Lock::release('league_traffic');
+        }
+    }
+
+    /** Publishes this site's own figures to every paired peer, once a day. */
+    public static function league_news(): string {
+        if (!IDO_League::active()) return '';
+        $queued = IDO_League_News::broadcast();
+        return $queued['queued'] > 0
+            ? sprintf('League: news queued for %d peer site(s).', $queued['queued'])
+            : '';
     }
 
     /** Turns are granted, building work finishes, old news is cleared. */
@@ -127,20 +169,22 @@ class IDO_Maintenance {
             $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('news') . ' WHERE created_at < %s', $cutoff));
 
             $rollover = IDO_Rounds::maybe_roll_over();
+            $league_note = self::league_news();
 
             self::record('daily', $source);
             // Saying how many were skipped matters: pressing Run now after the
             // tick has already run reports "0 granted", which reads as a fault
             // when the truth is that everyone already holds today's turns.
             $skipped = max(0, $eligible - $granted);
-            return sprintf(
-                'Daily upkeep: turns granted to %d %s%s, %d buildings finished.%s',
+            return trim(sprintf(
+                'Daily upkeep: turns granted to %d %s%s, %d buildings finished.%s %s',
                 $granted,
                 $granted === 1 ? 'empire' : 'empires',
                 $skipped > 0 ? sprintf(' (%d already had today, so received nothing)', $skipped) : '',
                 $built,
-                $rollover ? ' ' . $rollover : ''
-            );
+                $rollover ? ' ' . $rollover : '',
+                $league_note
+            ));
         } finally {
             IDO_Lock::release('maintenance_daily');
         }

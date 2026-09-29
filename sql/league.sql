@@ -44,6 +44,7 @@ CREATE TABLE {prefix}ido_sites (
   networth bigint(20) NOT NULL DEFAULT 0,
   largest_networth bigint(20) NOT NULL DEFAULT 0,
   grace_until datetime DEFAULT NULL,
+  news_as_of datetime DEFAULT NULL,
   claimed_at datetime DEFAULT NULL,
   last_contact_at datetime DEFAULT NULL,
   created_at datetime DEFAULT NULL,
