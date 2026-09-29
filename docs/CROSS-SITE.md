@@ -52,6 +52,8 @@ empires may be founded. Game-affecting ones are league-governed and identical ev
 - the conquest share, target bands, hits per target, truce length
 - agent cost and the agent limit
 - market tax and round length
+- the ruin threshold and the grace period that follows a board reset, since a league in which one
+  member refounds on easier terms than another is a league playing two games
 
 **Distribute, then verify.** The hub holds the league ruleset and sends it with the pairing
 handshake. A member site stores it and shows those settings read-only in the admin, marked as set
@@ -616,17 +618,92 @@ afford to send, which is a real advantage without being an automatic win. The ma
 Phase 1 already uses, `IDO_Military::attack()` over an explicit force array, with the committed
 forces of every participating empire summed on each side.
 
-### 2. Only what is committed is at risk
+### 2. Attacking is opting in; being attacked is not
 
-"A percentage of the assets of the site attacked" needs a sharper answer to the question *whose*.
+"A percentage of the assets of the site attacked" needs a sharper answer to the question *whose*,
+and the two sides of a march get different answers. That asymmetry is the decision, and it is worth
+stating plainly because an earlier version of this document claimed both sides worked the same way
+and could not have been implemented as written.
 
-Taking a slice of every empire on the losing site punishes players who never agreed to the war,
-for a decision their administrator made. One ruler logs in to find their army thinner because
-somebody else picked a fight. That is the fastest way to empty a league.
+**On the attacking side, empires opt in by committing.** An empire that sends nothing risks nothing
+and gains nothing. Losses and spoils fall on the contributors in proportion to what each one put in.
+A ruler chooses.
 
-**Empires opt in by committing.** An empire that sends nothing neither gains nor loses. Spoils go
-to the empires that contributed, in proportion to what they risked. The site is the banner; the
-empires are the participants.
+**On the defending side, the whole site pays.** A defence is not a decision anybody made: it is
+whatever happens to be standing when the packet lands. When a site loses, the plunder comes from
+every empire on it, and troop casualties fall on every empire that had troops at home.
+
+The instinct to protect uninvolved players is the wrong instinct here, and the reason is worth
+writing down. In league mode **the site is the team**: local war is switched off, nobody on the board
+is anybody else's rival, and the standings a ruler cares about are the league's. A site that could
+be raided while most of its rulers were untouchable would be a site where the correct play is to
+contribute nothing and let the keen ones absorb the risk. Everybody paying is what makes a league
+war the site's war.
+
+It also makes defence everybody's business. A ruler who keeps a garrison is protecting their own
+treasury as well as the site's, which is the incentive the design was missing.
+
+#### How a loss is shared
+
+Two steps, and the order matters.
+
+**First, the total.** The percentages are the ones the local game already uses, listed under spoils
+below, applied to the defending *site's* totals rather than to one empire. Nine percent of the
+site's gold, seven percent of its grain and iron, modified by the strength ratio exactly as a local
+raid is.
+
+**Then the apportionment.** That total is divided across the empires in proportion to **each
+empire's share of the resource being taken**, not in proportion to net worth. An empire holding a
+fifth of the site's gold pays a fifth of the gold.
+
+Apportioning by share of the resource rather than by net worth matters more than it sounds:
+
+- **It can never ask an empire for more than it has.** A land-rich, cash-poor empire apportioned by
+  net worth could be billed for gold it does not hold, and the shortfall would have to be shovelled
+  onto somebody else or silently forgiven. By share, a ruler with no gold pays no gold.
+- **It is the same rule in every resource**, so gold, grain and iron each fall where that resource
+  actually is, rather than all landing on whoever happens to look biggest overall.
+- **It still hits the large empires hardest**, because they hold the most, which is the behaviour
+  wanted without any special case to produce it.
+
+Troop casualties follow the same shape: the defending army is the sum of what was standing, so the
+losing side's casualty rate is applied to that total and apportioned by each empire's share of the
+troops that stood.
+
+The arithmetic is fractional and the game is not, so the split uses largest-remainder allocation
+and **the total taken is asserted to equal the total distributed**, per resource and per unit type.
+A march that cannot reconcile is held for an administrator rather than applied approximately. Zero
+is a hard floor throughout: no empire goes negative, and the sum taken can never exceed what the
+site held.
+
+#### And a successful defence pays
+
+If everybody shares a loss, everybody shares a repulse, or keeping a garrison is a pure cost and
+the dominant play is to keep nothing home.
+
+A site that throws back a march takes salvage from the attacker's committed force: a share of the
+casualties as iron, and captured siege weapons from a broken assault, on the same terms the local
+game already captures them. It is distributed by share of the troops that stood, so the rulers who
+actually held the wall are the ones who profit from it.
+
+#### When the loss is ruinous
+
+A league march can take a site to the floor. The percentages cannot reduce anybody below zero, but
+they can leave a board where every empire is too small to do anything with, and no realistic way
+back inside a round.
+
+That is the case the board reset exists for, and it is now on a trigger rather than waiting for a
+game master to notice. A site is ruined when its aggregate net worth falls below a share of what its
+empires were founded with, `board_ruin_percent`, defaulting to a quarter. On the next daily tick a
+ruined board **refounds itself**: every empire is restored to the starting package, the round
+restarts, the Hall of Fame is left intact so the history is not rewritten, and a grace period
+begins during which the site cannot be marched on and may not march.
+
+The grace period is the whole point of the reset. Without it the site that flattened them is still
+strong, still in range, and would do it again on day one. League play has to honour it, and the
+rules for a march that lands on a board under grace are unchanged from the section below: the force
+is returned home intact with a plain reason, because the attacker committed days before the reset
+happened and should lose the turns and the time but not the army.
 
 ### 3. Spoils: the local tables, minus land
 
@@ -1242,6 +1319,12 @@ refounded with the starting package, the round restarted, and the Hall of Fame l
 history is not rewritten. Only for a site that is genuinely finished, not as a way out of a bad
 week.
 
+**It also happens on its own.** A league march can take a board to the floor, and waiting for an
+administrator to notice means a site sits ruined for however long that takes. A site whose aggregate
+net worth falls below `board_ruin_percent` of what its empires were founded with, a quarter by
+default, is refounded on the next daily tick. The reasoning is the same as the automatic relief for a
+single ruined empire: the game knows, so the game should act, and a player should not have to ask.
+
 ### The grace period
 
 A reset board then gets **X days in which it cannot be attacked**, so its players can rebuild
@@ -1466,37 +1549,32 @@ Everything above is settled enough to build from. What follows is not, and is wr
 is found deliberately rather than discovered halfway through an implementation. Roughly in the
 order they would hurt.
 
-### 1. Who pays on the defending side
+### 1. Who pays on the defending side — decided
 
-This is the largest hole, and it contradicts a rule stated earlier in this document.
+This was the largest hole in the design and it is now answered, under *Attacking is opting in; being
+attacked is not*. Recorded here with the reasoning, because a decision is more useful than a
+resolved-and-deleted section.
 
-*Only what is committed is at risk* says empires opt in by committing, and that an empire which
-sends nothing neither gains nor loses. That is coherent for the attacker, who chooses. It cannot be
-true for the defender, who does not: a defence is whatever happens to be standing on the day the
-packet lands, assembled from empires that made no decision at all. Yet spoils are taken from "the
-defending side", and somebody's gold leaves.
+**The whole defending site pays, apportioned by each empire's share of the resource being taken.**
+The percentages are computed against the site's totals, then divided by share, so an empire holding a
+fifth of the site's gold pays a fifth of the gold, and a ruler with no gold pays no gold.
 
-So the unanswered question is exactly *whose*, and there are three candidate answers:
+The rejected answer was the symmetrical one: only the empires that had troops standing. It reads as
+fairer and plays worse. In league mode the site is the team, local war is off, and nobody on the
+board is anybody else's rival, so a site where most rulers were untouchable would be a site where the
+correct play is to contribute nothing and let the keen ones carry the risk.
 
-- **Everyone on the site, in proportion to what they held.** Simple, and it makes defence a shared
-  civic burden. It also means a ruler who logs in to find their treasury lighter because two other
-  sites had a war, which is the failure mode the opt-in rule was written to prevent.
-- **Only empires with troops standing.** Rewards keeping a garrison with the right to be robbed,
-  which is backwards, and it means the safest thing a defender can do is hold no army at all.
-- **In proportion to each empire's share of the defence that actually fought**, with losses and
-  the plunder both falling there. Closest to consistent with the attacker's rule, and it makes
-  garrisoning a real decision with a real cost.
+Apportioning by share of the resource rather than by net worth was the other decision inside it, and
+the reason is arithmetic rather than fairness: net worth would bill a land-rich, cash-poor empire for
+gold it does not hold, and that shortfall has to go somewhere.
 
-The third is the most likely right answer, and it needs one more decision inside it: what happens
-to an empire that held nothing back and contributed everything to its own site's muster. It
-defended with nothing, so it loses nothing, which reads as a loophole until you remember its army
-is a week away and at risk elsewhere. That may be fine. It needs thinking about rather than
-assuming.
+Two things follow, and both are now in the design rather than pending:
 
-**Defence also needs to pay.** The league table scores a repelled march, but nothing says what the
-defending *empires* get. If repelling is purely a cost, the dominant play is to keep nothing home.
-A share of the attacker's casualties as salvage, or captured engines from a broken assault, would
-make a garrison worth keeping.
+- **A successful defence pays**, in salvage and captured engines, distributed by share of the troops
+  that stood. Without it a garrison is a pure cost and the dominant play is to keep nothing home.
+- **A ruinous loss triggers the board reset**, on a threshold rather than a game master noticing.
+  `board_ruin_percent` of the founding package, a quarter by default, refounds the board on the next
+  daily tick and starts the grace period.
 
 ### 2. Numbers that are referred to but never set
 
