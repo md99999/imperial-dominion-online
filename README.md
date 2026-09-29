@@ -159,7 +159,7 @@ A few things worth knowing before you enable it:
 - There is a **kill switch** that stops all league traffic without deactivating the plugin or
   leaving the league.
 
-The full design, including the packet format, the threat model and what is still undecided, is in
+The full design, including the packet format, the threat model and what is still open, is in
 [docs/CROSS-SITE.md](docs/CROSS-SITE.md). To try it on two Local sites on one machine, see
 [docs/TWO-SITE-TESTING.md](docs/TWO-SITE-TESTING.md): it needs one deliberate, environment-gated
 allowance for private addresses, and HTTPS is still required even there.
@@ -304,8 +304,9 @@ already in flight is turned away with the attacker's force returned intact.
 **Current state:** Phase 2 is complete. Opting in, founding, invitations, the enrolment handshake,
 the packet queues, news, the muster with its window and escrow, the march, battle resolution, spoils,
 the agent who rides ahead, the return leg, the escrow timeout, the league table and page, local war
-standing down, the board reset and its grace period, the cron workers, leaving and the kill switch
-are all built and tested.
+standing down, the board reset and its grace period, relief for a ruined empire, the cron workers,
+leaving and the kill switch are all built and tested. Evicting a member is designed and not yet
+built, and handing a league to a new originator is still an open question.
 
 ---
 
@@ -473,12 +474,23 @@ out of it, and what to expect.
 
 ## Roadmap
 
-Phase 1 (this release) is a complete game on a single WordPress site.
+**Phase 1** is a complete game on a single WordPress site.
 
-Phase 2 is **inter-site war**: letting the empires of one WordPress site combine their forces
-against a game hosted on another. See [docs/CROSS-SITE.md](docs/CROSS-SITE.md) for the design
-questions that have to be answered first, above all how a war packet is signed, verified and
-replayed exactly once.
+**Phase 2**, inter-site war, is built: the empires of one site combine their forces and march on
+another, as described under [League play](#league-play-optional-off-by-default). The board reset
+and relief for a ruined empire, which exist so that a beaten site or ruler can come back, shipped
+with it.
+
+What is still open is listed under *Gaps* in [docs/CROSS-SITE.md](docs/CROSS-SITE.md#gaps-what-this-design-has-not-answered).
+The ones most likely to matter first:
+
+- **Evicting a member.** The originator can decline an enrolment but cannot yet remove a paired
+  site.
+- **A league whose originator disappears** has no way to hand the ruleset and calendar to anyone
+  else.
+- **A round boundary shared to the instant.** Each site still ends its round on its own clock
+  rather than at one moment the league publishes.
+- **Restoring a database** from backup rolls back sequence numbers, and nothing yet detects it.
 
 ## Licence
 

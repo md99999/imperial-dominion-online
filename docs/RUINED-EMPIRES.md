@@ -1,5 +1,10 @@
 ## An empire reduced to nothing
 
+**Status: built in 2.10.0.** The automatic relief described here is in the plugin
+(`IDO_Board::mark_ruined()` and `IDO_Board::relieve_due()`, run by the daily tick). The sections
+below were written as the case for it and now describe what it does; the one part not built is the
+manual restore at the end.
+
 ### Zero is already the floor
 
 Nothing can go negative. Every decrease runs through `IDO_Kingdom::pay()`, which guards the column
@@ -27,20 +32,21 @@ to get back to where the round started, and an empire in that state contributes 
 march either, which in league mode makes it a dead weight on the whole site rather than merely a
 sad story.
 
-### The recommendation: automatic relief, once a round
+### Automatic relief, once a round
 
-Rebuild the empire to the founding package when it falls below a floor, automatically, and announce
-it in the gazette.
+The empire is rebuilt to the founding package when it falls below a floor, automatically, and it is
+announced in the gazette.
 
-- **Trigger**: net worth below a settable threshold, defaulted well under what a new empire is
-  worth, and no standing army. Both conditions, so a rich empire that happens to be between
-  armies is never caught.
-- **What happens**: land, gold, grain, iron, peasants and starting troops restored to the founding
-  values. The empire keeps its name, its ruler, its war record and its place in the standings.
-  This is relief, not a new identity.
-- **Once per round**, recorded on the empire, so it cannot become a strategy.
-- **Announced publicly**, because a silent restoration looks like a bug to everyone else and like a
-  favour to the suspicious.
+- **Trigger**: net worth below `defeat_threshold_percent` of a founding grant, a quarter by
+  default, **and** no soldiers. Both conditions, so a rich empire that happens to be between
+  armies is never caught. Setting the threshold to 0 turns relief off.
+- **What happens**: the founding package is applied, with each value raised to the founding figure
+  and never lowered to it, so relief cannot take anything away. The empire keeps its name, its
+  ruler, its war record and its place in the standings. This is relief, not a new identity.
+- **A crown truce comes with it**, recorded in `relief_until`.
+- **Once per round**, recorded on the empire in `reliefs_used`, so it cannot become a strategy.
+- **Announced publicly**, both when the empire falls and when it is resettled, because a silent
+  restoration looks like a bug to everyone else and like a favour to the suspicious.
 
 ### Why automatic beats asking an administrator
 
@@ -65,6 +71,9 @@ An administrator should still be able to restore or remove an empire by hand, lo
 trail, for the cases automation should not try to judge: a bugged empire, a returning player, a
 test account. Rare, deliberate, and recorded.
 
+**Only removal is built.** The Kingdoms screen can delete an empire, and logs it; there is no
+manual restore yet.
+
 ### The day in between
 
 Relief does not land the moment an empire falls. The empire is marked defeated, and restored on
@@ -85,8 +94,13 @@ building work, so restoration is one more job it does, on a schedule players alr
   nothing new, and the founding allowance arrives with the relief.
 - The empire cannot be attacked and does not count as a league contributor. There is nothing left
   to take, and a march that includes a defeated empire would be counting troops that are gone.
-- The screens say so plainly: the empire has fallen, relief arrives on the next daily tick after
-  a given time. Not an error, not silence.
+- The gazette says so plainly: the empire lies in ruins and will be resettled within a given number
+  of hours. A ruler who tries to pledge to a muster is told the same. There is no dedicated notice
+  on the empire's own screens yet.
+
+**After relief, in a league.** The empire rejoins the league when its relief truce ends. Until
+then it cannot pledge to a muster: the grant exists to get a ruined ruler playing again, and
+sending it to somebody else's war is the fastest way to be ruined twice.
 
 **How long is a day, exactly.** Restoration runs on the daily tick, so a grace of 24 hours means
 an empire defeated at three in the afternoon is restored at the tick after the following midnight:
@@ -96,7 +110,14 @@ between 0 and 24 hours, which may be closer to what most sites want. It is a set
 
 ### `is_defeated` finally has a use
 
-The column exists and nothing has ever set it. Defeat is the right name for this state: an empire
-that has fallen below the floor is marked defeated, relief is applied on the next tick, and the
-flag is cleared. It also gives the grant and the league code an honest way to skip an empire that
-is mid-restoration rather than treating it as a going concern.
+The column existed long before anything set it. Defeat is the right name for this state: an empire
+that has fallen below the floor is marked defeated, relief is applied on the first daily tick after
+the wait, and the flag is cleared. It also gives the grant and the league code an honest way to skip
+an empire that is mid-restoration rather than treating it as a going concern.
+
+### A whole board, rather than one empire
+
+When every empire on a site is ruined together, relief one at a time is not enough, and the board
+itself is refounded. That is covered in the README under *Starting the board over* and in
+[CROSS-SITE.md](CROSS-SITE.md#a-board-reset-and-the-grace-period-that-follows). A reset clears
+`defeated_at`, `relief_until` and `reliefs_used` along with everything else.
