@@ -102,6 +102,7 @@ it off.
 | Imperial Dominion - Market | `[ido_market]` | Post lots, buy what other rulers have posted |
 | Imperial Dominion - Gazette | `[ido_gazette]` | Public news of the round |
 | Imperial Dominion - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
+| Imperial Dominion - League | `[ido_league]` | The league table, the open muster, and what you have given (league play only) |
 
 ### The rules, on a page of your own
 
@@ -232,11 +233,28 @@ If no dispatch ever comes, the army is given up for lost after a fortnight and w
 comes home. Losing an army to a network failure is worse than the small risk of settling one twice,
 and settling twice cannot happen anyway.
 
-**Current state:** opting in, founding, invitations, the full enrolment handshake, approval, secret
-issue, the packet queues in both directions, news packets, the muster, the march, battle resolution,
-spoils, the return leg, the escrow timeout, the cron workers, leaving and the kill switch are built
-and tested. What remains is the player-facing screens for all of it, the league table, and the board
-reset.
+### The league table
+
+`[ido_league]` shows where the site stands, the muster being raised now, the table, what you
+personally have given, and the recent exchanges. It is created only when this site is in a league,
+and disappears from the navigation when it leaves.
+
+The table is built on one rule: **rank on what was witnessed, display what was asserted, and label
+the difference.** A battle is witnessed by two sites, since the defender computes it and signs the
+result and the attacker holds the same document, so neither can invent it alone. Net worth and
+empire counts are the other kind: a claim signed by the claimant, which proves the packet arrived
+unaltered and nothing about whether it was true. So wealth is shown dimmed with the date it was
+claimed, and **nothing is ever ranked on it**.
+
+Scoring exists to close the obvious doors. Holding a wall pays the same as carrying a field, or
+every site would empty its garrison and the only skill left would be guessing who marched this week.
+Losing scores zero rather than negative, so nobody profits from arranging somebody else's defeat.
+Repeat exchanges with the same peer decay, so the weakest member cannot be farmed.
+
+**Current state:** everything above is built and tested: opting in, founding, invitations, the
+enrolment handshake, the packet queues, news, the muster, the march, battle resolution, spoils, the
+return leg, the escrow timeout, the league table and page, the cron workers, leaving and the kill
+switch. What remains is the War Room becoming a mustering hall, and the board reset.
 
 ---
 

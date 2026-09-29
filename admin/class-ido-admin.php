@@ -235,8 +235,13 @@ class IDO_Admin {
         $renamed = 0;
         $claimed = [];
 
+        $skipped_league = 0;
         foreach (IDO_UI::PAGES as $key => $def) {
             [$title, $slug, $shortcode] = $def;
+
+            // The League page is not made until there is a league. Pressing this
+            // button again after founding or joining one creates it.
+            if (!IDO_UI::page_applies($key)) { $skipped_league++; continue; }
             $existing = !empty($ids[$key]) ? get_post($ids[$key]) : get_page_by_path($slug);
 
             // If a slug changes, the page under the old slug may still be
@@ -276,7 +281,11 @@ class IDO_Admin {
 
         update_option('ido_page_ids', $ids);
         IDO_Log::admin('pages', sprintf('Created %d game pages, renamed %d, kept %d.', $created, $renamed, $kept));
-        return sprintf('%d pages created, %d renamed to match the game, %d already correct.', $created, $renamed, $kept);
+        return sprintf('%d pages created, %d renamed to match the game, %d already correct.%s',
+            $created, $renamed, $kept,
+            $skipped_league > 0
+                ? ' The League page is not created until this site is in a league; press this again once it is.'
+                : '');
     }
 
     /** Removes one empire and everything hanging off it. */

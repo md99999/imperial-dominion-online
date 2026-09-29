@@ -23,6 +23,9 @@ class IDO_UI {
         'market'   => ['Imperial Dominion - Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
         'gazette'  => ['Imperial Dominion - Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
         'rankings' => ['Imperial Dominion - Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
+        // Only created and only shown while this site is in a league: see
+        // league_only() and IDO_Admin::create_pages().
+        'league'   => ['Imperial Dominion - League', 'imperial-dominion-online-league', 'ido_league', 'League'],
     ];
 
     public static function url(string $key, array $args = []): string {
@@ -240,9 +243,26 @@ class IDO_UI {
         return $out . '</div>';
     }
 
+    /**
+     * Pages that only exist while this site is in a league.
+     *
+     * A site playing locally should not carry a League tab to an empty screen,
+     * and a site that leaves one should not keep it.
+     */
+    public static function league_only(): array {
+        return ['league'];
+    }
+
+    /** Whether a page should be offered at all, given how this site is playing. */
+    public static function page_applies(string $key): bool {
+        if (!in_array($key, self::league_only(), true)) return true;
+        return class_exists('IDO_League') && IDO_League::league() !== null;
+    }
+
     public static function nav(string $current): string {
         $out = '<nav class="ido-nav">';
         foreach (self::PAGES as $key => $def) {
+            if (!self::page_applies($key)) continue;
             $class = 'ido-nav-item' . ($key === $current ? ' ido-nav-current' : '');
             $out .= '<a class="' . esc_attr($class) . '" href="' . esc_url(self::url($key)) . '">' . esc_html($def[3]) . '</a>';
         }
