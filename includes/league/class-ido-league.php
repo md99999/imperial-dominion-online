@@ -423,8 +423,18 @@ class IDO_League {
      * Two things are safe to do automatically. The sequence counter is jumped past
      * what the peer says it has already seen, because re-issuing numbers a peer has
      * seen is pointless and the counter carries no meaning beyond being larger than
-     * last time. And the epoch is bumped, which is how a peer learns that anything
-     * of ours in flight toward it can no longer be trusted.
+     * last time. And the epoch is bumped, which records that this site is a new
+     * incarnation of itself.
+     *
+     * The epoch does not yet leave the database, so bumping it presently tells
+     * nobody anything: it is a local marker waiting on the envelope to carry it.
+     * Until then a peer only learns of our regression when it happens to send
+     * counters of its own, which is late -- this site can march in the meantime.
+     * With the epoch on the wire a peer could refuse a packet stamped older than
+     * the highest it has already accepted from us, which is the one replay the
+     * uuid index cannot catch: a restored outbox re-sends a march it already sent,
+     * composed fresh with a new uuid, and nothing on the receiving side can see
+     * that it is the same battle twice.
      *
      * What is *not* done automatically is applying or discarding the packets now
      * waiting. Which of them are duplicates is unknowable from here, and guessing
@@ -443,7 +453,8 @@ class IDO_League {
         ], ['id' => (int) $league->id]);
 
         // Every pairing gets a new epoch, because a restore is not something that
-        // happens to one peer at a time.
+        // happens to one peer at a time. Kept in step across pairings so that the
+        // figure still means something once it does travel.
         $wpdb->query($wpdb->prepare(
             'UPDATE ' . IDO_DB::t('sites') . ' SET epoch = epoch + 1 WHERE league_id = %d',
             (int) $league->id
