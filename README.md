@@ -264,6 +264,25 @@ can be sent by anybody who has seen the form once.
 The War Room says so and points at the League page, where armies are actually raised. Leaving a
 league gives local war back.
 
+### Relief for a ruined empire
+
+One empire beaten flat is not the same as a board beaten flat. An empire whose net worth falls under
+a quarter of a founding grant **and** which holds no soldiers is ruined, and is resettled
+automatically a day later with a founding grant and a crown truce.
+
+- **Both conditions**, so an empire caught between armies is never swept up by it.
+- **Relief, not a new identity.** It keeps its name, its ruler, its war record and its place in the
+  standings. Only what it holds is restored, and nothing is ever taken away: each value is raised to
+  the founding figure rather than set to it.
+- **Once a round**, recorded on the empire, so it cannot become a strategy. Tanking does not pay
+  anyway: to qualify you must destroy more than relief gives back.
+- **Announced in the gazette**, because a silent restoration looks like a bug to everyone else.
+- The day in between is deliberate. Losing has to be felt, and `defeat_grace_hours` sets how long.
+
+In league play a relieved empire **rejoins when its truce ends**. It cannot pledge to a muster while
+sheltering under relief: the grant exists to get a ruined ruler playing again, and shipping it off to
+somebody else's war for a fractional share of the spoils is the fastest way to be ruined twice.
+
 ### Starting the board over
 
 A board can be beaten flat: every empire in ruins, nothing to build from, no way back inside a round.

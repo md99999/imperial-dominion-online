@@ -151,6 +151,51 @@ check('so both empires are contributing to the same army',
     count(IDO_League_Muster::contributions((int) $march->id)) === 2);
 
 say('');
+say('=== a ruined empire rejoins the league when its truce ends ===');
+IDO_Settings::update(['defeat_threshold_percent' => 25, 'defeat_grace_hours' => 24]);
+$broken = empire('Mode Broken');
+
+// Ruined: nothing left and no army.
+$wpdb->update(IDO_DB::t('kingdoms'), [
+    'gold' => 0, 'grain' => 0, 'iron' => 0, 'land' => 5, 'networth' => 500,
+    'u_pawn' => 0, 'u_legionnaire' => 0, 'u_centurion' => 0, 'u_ballista_legion' => 0,
+], ['id' => (int) $broken->id]);
+
+check('it is marked ruined', IDO_Board::mark_ruined((int) $round->id) >= 1);
+$broken = IDO_Kingdom::reload($broken);
+$why = refused(static fn() => IDO_League_Muster::join($broken, (int) $march->id, ['pawn' => 1]));
+check('an empire in ruins is asked for nothing',
+    stripos($why, 'awaiting relief') !== false, $why);
+
+// A day passes and relief arrives.
+$wpdb->update(IDO_DB::t('kingdoms'),
+    ['defeated_at' => date('Y-m-d H:i:s', current_time('timestamp') - 25 * HOUR_IN_SECONDS)],
+    ['id' => (int) $broken->id]);
+check('relief arrives', IDO_Board::relieve_due((int) $round->id) >= 1);
+
+$broken = IDO_Kingdom::reload($broken);
+check('it has troops again', (int) $broken->u_pawn > 0, (string) $broken->u_pawn);
+check('and is under a relief truce', IDO_Board::under_relief($broken),
+    (string) $broken->relief_until);
+
+$why = refused(static fn() => IDO_League_Muster::join($broken, (int) $march->id, ['pawn' => 1]));
+check('it still cannot pledge while the truce holds',
+    stripos($why, 'rebuilding under relief') !== false, $why);
+check('so the grant stays where it was given',
+    (int) IDO_Kingdom::reload($broken)->u_pawn === (int) $broken->u_pawn);
+
+// The truce ends.
+$wpdb->update(IDO_DB::t('kingdoms'),
+    ['relief_until' => date('Y-m-d H:i:s', current_time('timestamp') - 60)],
+    ['id' => (int) $broken->id]);
+$broken = IDO_Kingdom::reload($broken);
+check('once it ends, the truce no longer holds', !IDO_Board::under_relief($broken));
+check('and the empire can join the league again',
+    refused(static fn() => IDO_League_Muster::join($broken, (int) $march->id, ['pawn' => 50])) === '');
+check('with its pledge on the board',
+    IDO_League_Muster::contribution((int) $march->id, (int) $broken->id) !== null);
+
+say('');
 say('=== leaving the league gives local play back ===');
 IDO_League_Muster::cancel((int) $march->id, 'Test tidy-up.');
 IDO_League_Setup::leave();

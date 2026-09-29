@@ -108,12 +108,20 @@ class IDO_Board {
         foreach (IDO_Kingdom::numeric_columns() as $column) $blank[$column] = 0;
 
         // Only columns this table actually has. An earlier version set
-        // defeated_at, which is in the design notes and not in the schema, and
-        // $wpdb->update() fails the whole statement over one unknown column: the
-        // reset reported success and changed nothing at all.
+        // defeated_at before that column existed, and $wpdb->update() fails the
+        // whole statement over one unknown column: the reset reported success and
+        // changed nothing at all.
         $blank['networth']    = 0;
         $blank['is_defeated'] = 0;
         $blank['last_seen']   = IDO_Game::now();
+
+        // The defeat and relief cycle starts again too. None of these are in the
+        // numeric column list, so nothing else clears them: a refounded board
+        // would otherwise carry a spent relief and, worse, a relief truce dated
+        // into the future that stops a ruler pledging on a board that is new.
+        $blank['defeated_at']  = null;
+        $blank['relief_until'] = null;
+        $blank['reliefs_used'] = 0;
 
         // The founding values land last, on top of the zeroes.
         foreach ($package as $column => $value) $blank[$column] = $value;
@@ -207,6 +215,134 @@ class IDO_Board {
         $result = self::reset($round_id, 'The board could not stand again on its own.');
         return sprintf('The board was beaten flat and has been refounded: %d empires begin again.',
             $result['empires']);
+    }
+
+    // -- One empire at a time ----------------------------------------------
+
+    /**
+     * What an empire has to fall below to be called ruined.
+     *
+     * A share of a founding grant, and well under it, which is what makes tanking
+     * on purpose pointless: to qualify you must first destroy more than relief
+     * gives back. Giving away an army and a treasury to receive a smaller army and
+     * a smaller treasury is not a strategy, it is a loss.
+     */
+    public static function relief_threshold(): int {
+        $share = IDO_Settings::int('defeat_threshold_percent');
+        if ($share < 1) return 0;   // 0 switches relief off
+        return (int) round(self::founding_worth() * ($share / 100));
+    }
+
+    /**
+     * Marks empires that have nothing left, ready for relief a day later.
+     *
+     * **Two conditions, not one.** Below the threshold *and* holding no soldiers,
+     * so a wealthy empire caught between armies is never swept up by it. Somebody
+     * who has just spent everything on a rebuild is not ruined, they are busy.
+     *
+     * Relief is once a round, recorded on the empire, so it cannot become a
+     * strategy: a ruler who has already had it stays where they are.
+     */
+    public static function mark_ruined(int $round_id): int {
+        global $wpdb;
+
+        $threshold = self::relief_threshold();
+        if ($threshold < 1) return 0;
+
+        $candidates = (array) $wpdb->get_results($wpdb->prepare(
+            'SELECT * FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_defeated = 0 AND reliefs_used = 0 AND networth < %d',
+            $round_id, $threshold
+        ));
+
+        $marked = 0;
+        foreach ($candidates as $row) {
+            if (IDO_Units::total($row) > 0) continue;   // between armies, not ruined
+
+            $wpdb->update(IDO_DB::t('kingdoms'),
+                ['is_defeated' => 1, 'defeated_at' => IDO_Game::now()], ['id' => (int) $row->id]);
+            $marked++;
+
+            $hours = IDO_Settings::int('defeat_grace_hours');
+            IDO_Log::news('defeat', sprintf(
+                '%s lies in ruins. What is left of the court will be resettled%s.',
+                $row->kingdom_name,
+                $hours > 0 ? sprintf(' within %d hours', $hours) : ' overnight'
+            ));
+        }
+        return $marked;
+    }
+
+    /**
+     * Gives relief to empires whose day has passed.
+     *
+     * **Relief, not a new identity.** The empire keeps its name, its ruler, its war
+     * record and its place in the standings: only what it holds is restored. A
+     * player who was beaten flat should come back as themselves, with the history
+     * that got them there.
+     *
+     * Nothing is ever taken away by relief. Each value is raised to the founding
+     * figure rather than set to it, so an empire that somehow holds more of
+     * something than a founding grant keeps the more. Relief that could reduce a
+     * holding would be a punishment wearing the wrong name.
+     */
+    public static function relieve_due(int $round_id): int {
+        global $wpdb;
+
+        $hours = max(0, IDO_Settings::int('defeat_grace_hours'));
+        $cutoff = date('Y-m-d H:i:s', current_time('timestamp') - $hours * HOUR_IN_SECONDS);
+
+        $waiting = (array) $wpdb->get_results($wpdb->prepare(
+            'SELECT * FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_defeated = 1 AND reliefs_used = 0'
+            . ' AND defeated_at IS NOT NULL AND defeated_at <= %s',
+            $round_id, $cutoff
+        ));
+
+        $relieved = 0;
+        foreach ($waiting as $row) {
+            $package = IDO_Kingdom::starting_package();
+            $update = [
+                'is_defeated'  => 0,
+                'defeated_at'  => null,
+                'reliefs_used' => 1,
+                'relief_until' => $package['protection_until'],
+            ];
+            foreach ($package as $column => $value) {
+                // Raised to the founding figure, never lowered to it.
+                $update[$column] = is_int($value) ? max((int) $row->{$column}, $value) : $value;
+            }
+
+            if ($wpdb->update(IDO_DB::t('kingdoms'), $update, ['id' => (int) $row->id]) === false) {
+                IDO_Log::admin('relief', sprintf('Could not give relief to empire %d: %s',
+                    (int) $row->id, $wpdb->last_error));
+                continue;
+            }
+            $relieved++;
+
+            $fresh = IDO_Kingdom::find((int) $row->id);
+            if ($fresh) IDO_Kingdom::recalc_networth($fresh);
+
+            // Announced, because a silent restoration looks like a bug to
+            // everybody else and like a favour to the suspicious.
+            IDO_Log::news('relief', sprintf(
+                '%s has been resettled with a founding grant and a crown truce. The court stands again, '
+                . 'and keeps every mark of the road that brought it here.',
+                $row->kingdom_name
+            ));
+        }
+        return $relieved;
+    }
+
+    /** Whether an empire is inside its relief truce. */
+    public static function under_relief(object $kingdom): bool {
+        if (empty($kingdom->relief_until)) return false;
+        return strtotime((string) $kingdom->relief_until) > current_time('timestamp');
+    }
+
+    /** Whether an empire could still be given relief this round. */
+    public static function relief_available(object $kingdom): bool {
+        return (int) $kingdom->reliefs_used === 0 && self::relief_threshold() > 0;
     }
 
     // -- The league side ---------------------------------------------------

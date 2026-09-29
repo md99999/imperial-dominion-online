@@ -266,6 +266,23 @@ class IDO_League_Muster {
         if ((string) $march->status !== IDO_League_Status::MUSTERING) {
             throw new IDO_Game_Exception('That muster has closed. The army has already left.');
         }
+        // An empire rebuilding under relief joins the league when its truce ends.
+        // The grant exists to get a ruined ruler playing again, and shipping it
+        // off to somebody else's war for a fractional share of the spoils is the
+        // fastest way to be ruined twice.
+        if (IDO_Board::under_relief($kingdom)) {
+            throw new IDO_Game_Exception(sprintf(
+                'Your empire is rebuilding under relief until %s and cannot send anything to a muster '
+                . 'until then. Build with what you have been given first.',
+                IDO_League::when((string) $kingdom->relief_until)
+            ));
+        }
+        if ((int) $kingdom->is_defeated === 1) {
+            throw new IDO_Game_Exception(
+                'Your empire is in ruins and awaiting relief. There is nothing to send and nothing is '
+                . 'expected of you until it arrives.'
+            );
+        }
         if (self::contribution($march_id, (int) $kingdom->id)) {
             throw new IDO_Game_Exception(
                 'You have already pledged to this muster. Withdraw first if you want to change what you send.'

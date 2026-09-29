@@ -137,6 +137,13 @@ class IDO_Settings {
             'delete_data_on_uninstall' => 0,
             // League play is opt in and off by default: a site that never joins
             // one should carry none of its tables, routes or attack surface.
+            // An empire worth less than this share of a founding grant, and with
+            // no army left, is ruined. Well under what a founding is worth, so
+            // qualifying means destroying more than relief gives back.
+            'defeat_threshold_percent' => 25,
+            // The day between defeat and relief. Long enough to be felt, short
+            // enough that nobody gives up waiting. 0 restores overnight.
+            'defeat_grace_hours'       => 24,
             // A board worth less than this share of its founding grants is
             // finished, and is refounded on the next daily tick. 0 turns the
             // automatic reset off and leaves it to the game master.
@@ -187,6 +194,7 @@ class IDO_Settings {
         $current['target_max_percent'] = max((int) $current['target_min_percent'], (int) $current['target_max_percent']);
         $current['market_tax_percent'] = min(50, (int) $current['market_tax_percent']);
         $current['board_ruin_percent'] = min(90, (int) $current['board_ruin_percent']);
+        $current['defeat_threshold_percent'] = min(90, (int) $current['defeat_threshold_percent']);
         $current['delete_data_on_uninstall'] = !empty($current['delete_data_on_uninstall']) ? 1 : 0;
         $current['league_enabled']           = !empty($current['league_enabled']) ? 1 : 0;
         $current['league_endpoint']          = !empty($current['league_endpoint']) ? 1 : 0;

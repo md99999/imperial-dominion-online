@@ -190,6 +190,109 @@ foreach ($columns as $column) {
 }
 check('no column kept a stale value', $leftovers === [], implode(', ', $leftovers));
 
+// The relief cycle's own columns are not numeric-column material, so the sweep
+// above cannot see them. A refounded board carrying a spent relief, or worse a
+// relief truce dated into the future, would stop a ruler pledging on a board that
+// is brand new.
+$wpdb->update(IDO_DB::t('kingdoms'), [
+    'reliefs_used' => 1, 'is_defeated' => 1,
+    'defeated_at' => IDO_Game::now(),
+    'relief_until' => date('Y-m-d H:i:s', current_time('timestamp') + 86400),
+], ['id' => (int) $developed->id]);
+IDO_Board::reset($round_id, 'Third time.');
+$swept = IDO_Kingdom::find((int) $developed->id);
+check('a refounded board has its relief cycle back', (int) $swept->reliefs_used === 0);
+check('with nothing marked defeated', (int) $swept->is_defeated === 0);
+check('no defeat on record', $swept->defeated_at === null);
+check('and no relief truce left over', $swept->relief_until === null);
+
+say('');
+say('=== one empire at a time: ruin, a day, then relief ===');
+IDO_Settings::update(['defeat_threshold_percent' => 25, 'defeat_grace_hours' => 24]);
+$threshold = IDO_Board::relief_threshold();
+check('the threshold is under a founding grant',
+    $threshold > 0 && $threshold < IDO_Board::founding_worth(),
+    number_format($threshold) . ' vs ' . number_format(IDO_Board::founding_worth()));
+
+// A ruined empire: nothing left and no army.
+$ruined = empire($round_id, 'Reset Ruined');
+$wpdb->update(IDO_DB::t('kingdoms'), [
+    'gold' => 0, 'grain' => 0, 'iron' => 0, 'peasants' => 10, 'land' => 5,
+    'u_pawn' => 0, 'u_legionnaire' => 0, 'u_centurion' => 0, 'u_ballista_legion' => 0,
+    'b_homestead' => 1, 'b_farmstead' => 0, 'b_mint' => 0, 'b_foundry' => 0,
+    'b_barracks' => 0, 'b_fortification' => 0, 'catapults' => 0,
+    'attacks_made' => 9, 'attacks_won' => 2, 'land_lost' => 300,
+    'networth' => 1000,
+], ['id' => (int) $ruined->id]);
+
+// And one that is merely between armies: poor on paper, still holding soldiers.
+$between = empire($round_id, 'Reset Between');
+$wpdb->update(IDO_DB::t('kingdoms'), [
+    'gold' => 0, 'grain' => 0, 'iron' => 0, 'networth' => 1000, 'u_legionnaire' => 500,
+], ['id' => (int) $between->id]);
+
+check('one empire is marked ruined', IDO_Board::mark_ruined($round_id) === 1);
+check('the ruined one is flagged', (int) IDO_Kingdom::find((int) $ruined->id)->is_defeated === 1);
+check('with the hour recorded', IDO_Kingdom::find((int) $ruined->id)->defeated_at !== null);
+check('an empire between armies is left alone',
+    (int) IDO_Kingdom::find((int) $between->id)->is_defeated === 0);
+check('marking again changes nothing', IDO_Board::mark_ruined($round_id) === 0);
+check('relief does not come the same moment', IDO_Board::relieve_due($round_id) === 0);
+
+// Wind the clock back a day and an hour.
+$wpdb->update(IDO_DB::t('kingdoms'),
+    ['defeated_at' => date('Y-m-d H:i:s', current_time('timestamp') - 25 * HOUR_IN_SECONDS)],
+    ['id' => (int) $ruined->id]);
+check('a day later it does', IDO_Board::relieve_due($round_id) === 1);
+
+$relieved = IDO_Kingdom::find((int) $ruined->id);
+$package = IDO_Kingdom::starting_package();
+check('the empire stands again', (int) $relieved->is_defeated === 0);
+check('with a founding grant', (int) $relieved->gold === (int) $package['gold'],
+    $relieved->gold . ' vs ' . $package['gold']);
+check('and founding troops', (int) $relieved->u_pawn === (int) $package['u_pawn']);
+check('and land', (int) $relieved->land === (int) $package['land'], (string) $relieved->land);
+check('under a crown truce', IDO_Kingdom::is_protected($relieved));
+
+// Relief, not a new identity.
+check('it keeps its war record',
+    (int) $relieved->attacks_made === 9 && (int) $relieved->attacks_won === 2,
+    $relieved->attacks_made . '/' . $relieved->attacks_won);
+check('and its scars', (int) $relieved->land_lost === 300);
+check('and the building it still had', (int) $relieved->b_homestead === 1);
+check('and its name', strpos((string) $relieved->kingdom_name, 'Reset Ruined') === 0);
+
+check('relief is recorded as spent', (int) $relieved->reliefs_used === 1);
+check('so it cannot be had twice in a round', IDO_Board::mark_ruined($round_id) === 0);
+check('and is no longer available', !IDO_Board::relief_available($relieved));
+
+say('');
+say('=== relief never takes anything away ===');
+$hoarder = empire($round_id, 'Reset Hoarder');
+$wpdb->update(IDO_DB::t('kingdoms'), [
+    'networth' => 1000, 'u_pawn' => 0, 'u_legionnaire' => 0, 'u_centurion' => 0,
+    'u_ballista_legion' => 0, 'land' => 9000, 'grain' => 999999,
+    'defeated_at' => date('Y-m-d H:i:s', current_time('timestamp') - 25 * HOUR_IN_SECONDS),
+    'is_defeated' => 1,
+], ['id' => (int) $hoarder->id]);
+IDO_Board::relieve_due($round_id);
+$after_relief = IDO_Kingdom::find((int) $hoarder->id);
+check('land above the founding figure is kept', (int) $after_relief->land === 9000,
+    (string) $after_relief->land);
+check('and so is the grain', (int) $after_relief->grain === 999999);
+check('while empty troops are filled to founding',
+    (int) $after_relief->u_pawn === (int) $package['u_pawn']);
+
+say('');
+say('=== relief can be switched off ===');
+IDO_Settings::update(['defeat_threshold_percent' => 0]);
+check('a threshold of zero turns it off', IDO_Board::relief_threshold() === 0);
+$off = empire($round_id, 'Reset NoRelief');
+$wpdb->update(IDO_DB::t('kingdoms'), ['networth' => 1, 'u_pawn' => 0, 'u_legionnaire' => 0,
+    'u_centurion' => 0, 'u_ballista_legion' => 0], ['id' => (int) $off->id]);
+check('and nothing is marked', IDO_Board::mark_ruined($round_id) === 0);
+IDO_Settings::update(['defeat_threshold_percent' => 25]);
+
 say('');
 say('=== in a league, the record is forfeit too ===');
 add_filter('home_url', static function () { return 'https://hub.example.com'; }, 99);

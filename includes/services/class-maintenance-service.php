@@ -183,6 +183,17 @@ class IDO_Maintenance {
             // After the league traffic, so an army that came home tonight counts
             // toward whether the board can still stand.
             $league_note = trim(self::league_traffic(true) . ' ' . self::league_news());
+            // One empire at a time first, then the whole board: an empire given
+            // relief tonight counts toward whether the board can still stand.
+            $ruined   = IDO_Board::mark_ruined((int) $round->id);
+            $relieved = IDO_Board::relieve_due((int) $round->id);
+            if ($ruined > 0) {
+                $league_note = trim($league_note . sprintf(' %d empire(s) ruined.', $ruined));
+            }
+            if ($relieved > 0) {
+                $league_note = trim($league_note . sprintf(' %d empire(s) given relief.', $relieved));
+            }
+
             $reset_note = IDO_Board::reset_if_ruined((int) $round->id);
             if ($reset_note !== '') $league_note = trim($league_note . ' ' . $reset_note);
 
