@@ -54,16 +54,31 @@ allowed it.
 6. **Install the plugin on both**, enable league play on both, then found a league on A and join it
    from B with an invitation A generates.
 
+## The run through, once both sites are up
+
+On **A**: enable league play, found a league, create an invitation, copy it.
+
+On **B**: enable league play, paste the invitation, press **Present the invitation**. B calls A, and
+A calls B back to prove B controls its own address and holds the token. If this step fails, it is
+almost always one of three things: B's incoming packets are switched off under Settings, B's
+WordPress Address is still `http://`, or the development constant is missing on A so A will not dial
+a `.local` address.
+
+On **A**: the member appears as `pending` in the member list with **Approve** and **Decline** beside
+it. Approve it.
+
+On **B**: press **Check approval and collect the secret**. B collects the shared secret over TLS and
+becomes an active member, and A's list shows it as `paired`.
+
 ## What is testable today, and what is not
 
-Built: opting in, founding, invitations, recording an enrolment, the endpoint gate, leaving, and the
-kill switch. Two sites are enough to exercise all of it, including that B refuses an invitation
-pointing at an address it will not call.
+Built and tested: opting in, founding, invitations, the whole handshake, approval and declining,
+secret issue, the endpoint gate, the rate limit, leaving, and the kill switch. Two sites exercise all
+of it end to end.
 
-Not built yet: the handshake that turns a pending enrolment into a member, the packet endpoint, and
-everything downstream of it, which is where a second site starts earning its keep. The enrolment
-will sit at `pending` until the handshake exists, and the League screen says so rather than implying
-more than is there.
+Not built yet: musters, marches, and the packet exchange those drive. The pairing is the foundation
+for them, and once two sites are paired a signed packet between them already verifies and passes the
+schema, which is the part worth having in place first.
 
 ## When you are finished
 

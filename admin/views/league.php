@@ -205,12 +205,39 @@ if ($invite) delete_transient('ido_league_invitation');
     ?>
 
     <?php if ($pending) : ?>
-        <div class="notice notice-warning inline"><p>
-            <strong>Enrolment recorded, not yet complete.</strong> This site has read the invitation to
-            <em><?php echo esc_html($league->league_name); ?></em> and written down where the hub is.
-            Membership is settled by the hub calling this site back to prove you control it, and by the
-            originator approving the enrolment. Until then nothing is sent or accepted.
+        <div class="notice notice-warning"><p>
+            <strong>Enrolment in progress.</strong> This site has read the invitation to
+            <em><?php echo esc_html($league->league_name); ?></em>. It is not a member yet, and nothing is
+            sent or accepted until it is.
         </p></div>
+
+        <h2>Finish joining</h2>
+        <ol style="max-width:46em">
+            <li><strong>Present the invitation.</strong> This site calls the hub with its one-time token.
+                The hub then calls back to prove you control
+                <code><?php echo esc_html(IDO_League::own_url()); ?></code> and hold the invitation, so
+                nobody can enrol a site they do not run.
+                <p>
+                    <?php echo IDO_Admin::form_open('league_present', 'ido_league'); ?>
+                        <button type="submit" class="button button-primary">Present the invitation</button>
+                    </form>
+                </p>
+            </li>
+            <li><strong>Wait for the originator to approve this site</strong>, then collect the shared
+                secret. It travels over TLS inside the answer to this site's own request, so nobody ever
+                copies it by hand.
+                <p>
+                    <?php echo IDO_Admin::form_open('league_collect', 'ido_league'); ?>
+                        <button type="submit" class="button">Check approval and collect the secret</button>
+                    </form>
+                </p>
+            </li>
+        </ol>
+        <p class="description" style="max-width:46em">
+            The hub has to be able to reach this site over HTTPS for step one to work, which means incoming
+            packets must be switched on under Settings. On two sites on one machine it also means the
+            development allowance described in <code>docs/TWO-SITE-TESTING.md</code>.
+        </p>
     <?php endif; ?>
 
     <?php if (!$pending && !IDO_League::endpoint_enabled()) : ?>
@@ -260,10 +287,10 @@ if ($invite) delete_transient('ido_league_invitation');
 
     <h2>Member sites</h2>
     <table class="widefat striped" style="max-width:60em">
-        <thead><tr><th>Site</th><th>Address</th><th>Status</th><th>Last heard</th></tr></thead>
+        <thead><tr><th>Site</th><th>Address</th><th>Status</th><th>Last heard</th><th></th></tr></thead>
         <tbody>
         <?php if (!$members) : ?>
-            <tr><td colspan="4">No other sites yet.</td></tr>
+            <tr><td colspan="5">No other sites yet. Create an invitation below and send it to another administrator.</td></tr>
         <?php else : foreach ($members as $member) : ?>
             <tr>
                 <td><?php echo esc_html($member->site_name); ?>
@@ -271,6 +298,23 @@ if ($invite) delete_transient('ido_league_invitation');
                 <td><code><?php echo esc_html($member->site_url); ?></code></td>
                 <td><?php echo esc_html($member->status); ?></td>
                 <td><?php echo esc_html(IDO_League::when($member->last_contact_at)); ?></td>
+                <td>
+                    <?php if (IDO_League::is_originator() && (int) $member->is_hub === 0
+                              && (string) $member->status === 'pending') : ?>
+                        <?php echo IDO_Admin::form_open('league_approve', 'ido_league'); ?>
+                            <input type="hidden" name="member_id" value="<?php echo esc_attr((int) $member->id); ?>">
+                            <button type="submit" class="button button-small button-primary">Approve</button>
+                        </form>
+                        <?php echo IDO_Admin::form_open('league_decline', 'ido_league'); ?>
+                            <input type="hidden" name="member_id" value="<?php echo esc_attr((int) $member->id); ?>">
+                            <button type="submit" class="button-link delete">Decline</button>
+                        </form>
+                    <?php elseif ((string) $member->status === 'active' && $member->secret_issued_at) : ?>
+                        <span class="description">paired</span>
+                    <?php elseif ((string) $member->status === 'active') : ?>
+                        <span class="description">approved, awaiting collection</span>
+                    <?php endif; ?>
+                </td>
             </tr>
         <?php endforeach; endif; ?>
         </tbody>

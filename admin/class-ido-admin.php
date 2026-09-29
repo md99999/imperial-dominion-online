@@ -166,6 +166,38 @@ class IDO_Admin {
                 }
                 break;
 
+            case 'league_present':
+                try {
+                    $notice = IDO_League_Enrol::present();
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
+            case 'league_collect':
+                try {
+                    $notice = IDO_League_Enrol::collect();
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
+            case 'league_approve':
+                try {
+                    $notice = IDO_League_Enrol::approve(isset($_POST['member_id']) ? (int) $_POST['member_id'] : 0);
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
+            case 'league_decline':
+                try {
+                    $notice = IDO_League_Enrol::decline(isset($_POST['member_id']) ? (int) $_POST['member_id'] : 0);
+                } catch (IDO_Game_Exception $e) {
+                    $notice = $e->getMessage();
+                }
+                break;
+
             case 'league_pause':
                 $notice = IDO_League_Setup::set_paused(!empty($_POST['paused']));
                 break;

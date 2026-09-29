@@ -48,7 +48,14 @@ class IDO_League {
         if (!self::enabled() || !self::tables_exist()) return null;
 
         global $wpdb;
-        $row = $wpdb->get_row('SELECT * FROM ' . IDO_DB::t('leagues') . " WHERE status = 'active' ORDER BY id DESC LIMIT 1");
+        // Pending as well as active, which was a bug when this only read
+        // active: joining records the enrolment as pending, so the League screen
+        // could not see the very row it had just written and told the
+        // administrator they were not in a league at all.
+        $row = $wpdb->get_row(
+            'SELECT * FROM ' . IDO_DB::t('leagues')
+            . " WHERE status IN ('active', 'pending') ORDER BY id DESC LIMIT 1"
+        );
         self::$league = $row ?: null;
         return self::$league;
     }
@@ -116,6 +123,12 @@ class IDO_League {
     public static function paused(): bool {
         $league = self::league();
         return $league !== null && (int) $league->paused === 1;
+    }
+
+    /** Enrolled but not yet a member: the handshake has not finished. */
+    public static function pending(): bool {
+        $league = self::league();
+        return $league !== null && (string) $league->status === 'pending';
     }
 
     public static function is_originator(): bool {

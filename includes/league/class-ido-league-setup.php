@@ -256,6 +256,11 @@ class IDO_League_Setup {
             'is_originator' => 0,
             'status'        => 'pending',
             'paused'        => 1,
+            // Kept in the clear, and only here. The joining site needs the token
+            // itself to answer the hub's callback and to collect the secret; the
+            // hub stores only a hash of it. It is single use, expires in days,
+            // and is cleared the moment enrolment completes.
+            'enrol_token'   => $invitation['token'],
             'created_at'    => $now,
         ]);
         if (!$ok) throw new IDO_Game_Exception('The enrolment could not be recorded.');

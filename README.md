@@ -163,9 +163,26 @@ The full design, including the packet format, the threat model and what is still
 [docs/TWO-SITE-TESTING.md](docs/TWO-SITE-TESTING.md): it needs one deliberate, environment-gated
 allowance for private addresses, and HTTPS is still required even there.
 
-**Current state:** opting in, founding, invitations, joining and leaving are built. The handshake,
-packet exchange, musters and marches are designed and not yet built, so a league can be set up but
-not yet fought.
+### How two sites pair
+
+1. The originator founds a league and generates an **invitation**: a one-time token that expires in
+   seven days. Send it however you like, email included, because it is not worth stealing for long.
+2. The joining administrator pastes it in, then presses **Present the invitation**. Their site calls
+   the hub with the token.
+3. **The hub calls back.** The joining site answers with an HMAC of the hub's nonce, keyed by the
+   invitation token, which proves two things at once: it controls the address it claims, and it holds
+   the invitation. Nobody can enrol a site they do not run, and a stolen token is useless without it.
+4. The originator **approves** the member on the League screen. An invitation alone is not enough:
+   two administrators agreeing is the point.
+5. The joining site presses **Collect the secret**. The shared secret is issued once, inside the TLS
+   response to a request that site made itself, so it never travels by email, never appears in a
+   link, and is never copied by a person. The invitation is spent in the same write.
+
+What a human handles is a token that expires. What the software handles is the long-term key.
+
+**Current state:** opting in, founding, invitations, the full enrolment handshake, approval, secret
+issue, leaving and the kill switch are built and tested. Musters, marches and packet exchange are
+designed and not yet built, so a league can now be formed and paired but not yet fought.
 
 ---
 

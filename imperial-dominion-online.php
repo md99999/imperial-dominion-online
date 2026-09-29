@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.0.5
+Version: 2.1.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -24,7 +24,7 @@ See the GNU General Public License for more details. A copy is included in LICEN
 */
 if (!defined('ABSPATH')) exit;
 
-define('IDO_VERSION', '2.0.5');
+define('IDO_VERSION', '2.1.0');
 define('IDO_DB_VERSION', '11');
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
@@ -54,6 +54,9 @@ require_once IDO_PATH . 'includes/league/class-ido-league-url.php';
 require_once IDO_PATH . 'includes/league/class-ido-league-packet.php';
 require_once IDO_PATH . 'includes/league/class-ido-league.php';
 require_once IDO_PATH . 'includes/league/class-ido-league-setup.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-http.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-enrol.php';
+require_once IDO_PATH . 'includes/league/class-ido-league-endpoint.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-ui.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-actions.php';
 require_once IDO_PATH . 'includes/frontend/class-ido-shortcodes.php';
@@ -68,6 +71,9 @@ add_action('admin_init', ['IDO_Installer', 'maybe_rename_pages']);
 add_action('plugins_loaded', ['IDO_Maintenance', 'sync_timezone']);
 add_action('init', ['IDO_Shortcodes', 'register']);
 add_action('init', ['IDO_Menu', 'init']);
+// Registers nothing unless this site is in a league and the game master has
+// opened the endpoint: see IDO_League_Endpoint::register().
+IDO_League_Endpoint::init();
 add_action('template_redirect', ['IDO_Actions', 'handle']);
 add_action('wp_enqueue_scripts', ['IDO_UI', 'enqueue_assets']);
 add_action(IDO_Maintenance::HOURLY_HOOK, ['IDO_Maintenance', 'hourly']);
