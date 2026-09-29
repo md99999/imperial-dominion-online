@@ -1100,6 +1100,17 @@ versions of one piece of arithmetic is how they end up disagreeing: somebody tun
 mission that reads identically on screen quietly behaves differently depending on where it was
 ordered.
 
+**One agent to a march, and only one.** The first ruler to offer theirs takes the slot and everybody
+else is turned away. That is not a balance tweak: a wall has one night and one weak point, and a
+queue of spies tripping over each other in the same cellar is a worse story than one man with one
+chance. It also stops the mechanic scaling with the size of the site, which is the failure mode the
+rest of league play is built to avoid, and it makes the slot worth racing for.
+
+The slot is taken with a guarded write, `WHERE agent_kingdom_id = 0`, because two rulers pressing the
+button in the same second would otherwise both read an empty slot, both believe they had it, and the
+loser would find out a week later when the report named somebody else's agent. It can be given back
+while the muster is open and not after, guarded on the claimant so nobody can recall a rival's agent.
+
 Three things make it a decision rather than a free extra. An empire keeps **one agent** and he costs
 a great deal, so sending him is spending the only one there is. He is **escrowed with the army**,
 gone for the whole march and unavailable for anything at home. And **failure is total**: no partial
@@ -1107,10 +1118,13 @@ credit, no consolation, and a ruler who loses him starts saving again.
 
 ### What it is worth, and what it cannot do
 
-Half the fortification bonus for the first agent through, and diminishing after that, capped at
-three quarters however many get in. The cap is the point. A siege the attacker has already won
-before arriving is not a siege, and a large site able to field a dozen agents should not be able to
-switch a defender's walls off.
+Half the fortification bonus, and never more, because there is only ever one agent. An earlier
+version of this stacked several with diminishing returns and a cap, which was careful arithmetic
+solving a problem that the single-slot rule removes: a mechanic that cannot be stacked needs no
+ceiling to stop it being stacked.
+
+Half rather than all of it. The walls still count for something, the defender is not disarmed by one
+man, and an attacker who spends their only agent buys an advantage rather than a result.
 
 The odds are worse than any local mission and the rope is likelier: a local agent works a neighbour
 he could ride to, and this one is deep in another realm on a night the garrison is already nervous.

@@ -114,6 +114,8 @@ CREATE TABLE {prefix}ido_league_marches (
   joined_at datetime DEFAULT NULL,
   resolved_at datetime DEFAULT NULL,
   outcome varchar(16) NOT NULL DEFAULT '',
+  agent_kingdom_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  agent_outcome varchar(16) NOT NULL DEFAULT '',
   force_json longtext,
   spoils_json longtext,
   report text,

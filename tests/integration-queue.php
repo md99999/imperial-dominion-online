@@ -367,6 +367,61 @@ check('and the contributions beside them',
 $wpdb->delete(IDO_DB::t('packets_in'), ['id' => (int) $war_row->id], ['%d']);
 
 say('');
+say('=== one agent to a march, and the race for the slot ===');
+$wpdb->insert(IDO_DB::t('league_marches'), [
+    'league_id' => (int) $league->id, 'peer_id' => (int) $peer->id, 'round_id' => 1,
+    'direction' => 'out', 'status' => IDO_League_Status::MUSTERING,
+    'created_at' => IDO_League::now(),
+]);
+$march_id = (int) $wpdb->insert_id;
+
+check('the slot starts free', IDO_League_Covert::slot_holder($march_id) === 0);
+check('the first ruler takes it', IDO_League_Covert::claim_slot($march_id, 101));
+check('and is recorded as holding it', IDO_League_Covert::slot_holder($march_id) === 101);
+
+// The race. Both rulers press the button; the guarded write decides, and the
+// loser is told immediately rather than finding out a week later that the report
+// named somebody else's agent.
+$second = IDO_League_Covert::claim_slot($march_id, 202);
+check('a second ruler is turned away', !$second);
+check('and the first still holds it', IDO_League_Covert::slot_holder($march_id) === 101);
+
+$racers = 0;
+for ($i = 0; $i < 20; $i++) {
+    if (IDO_League_Covert::claim_slot($march_id, 300 + $i)) $racers++;
+}
+check('twenty more rulers all fail', $racers === 0);
+check('the slot still belongs to the first ruler', IDO_League_Covert::slot_holder($march_id) === 101);
+
+check('somebody else cannot release it', !IDO_League_Covert::release_slot($march_id, 202));
+check('so it is still held', IDO_League_Covert::slot_holder($march_id) === 101);
+check('the holder can withdraw while the muster is open',
+    IDO_League_Covert::release_slot($march_id, 101));
+check('which frees it for the next ruler', IDO_League_Covert::slot_holder($march_id) === 0);
+check('and the next ruler takes it', IDO_League_Covert::claim_slot($march_id, 202));
+
+// Once the army has left there is nothing to recall.
+$wpdb->update(IDO_DB::t('league_marches'),
+    ['status' => IDO_League_Status::MARCHING], ['id' => $march_id]);
+check('nobody can recall an agent once the army has marched',
+    !IDO_League_Covert::release_slot($march_id, 202));
+check('so the agent is committed', IDO_League_Covert::slot_holder($march_id) === 202);
+
+// And what a ruler is told when they cannot send one.
+$broke = (object) ['id' => 303, 'agents' => 1, 'gold' => 10];
+$agentless = (object) ['id' => 304, 'agents' => 0, 'gold' => 10000000];
+$able = (object) ['id' => 305, 'agents' => 1, 'gold' => 10000000];
+check('a ruler with no agent is told to hire one',
+    stripos(IDO_League_Covert::refusal($agentless, $march_id), 'hire one') !== false);
+check('a ruler who cannot pay the bribes is told the price',
+    stripos(IDO_League_Covert::refusal($broke, $march_id), 'bribes') !== false);
+check('and a ruler arriving second is told why',
+    stripos(IDO_League_Covert::refusal($able, $march_id), 'Only one goes with the army') !== false,
+    IDO_League_Covert::refusal($able, $march_id));
+
+$wpdb->delete(IDO_DB::t('league_marches'), ['id' => $march_id], ['%d']);
+
+say('');
 say('=== the kill switch stops both directions ===');
 IDO_League_Setup::set_paused(true);
 IDO_League::forget();
