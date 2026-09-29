@@ -202,10 +202,16 @@ class IDO_League_Queue {
             return $exists > 0 ? 'duplicate' : 'error';
         }
 
-        $wpdb->update(IDO_DB::t('sites'), [
-            'last_contact_at' => IDO_League::now(),
-            'fingerprint'     => (string) $envelope['fp'],
-        ], ['id' => (int) $peer->id]);
+        // The highest sequence seen from this peer, kept as a high-water mark
+        // rather than a count. It is what tells the peer, in the next news packet,
+        // how far we have got, which is the only way either side can discover that
+        // its own database has gone backwards.
+        $wpdb->query($wpdb->prepare(
+            'UPDATE ' . IDO_DB::t('sites')
+            . ' SET seq_in = GREATEST(seq_in, %d), last_contact_at = %s, fingerprint = %s'
+            . ' WHERE id = %d',
+            (int) $envelope['seq'], IDO_League::now(), (string) $envelope['fp'], (int) $peer->id
+        ));
 
         return 'staged';
     }
@@ -243,6 +249,15 @@ class IDO_League_Queue {
 
         $league = IDO_League::league();
         if (!$league || !IDO_League::active()) return ['processed' => 0, 'rejected' => 0];
+
+        // Held, not dropped. When this site has been caught playing from an older
+        // copy of itself, the record of what it has already applied is unreliable,
+        // and applying a packet that was already applied is how a game quietly
+        // counts a battle twice. Receiving and staging carry on as normal, so
+        // nothing is lost while a game master decides.
+        if (IDO_League::resync_required()) {
+            return ['processed' => 0, 'rejected' => 0, 'held' => IDO_League::held_count()];
+        }
 
         // A march and a result land on the daily tick and nothing else, which is
         // the whole ritual: you log in, and the dispatches from days ago are

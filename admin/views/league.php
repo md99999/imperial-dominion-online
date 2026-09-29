@@ -240,6 +240,41 @@ if ($invite) delete_transient('ido_league_invitation');
         </p>
     <?php endif; ?>
 
+    <?php if (IDO_League::resync_required()) : ?>
+        <div class="notice notice-error">
+            <p><strong>This site needs resynchronising with the league.</strong></p>
+            <p><?php echo esc_html(IDO_League::resync_note()); ?></p>
+            <p>
+                Nothing has been thrown away. Packets from the other sites are still arriving and being
+                kept; what has stopped is <em>acting</em> on them, because this site can no longer be sure
+                which of them it has already acted on. Applying one twice is how a battle gets fought
+                twice and spoils get handed out twice.
+                <strong><?php echo esc_html(IDO_Game::fmt(IDO_League::held_count())); ?></strong>
+                packet(s) are waiting.
+            </p>
+            <p>
+                This almost always means a database backup was restored. If you did that, the safe choice
+                is to discard what is waiting: some of it will be work this site did before the backup was
+                taken, and there is no way from here to tell which.
+            </p>
+            <p>
+                <?php echo IDO_Admin::form_open('league_resync_discard', 'ido_league'); ?>
+                    <button type="submit" class="button button-primary"
+                            onclick="return confirm('Discard the waiting packets and resume? This cannot be undone.');">
+                        Resynchronise and discard what is waiting
+                    </button>
+                </form>
+                <?php echo IDO_Admin::form_open('league_resync_apply', 'ido_league'); ?>
+                    <button type="submit" class="button">Resynchronise and apply what is waiting</button>
+                </form>
+            </p>
+            <p class="description">
+                Applying is the right choice only if you are confident this site has not restored anything
+                and the warning came from a peer being wrong about us.
+            </p>
+        </div>
+    <?php endif; ?>
+
     <?php if (!$pending && !IDO_League::endpoint_enabled()) : ?>
         <div class="notice notice-warning inline"><p>
             <strong>This site cannot receive league packets.</strong>

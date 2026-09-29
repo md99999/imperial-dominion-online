@@ -94,6 +94,12 @@ class IDO_League_Packet {
                 'largest_networth' => ['int', 0, IDO_Game::MAX_VALUE],
                 'accepting'        => ['bool'],
                 'grace_until'      => ['datetime', 'optional'],
+                // What each side believes about the other's counters. Optional,
+                // so a member running an older build is not refused for failing
+                // to send a field it has never heard of, and the detection simply
+                // does not fire for that pairing.
+                'seq_seen'         => ['int', 0, PHP_INT_MAX, 'optional'],
+                'seq_sent'         => ['int', 0, PHP_INT_MAX, 'optional'],
                 'as_of'            => ['datetime'],
             ],
             'war' => [

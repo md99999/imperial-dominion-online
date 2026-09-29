@@ -392,6 +392,128 @@ class IDO_League {
 
     // -- This site's identity in a league ----------------------------------
 
+    // -- Recovering from a restored backup ---------------------------------
+
+    /**
+     * Whether this site has been caught playing from an older copy of itself.
+     *
+     * Restoring a database backup rolls back the two things that keep the protocol
+     * honest: the record of packet UUIDs already processed, and the march rows that
+     * say what has been settled. Both live in the same database as everything else,
+     * so both go back together, and the site will cheerfully fight a battle it has
+     * already fought and hand out spoils it has already handed out.
+     *
+     * While this is raised, packets are still received and staged and nothing is
+     * lost. What stops is *applying* them, because staging is harmless and applying
+     * is what double-counts. A game master clears it deliberately.
+     */
+    public static function resync_required(): bool {
+        $league = self::league();
+        return $league !== null && (int) $league->resync_required === 1;
+    }
+
+    public static function resync_note(): string {
+        $league = self::league();
+        return $league ? (string) $league->resync_note : '';
+    }
+
+    /**
+     * Raises the flag, and repairs what can be repaired without guessing.
+     *
+     * Two things are safe to do automatically. The sequence counter is jumped past
+     * what the peer says it has already seen, because re-issuing numbers a peer has
+     * seen is pointless and the counter carries no meaning beyond being larger than
+     * last time. And the epoch is bumped, which is how a peer learns that anything
+     * of ours in flight toward it can no longer be trusted.
+     *
+     * What is *not* done automatically is applying or discarding the packets now
+     * waiting. Which of them are duplicates is unknowable from here, and guessing
+     * would produce a game that looks right and is not.
+     */
+    public static function flag_resync(string $note): void {
+        global $wpdb;
+
+        $league = self::league();
+        if (!$league || (int) $league->resync_required === 1) return;
+
+        $wpdb->update(IDO_DB::t('leagues'), [
+            'resync_required' => 1,
+            'resync_note'     => substr($note, 0, 255),
+            'resync_at'       => self::now(),
+        ], ['id' => (int) $league->id]);
+
+        // Every pairing gets a new epoch, because a restore is not something that
+        // happens to one peer at a time.
+        $wpdb->query($wpdb->prepare(
+            'UPDATE ' . IDO_DB::t('sites') . ' SET epoch = epoch + 1 WHERE league_id = %d',
+            (int) $league->id
+        ));
+
+        self::forget();
+        IDO_Log::admin('league', 'League traffic held for resynchronisation: ' . $note);
+        IDO_Log::news('league', 'The heralds have lost their place in the ledgers. '
+            . 'Word from other realms is being held until the record is set straight.');
+    }
+
+    /** Jumps our counter past what a peer says it has already seen from us. */
+    public static function catch_up_sequence(object $peer, int $seen): void {
+        global $wpdb;
+
+        if ($seen <= (int) $peer->seq_out) return;
+
+        // A margin, so a peer that was itself mid-flight when we restored does not
+        // leave us issuing a number it has already filed.
+        $wpdb->update(IDO_DB::t('sites'), ['seq_out' => $seen + 10], ['id' => (int) $peer->id]);
+    }
+
+    /**
+     * Clears the flag, once a human has decided what to do about the backlog.
+     *
+     * @param bool $discard true to throw away what is staged, false to let it apply
+     */
+    public static function clear_resync(bool $discard): string {
+        global $wpdb;
+
+        $league = self::league();
+        if (!$league) return 'This site is not in a league.';
+
+        $discarded = 0;
+        if ($discard) {
+            $discarded = (int) $wpdb->query($wpdb->prepare(
+                'UPDATE ' . IDO_DB::t('packets_in')
+                . ' SET status = %s, processed_at = %s, result_note = %s'
+                . ' WHERE league_id = %d AND status = %s',
+                'rejected', self::now(),
+                'Discarded after a backup was restored: it could not be told from something already applied.',
+                (int) $league->id, 'staged'
+            ));
+        }
+
+        $wpdb->update(IDO_DB::t('leagues'),
+            ['resync_required' => 0, 'resync_note' => '', 'resync_at' => null],
+            ['id' => (int) $league->id]);
+        self::forget();
+
+        IDO_Log::admin('league', $discard
+            ? sprintf('Resynchronised and discarded %d waiting packet(s).', $discarded)
+            : 'Resynchronised and released the waiting packets to be applied.');
+
+        return $discard
+            ? sprintf('League traffic has resumed. %d waiting packet(s) were discarded.', $discarded)
+            : 'League traffic has resumed. The waiting packets will be applied on the next run.';
+    }
+
+    /** How many packets are waiting while the flag is up. */
+    public static function held_count(): int {
+        global $wpdb;
+        $league = self::league();
+        if (!$league) return 0;
+        return (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('packets_in') . ' WHERE league_id = %d AND status = %s',
+            (int) $league->id, 'staged'
+        ));
+    }
+
     // -- The calendar ------------------------------------------------------
 
     /**

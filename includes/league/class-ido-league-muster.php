@@ -159,6 +159,13 @@ class IDO_League_Muster {
         if (!$league || !IDO_League::active()) {
             throw new IDO_Game_Exception('This site is not playing a league.');
         }
+        if (IDO_League::resync_required()) {
+            throw new IDO_Game_Exception(
+                'This site is waiting on the game master to set its records straight with the league, '
+                . 'and cannot raise an army until that is done. Nothing is lost: whatever the other '
+                . 'sites have sent is being held rather than thrown away.'
+            );
+        }
         if (self::open()) {
             throw new IDO_Game_Exception(
                 'A muster is already open. A site raises one army at a time, and this one has to '

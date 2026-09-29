@@ -204,6 +204,14 @@ class IDO_Admin {
                 if ($notice === '') $notice = 'Nothing was waiting in either queue.';
                 break;
 
+            case 'league_resync_discard':
+                $notice = IDO_League::clear_resync(true);
+                break;
+
+            case 'league_resync_apply':
+                $notice = IDO_League::clear_resync(false);
+                break;
+
             case 'league_pause':
                 $notice = IDO_League_Setup::set_paused(!empty($_POST['paused']));
                 break;

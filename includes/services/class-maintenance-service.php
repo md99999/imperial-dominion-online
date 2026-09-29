@@ -129,6 +129,10 @@ class IDO_Maintenance {
             $lost    = $daily_tick ? IDO_League_March::release_timed_out() : 0;
 
             $parts = [];
+            if (!empty($processed['held'])) {
+                $parts[] = sprintf('%d packet(s) held: this site needs resynchronising with the league',
+                    (int) $processed['held']);
+            }
             if ($closed !== '')           $parts[] = $closed;
             if ($lost > 0)                $parts[] = sprintf('%d army/armies given up for lost and returned', $lost);
             if ($sent['sent'])            $parts[] = sprintf('%d packet(s) sent', $sent['sent']);

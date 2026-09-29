@@ -33,7 +33,7 @@ class IDO_League_News {
      * board with absurd numbers on it reports a large number rather than
      * overflowing into a negative one.
      */
-    public static function compose(): array {
+    public static function compose(?object $peer = null): array {
         global $wpdb;
 
         $league = IDO_League::league();
@@ -72,6 +72,16 @@ class IDO_League_News {
             'as_of'            => IDO_League::now(),
         ];
 
+        // What this site believes about the pairing's counters. The peer compares
+        // them with its own view, and a disagreement is how either side finds out
+        // it has been restored from a backup: nothing inside a database can notice
+        // that the database went backwards, because the noticing would go back
+        // with it. Only the other end remembers.
+        if ($peer !== null) {
+            $body['seq_seen'] = (int) $peer->seq_in;    // the highest we have had from them
+            $body['seq_sent'] = (int) $peer->seq_out;   // the highest we have sent them
+        }
+
         // A site rebuilding says so, so peers can see not to march on it rather
         // than finding out days later when their army is turned away at the gate.
         $grace = IDO_Board::grace_until();
@@ -87,15 +97,64 @@ class IDO_League_News {
         $peers = IDO_League_Queue::active_peers();
         if (!$peers) return ['queued' => 0];
 
-        $body = self::compose();
         $queued = 0;
         foreach ($peers as $peer) {
-            if (IDO_League_Queue::enqueue($peer, 'news', $body)) $queued++;
+            // Composed per peer rather than once, because the counters describe a
+            // pairing rather than this site.
+            if (IDO_League_Queue::enqueue($peer, 'news', self::compose($peer))) $queued++;
         }
         if ($queued > 0) {
             IDO_Log::admin('league', sprintf('Queued news for %d peer site(s).', $queued));
         }
         return ['queued' => $queued];
+    }
+
+    /**
+     * Compares a peer's view of the pairing with ours, and raises the alarm.
+     *
+     * Two disagreements matter, and they are different faults:
+     *
+     * **They have seen more from us than we have sent.** Our counter went
+     * backwards, which only happens when our database did. This is the dangerous
+     * one, because if the counter rolled back so did the record of what we have
+     * already applied, and the next retry from any peer will be applied twice.
+     *
+     * **They have sent more than we have received.** Either packets were lost in
+     * transit, which the retry queue will fix on its own, or our record of what we
+     * received went backwards, which is the same restore seen from the other side.
+     * Treated as a warning rather than a halt: a genuine gap is ordinary and the
+     * queue heals it.
+     *
+     * Neither claim is trusted for anything except becoming more careful. A peer
+     * that lies here can make us stop and ask a human, which is a denial of service
+     * worth having over the alternative of a game quietly counting things twice.
+     */
+    private static function check_counters(object $peer, array $body): void {
+        if (isset($body['seq_seen'])) {
+            $seen_by_them = (int) $body['seq_seen'];
+            if ($seen_by_them > (int) $peer->seq_out) {
+                IDO_League::catch_up_sequence($peer, $seen_by_them);
+                IDO_League::flag_resync(sprintf(
+                    '%s has seen packet %d from this site, but this site has only issued %d. '
+                    . 'That means this database is older than the one the league has been talking to, '
+                    . 'which usually means a backup was restored.',
+                    (string) $peer->site_name, $seen_by_them, (int) $peer->seq_out
+                ));
+            }
+        }
+
+        if (isset($body['seq_sent'])) {
+            $sent_by_them = (int) $body['seq_sent'];
+            $gap = $sent_by_them - (int) $peer->seq_in;
+            // A small gap is packets still in flight or waiting on a retry. A large
+            // one is a hole in the record.
+            if ($gap > 5) {
+                IDO_Log::admin('league', sprintf(
+                    '%s reports sending %d packets; this site has recorded %d. %d may be missing.',
+                    (string) $peer->site_name, $sent_by_them, (int) $peer->seq_in, $gap
+                ));
+            }
+        }
     }
 
     /**
@@ -116,6 +175,15 @@ class IDO_League_News {
      */
     public static function apply(object $peer, array $body): string {
         global $wpdb;
+
+        // Before anything else, and deliberately before the staleness gate below.
+        // The counters describe the conversation rather than the news, so they are
+        // worth reading off a packet whose figures are too old to use: a peer
+        // saying it once saw packet 41 proves we once issued 41, however long ago
+        // it said so. Putting this after the gate would have meant a restored site
+        // ignoring the very packets most likely to carry the evidence, because a
+        // site catching up floods us with retries and most of them are stale.
+        self::check_counters($peer, $body);
 
         $as_of = strtotime((string) $body['as_of'] . ' UTC');
         if ($as_of === false) return 'That news packet carried no usable date.';
