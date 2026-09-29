@@ -109,10 +109,13 @@ class IDO_League_Endpoint {
             return self::refuse(404);
         }
 
+        // The proof and nothing else. This route answers before any trust is
+        // established, so it gives away as little as it can: the hub learns this
+        // site's name and identity from the enrolment request itself, and
+        // repeating them here would mean an unauthenticated caller who guessed a
+        // league id could read them too.
         return self::answer(200, [
             'proof' => hash_hmac('sha256', $nonce, (string) $league->enrol_token),
-            'site'  => (string) $league->site_uuid,
-            'name'  => (string) $league->site_name,
         ]);
     }
 
@@ -142,7 +145,13 @@ class IDO_League_Endpoint {
         $token     = self::hex($body['token'] ?? null, 64);
         $site_uuid = self::uuid($body['site'] ?? null);
         $site_url  = is_string($body['url'] ?? null) ? IDO_League_URL::normalize($body['url']) : null;
-        $site_name = IDO_League_Packet::clean_name((string) ($body['name'] ?? ''));
+        // is_string first, not a cast. Casting an array to string yields the word
+        // "Array" and a PHP warning, and "Array" would then pass the name rules
+        // and be stored as this member's name. Type confusion dressed as a
+        // convenience.
+        $site_name = is_string($body['name'] ?? null)
+            ? IDO_League_Packet::clean_name($body['name'])
+            : null;
 
         if ($token === null || $site_uuid === null || $site_url === null || $site_name === null) {
             return self::refuse(400);
@@ -171,6 +180,19 @@ class IDO_League_Endpoint {
         if (self::is_own_url($site_url)) {
             self::log('An enrolment named this site\'s own address.');
             return self::refuse(400);
+        }
+
+        // One address, one member. Without this a second enrolment could claim
+        // the address of a site already in the league under a new identity, and
+        // the league would hold two rows that disagree about who lives where.
+        $taken = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('sites')
+            . ' WHERE league_id = %d AND site_url = %s AND site_uuid <> %s AND status <> %s',
+            (int) $league->id, $site_url, $site_uuid, 'declined'
+        ));
+        if ($taken > 0) {
+            self::log('An enrolment named an address already in this league: ' . $site_url);
+            return self::refuse(409);
         }
 
         // Prove the caller controls that address and holds that invitation.
@@ -312,6 +334,13 @@ class IDO_League_Endpoint {
      * before we decide whether to accept it.
      */
     private static function read_body(WP_REST_Request $request): ?array {
+        // The declared length first, before the body is touched. It is only a
+        // claim, and the real length is checked immediately after, but refusing
+        // on the header means an oversized request is turned away without this
+        // code handling its contents at all.
+        $declared = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+        if ($declared > self::MAX_BODY) return null;
+
         $raw = (string) $request->get_body();
         if ($raw === '' || strlen($raw) > self::MAX_BODY) return null;
 
