@@ -82,6 +82,25 @@ class IDO_Buildings {
         return $all[$key]['plural'] ?? self::label($key);
     }
 
+    /**
+     * The most of a building that still does anything, or 0 for no ceiling.
+     *
+     * Two buildings have a cap on what they do: fortifications stop lifting
+     * defence at MAX_FORTIFICATION_BONUS and barracks stop discounting at
+     * MAX_BARRACKS_DISCOUNT. Past that point each one costs a turn, gold, iron
+     * and an acre, and gives nothing back.
+     *
+     * Derived from the constants rather than written down, so tuning the bonus
+     * moves the ceiling with it and the two cannot drift apart.
+     */
+    public static function useful_cap(string $key): int {
+        switch ($key) {
+            case 'fortification': return (int) ceil(self::MAX_FORTIFICATION_BONUS / 0.006);
+            case 'barracks':      return (int) ceil(self::MAX_BARRACKS_DISCOUNT / 0.005);
+        }
+        return 0;
+    }
+
     /** The empires table column holding the standing count of a building. */
     public static function column(string $key): string {
         return 'b_' . $key;

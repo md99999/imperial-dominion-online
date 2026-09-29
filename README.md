@@ -244,6 +244,11 @@ reset.
 
 Each ruler gets **one empire per round**, tied to their WordPress account.
 
+**A turn is never spent on nothing.** Fortifications stop lifting defence past a point and barracks
+stop discounting past theirs, so the game refuses an order that would go beyond it and says how many
+would still count. The Lands screen shows the ceiling before you order. In a game where turns are the
+currency, a building that quietly does nothing is a trap rather than a choice.
+
 **Turns are the currency.** You are granted 10 turns a day (configurable), stored up to 30, and a new
 empire is founded with 15.
 Every order costs turns, and every turn spent pays out your income at that instant. Turns sitting

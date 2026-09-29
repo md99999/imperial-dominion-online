@@ -46,17 +46,37 @@ $build_days = IDO_Settings::int('build_days');
     <table class="ido-table ido-table-wide">
         <thead><tr><th>Building</th><th class="ido-right">Owned</th><th>What it does</th><th>Order</th><th>Demolish</th></tr></thead>
         <tbody>
-        <?php foreach (IDO_Buildings::all() as $key => $building) : ?>
+        <?php foreach (IDO_Buildings::all() as $key => $building) :
+            // Some buildings stop doing anything past a point. Showing the
+            // ceiling here is the difference between a ruler choosing not to
+            // build and a ruler spending a turn to find out.
+            $standing = (int) $kingdom->{IDO_Buildings::column($key)};
+            $cap      = IDO_Buildings::useful_cap($key);
+            $queued   = $cap > 0 ? IDO_Construction::queued($kingdom, $key) : 0;
+            $room     = $cap > 0 ? max(0, $cap - $standing - $queued) : -1;
+        ?>
             <tr>
                 <td><?php echo esc_html($building['plural']); ?></td>
-                <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($kingdom->{IDO_Buildings::column($key)})); ?></td>
+                <td class="ido-right">
+                    <?php echo esc_html(IDO_Game::fmt($standing)); ?>
+                    <?php if ($cap > 0) : ?>
+                        <div class="ido-dim">of <?php echo esc_html(IDO_Game::fmt($cap)); ?> that count</div>
+                    <?php endif; ?>
+                </td>
                 <td class="ido-dim"><?php echo esc_html($building['effect']); ?></td>
                 <td>
-                    <?php echo IDO_UI::form_open('build', 'ido-form-inline'); ?>
-                        <input type="hidden" name="building" value="<?php echo esc_attr($key); ?>">
-                        <?php echo IDO_UI::number_field('qty', 0, 0); ?>
-                        <button type="submit" class="ido-btn ido-btn-small">Build</button>
-                    </form>
+                    <?php if ($room === 0) : ?>
+                        <span class="ido-dim">At the most that counts.</span>
+                    <?php else : ?>
+                        <?php echo IDO_UI::form_open('build', 'ido-form-inline'); ?>
+                            <input type="hidden" name="building" value="<?php echo esc_attr($key); ?>">
+                            <?php echo IDO_UI::number_field('qty', 0, 0); ?>
+                            <button type="submit" class="ido-btn ido-btn-small">Build</button>
+                        </form>
+                        <?php if ($room > 0) : ?>
+                            <div class="ido-dim"><?php echo esc_html(IDO_Game::fmt($room)); ?> more will count</div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </td>
                 <td>
                     <?php echo IDO_UI::form_open('demolish', 'ido-form-inline'); ?>

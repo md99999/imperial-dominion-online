@@ -12,6 +12,16 @@ if (!defined('ABSPATH')) exit;
  */
 class IDO_Construction {
 
+    /** How many of one building an empire already has on the way. */
+    public static function queued(object $kingdom, string $building): int {
+        global $wpdb;
+        return (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COALESCE(SUM(qty), 0) FROM ' . IDO_DB::t('constructions')
+            . ' WHERE kingdom_id = %d AND building = %s AND kind = %s',
+            (int) $kingdom->id, $building, 'building'
+        ));
+    }
+
     /** Orders $qty of a building. Costs one turn plus gold and iron per acre. */
     public static function order(object $kingdom, string $building, int $qty): array {
         global $wpdb;
@@ -29,6 +39,35 @@ class IDO_Construction {
                 'You have %s acres of wilderness free and ordered %s. Settle more land first.',
                 IDO_Game::fmt($free), IDO_Game::fmt($qty)
             ));
+        }
+
+        // Some buildings stop doing anything past a certain number, and in a game
+        // where turns are the currency, letting a ruler spend one on a building
+        // that cannot help them is a trap rather than a choice. Refused with the
+        // number that would help, so the decision is theirs and informed.
+        $cap = IDO_Buildings::useful_cap($building);
+        if ($cap > 0) {
+            $standing = (int) $kingdom->{IDO_Buildings::column($building)};
+            $queued   = self::queued($kingdom, $building);
+            $room     = $cap - $standing - $queued;
+
+            if ($room <= 0) {
+                throw new IDO_Game_Exception(sprintf(
+                    'You already have %s %s%s, which is as many as count: past %s they add nothing and '
+                    . 'would cost you a turn for it.',
+                    IDO_Game::fmt($standing + $queued),
+                    strtolower(IDO_Buildings::plural($building)),
+                    $queued > 0 ? sprintf(' (%s of them still being built)', IDO_Game::fmt($queued)) : '',
+                    IDO_Game::fmt($cap)
+                ));
+            }
+            if ($qty > $room) {
+                throw new IDO_Game_Exception(sprintf(
+                    'Only %s more %s will count. Past %s they add nothing, so order %s or fewer.',
+                    IDO_Game::fmt($room), strtolower(IDO_Buildings::plural($building)),
+                    IDO_Game::fmt($cap), IDO_Game::fmt($room)
+                ));
+            }
         }
 
         $gold = $qty * IDO_Settings::int('build_gold_per_acre');
