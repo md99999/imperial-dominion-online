@@ -85,7 +85,8 @@ $highest_title = end($titles);
         <li>Claim your empire. You start with <?php echo esc_html(IDO_Game::fmt($s['starting_land'])); ?> acres,
             <?php echo esc_html(IDO_Game::fmt($s['starting_gold'])); ?> gold, and a crown truce of
             <?php echo esc_html((string) $s['protection_hours']); ?> hours that nobody can break.</li>
-        <li>Open <strong>Lands</strong> and look at your wilderness: acres with nothing on them, earning nothing.</li>
+        <li>Open <strong>Lands</strong> and look at your wilderness: acres with nothing on them, earning nothing.
+            This is also where you will be sending settlers out to claim new land, which is how an empire gains wealth.</li>
         <li><strong>Build farmsteads and homesteads first.</strong> Food and people come before everything. Check the
             Empire screen afterwards: if grain per turn is negative, you are heading for starvation.</li>
         <li>Spend a turn or two <strong>settling more land</strong>, then build on that too.</li>
