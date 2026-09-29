@@ -160,12 +160,31 @@ class IDO_Kingdom {
         return $name;
     }
 
-    /** Plain field update. Callers pass already-validated values. */
+    /**
+     * Plain field update, restricted to columns this game actually has.
+     *
+     * The column allowlist is not there because a caller is expected to pass
+     * request data: no caller does, and the one that exists builds its fields
+     * from clamped arithmetic. It is there because a column name is the one part
+     * of a query $wpdb cannot escape for us, so the only safe rule is that it
+     * never comes from anywhere but a list defined in code. An unknown column
+     * throws rather than being skipped, so a typo in a future patch fails
+     * loudly instead of silently not saving something.
+     */
     public static function update(object $kingdom, array $fields): void {
         global $wpdb;
         if (!$fields) return;
-        $wpdb->update(IDO_DB::t('kingdoms'), $fields, ['id' => (int) $kingdom->id], null, ['%d']);
 
+        $allowed = array_merge(self::numeric_columns(), [
+            'networth', 'last_turn_grant', 'last_seen', 'protection_until', 'is_defeated',
+        ]);
+        foreach (array_keys($fields) as $column) {
+            if (!in_array($column, $allowed, true)) {
+                throw new IDO_Game_Exception('That is not a field of an empire.');
+            }
+        }
+
+        $wpdb->update(IDO_DB::t('kingdoms'), $fields, ['id' => (int) $kingdom->id], null, ['%d']);
     }
 
     /**
@@ -199,7 +218,17 @@ class IDO_Kingdom {
 
         foreach ($deltas as $column => $delta) {
             $delta = (int) $delta;
-            if ($delta === 0 || !in_array($column, $allowed, true)) continue;
+
+            // An unknown column is an error, not something to skip. Skipping is
+            // the tempting behaviour and the dangerous one: this method applies
+            // costs and gains in the same statement, so a mistyped *cost*
+            // column would be dropped while the gain beside it still applied,
+            // and the player would get the goods for nothing. Failing loudly
+            // turns that from a silent exploit into a bug report.
+            if (!in_array($column, $allowed, true)) {
+                throw new IDO_Game_Exception('That is not something an empire can hold.');
+            }
+            if ($delta === 0) continue;
 
             if ($delta > 0) {
                 if ($delta > $cap) {
