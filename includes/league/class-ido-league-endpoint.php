@@ -130,7 +130,16 @@ class IDO_League_Endpoint {
         try {
             $envelope = IDO_League_Packet::read($opened, (string) $peer->site_uuid, (string) $league->site_uuid);
         } catch (IDO_Game_Exception $e) {
-            self::log(sprintf('Refused a packet from %s: %s', (string) $peer->site_name, $e->getMessage()));
+            // The reason is withheld when the packet claims to be a march or a
+            // result, because the reason names the type, and the admin log is a
+            // screen. "Refused a war packet from Northmarch" tells the defender
+            // that Northmarch is marching on them, which is precisely the thing
+            // they are not supposed to learn until the battle is fought. A
+            // refused march is still a march somebody attempted.
+            $claimed = isset($opened['type']) && is_string($opened['type']) ? $opened['type'] : '';
+            self::log(IDO_League_Status::is_secret_until_resolved($claimed)
+                ? sprintf('Refused a packet from %s.', (string) $peer->site_name)
+                : sprintf('Refused a packet from %s: %s', (string) $peer->site_name, $e->getMessage()));
             return self::refuse(422);
         }
 

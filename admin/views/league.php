@@ -395,10 +395,15 @@ if ($invite) delete_transient('ido_league_invitation');
             </tbody>
         </table>
         <p class="description" style="max-width:46em">
-            Packets move on the hourly tick and news is published on the daily one. A staged war packet
-            deliberately shows only that it exists and roughly when it is due, never what is in it: an
-            administrator who is also a player would otherwise read the force out of this screen and
-            reinforce against it.
+            Packets move on the hourly tick, news is published on the daily one, and a march lands on the
+            daily one so the dispatches arrive overnight rather than at any hour.
+        </p>
+        <p class="description" style="max-width:46em">
+            <strong>An inbound march is not counted here and will not appear anywhere on this site until
+            it has been fought.</strong> Not its existence, not its size, not the day it is due. A
+            defender who knew something was coming would reinforce, recall an army or empty the
+            treasury, and none of that would even be cheating, because the number would be sitting on
+            their own dashboard. You find out when your rulers do.
         </p>
         <p>
             <?php echo IDO_Admin::form_open('league_run_traffic', 'ido_league'); ?>

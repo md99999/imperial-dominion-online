@@ -99,3 +99,42 @@ CREATE TABLE {prefix}ido_packets_out (
   UNIQUE KEY peer_uuid (peer_id,uuid),
   KEY due (status,send_after)
 ) {charset_collate};
+CREATE TABLE {prefix}ido_league_marches (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  league_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  peer_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  round_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  direction varchar(8) NOT NULL DEFAULT 'out',
+  status varchar(16) NOT NULL DEFAULT 'mustering',
+  called_by bigint(20) unsigned NOT NULL DEFAULT 0,
+  packet_uuid varchar(36) NOT NULL DEFAULT '',
+  result_uuid varchar(36) NOT NULL DEFAULT '',
+  muster_closes_at datetime DEFAULT NULL,
+  sent_at datetime DEFAULT NULL,
+  joined_at datetime DEFAULT NULL,
+  resolved_at datetime DEFAULT NULL,
+  outcome varchar(16) NOT NULL DEFAULT '',
+  force_json longtext,
+  spoils_json longtext,
+  report text,
+  created_at datetime DEFAULT NULL,
+  PRIMARY KEY  (id),
+  KEY league_status (league_id,status),
+  KEY packet_uuid (packet_uuid)
+) {charset_collate};
+CREATE TABLE {prefix}ido_league_contributions (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  march_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  kingdom_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  committed_json longtext,
+  returned_json longtext,
+  spoils_gold bigint(20) NOT NULL DEFAULT 0,
+  spoils_grain bigint(20) NOT NULL DEFAULT 0,
+  spoils_iron bigint(20) NOT NULL DEFAULT 0,
+  spoils_weapons bigint(20) NOT NULL DEFAULT 0,
+  committed_at datetime DEFAULT NULL,
+  settled_at datetime DEFAULT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY march_kingdom (march_id,kingdom_id),
+  KEY kingdom_id (kingdom_id)
+) {charset_collate};

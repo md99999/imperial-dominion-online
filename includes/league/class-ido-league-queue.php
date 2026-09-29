@@ -222,7 +222,11 @@ class IDO_League_Queue {
      * nothing from watching.
      */
     private static function delay_days_for(string $type): int {
-        if ($type === 'news') return 0;
+        // News is public and waits for nothing. A result waits one day, which is
+        // the courier ride home and the day a ruler spends knowing the battle is
+        // being fought. A march waits the long draw, which is the suspense.
+        if ($type === 'news')   return 0;
+        if ($type === 'result') return IDO_League::RESULT_DELAY_DAYS;
         return IDO_League::delay_days();
     }
 
@@ -362,14 +366,29 @@ class IDO_League_Queue {
         ));
     }
 
-    /** Counts for the admin screen. */
+    /**
+     * Counts for the admin screen, with the inbound side censored.
+     *
+     * A staged war packet is not counted and not shown, and this is not
+     * over-caution: a defender who can see that something is waiting will
+     * reinforce, recall an army or empty the treasury, and the blind exchange
+     * that makes a league march worth anything becomes a scheduling exercise.
+     * It would not even be cheating, since the number would be sitting on their
+     * own dashboard.
+     *
+     * On most sites the administrator is also a player, so there is no version of
+     * this that shows it to one and not the other. Nothing about an unresolved
+     * march reaches a person until the daily tick has fought it.
+     */
     public static function summary(): array {
         global $wpdb;
         $league = IDO_League::league();
         if (!$league) return [];
 
         $out = 'SELECT status, COUNT(*) AS n FROM ' . IDO_DB::t('packets_out') . ' WHERE league_id = %d GROUP BY status';
-        $in  = 'SELECT status, COUNT(*) AS n FROM ' . IDO_DB::t('packets_in') . ' WHERE league_id = %d GROUP BY status';
+        $in  = 'SELECT status, COUNT(*) AS n FROM ' . IDO_DB::t('packets_in')
+             . " WHERE league_id = %d AND NOT (status = 'staged' AND packet_type IN ('war', 'result'))"
+             . ' GROUP BY status';
 
         $tally = static function (array $rows): array {
             $out = [];

@@ -172,8 +172,9 @@ check('and nothing outside that range ever does',
     min(array_keys($seen)) === IDO_League::DELAY_MIN_DAYS && max(array_keys($seen)) === IDO_League::DELAY_MAX_DAYS);
 check('the floor is three days, for three daily ticks', IDO_League::DELAY_MIN_DAYS === 3);
 check('the ceiling is seven', IDO_League::DELAY_MAX_DAYS === 7);
-check('the longest exchange is the muster plus both legs',
-    IDO_League::longest_exchange_days(5) === 5 + 14, (string) IDO_League::longest_exchange_days(5));
+check('the result rides home in a day', IDO_League::RESULT_DELAY_DAYS === 1);
+check('the longest exchange is the muster, the march out and the ride home',
+    IDO_League::longest_exchange_days(5) === 5 + 7 + 1, (string) IDO_League::longest_exchange_days(5));
 
 // A war packet is staged with a real wait; news is not delayed at all.
 clear_rate_limits();
@@ -290,6 +291,77 @@ for ($i = 0; $i < IDO_League_Queue::MAX_ATTEMPTS + 1; $i++) {
 $final = (string) $wpdb->get_var($wpdb->prepare(
     'SELECT status FROM ' . IDO_DB::t('packets_out') . ' WHERE id = %d', (int) $down->id));
 check('it is eventually abandoned, not retried forever', $final === 'failed', $final);
+
+say('');
+say('=== a defender learns nothing until the battle is fought ===');
+// Stage a war-shaped row directly. The endpoint refuses a war packet today
+// because its body has no specification yet, and what is under test here is the
+// disclosure rule rather than the packet format.
+$wpdb->insert(IDO_DB::t('packets_in'), [
+    'league_id' => (int) $league->id, 'peer_id' => (int) $peer->id,
+    'uuid' => IDO_League_Crypto::uuid(), 'packet_type' => 'war', 'sequence' => 99,
+    'received_at' => IDO_League::now(),
+    'process_after' => gmdate('Y-m-d H:i:s', time() + 4 * DAY_IN_SECONDS),
+    'status' => 'staged', 'payload' => 'placeholder',
+]);
+$war_row = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . IDO_DB::t('packets_in')
+    . ' WHERE id = %d', (int) $wpdb->insert_id));
+
+$summary = IDO_League_Queue::summary();
+check('an inbound march is not counted anywhere the admin can see it',
+    (int) ($summary['in']['staged'] ?? 0) === 0, (string) wp_json_encode($summary['in']));
+check('the defender is told nothing about it', IDO_League_Status::for_defender($war_row) === null);
+check('a war packet is one that must stay secret', IDO_League_Status::is_secret_until_resolved('war'));
+check('and so is a result', IDO_League_Status::is_secret_until_resolved('result'));
+check('news is not', !IDO_League_Status::is_secret_until_resolved('news'));
+
+// The admin log is a screen too. A refused march must not name itself there.
+$before_log = (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . IDO_DB::t('admin_log'));
+clear_rate_limits();
+IDO_League_Endpoint::packet(packet_request(IDO_League_Crypto::pack([
+    'v' => 1, 'type' => 'war', 'league' => $league->league_uuid, 'from' => $peer_uuid,
+    'to' => $league->site_uuid, 'uuid' => IDO_League_Crypto::uuid(), 'seq' => 77,
+    'ts' => time(), 'fp' => $league->fingerprint, 'body' => ['force' => []],
+], $peer_uuid, $secret)));
+$logged = (string) $wpdb->get_var('SELECT message FROM ' . IDO_DB::t('admin_log') . ' ORDER BY id DESC LIMIT 1');
+check('a refused march is logged without naming itself',
+    (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . IDO_DB::t('admin_log')) > $before_log
+    && stripos($logged, 'war') === false, $logged);
+
+$war_row->status = 'processed';
+check('only once it is fought does the defender learn the outcome',
+    IDO_League_Status::for_defender($war_row) === IDO_League_Status::RESOLVED);
+
+check('the attacker sees three states after the muster', [
+    IDO_League_Status::label(IDO_League_Status::MARCHING),
+    IDO_League_Status::label(IDO_League_Status::IN_BATTLE),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, true),
+    IDO_League_Status::label(IDO_League_Status::RESOLVED, false),
+] === ['Marching to the battlefield', 'In battle', 'Victory', 'Defeat']);
+
+$march = static function (array $f) { return (object) array_merge(
+    ['sent_at' => null, 'joined_at' => null, 'resolved_at' => null], $f); };
+check('a march starts out mustering',
+    IDO_League_Status::derive($march([])) === IDO_League_Status::MUSTERING);
+check('marching once the packet has gone',
+    IDO_League_Status::derive($march(['sent_at' => '2026-10-01 00:00:00'])) === IDO_League_Status::MARCHING);
+check('in battle the day the sealed result arrives',
+    IDO_League_Status::derive($march(['sent_at' => '2026-10-01 00:00:00',
+        'joined_at' => '2026-10-05 00:00:00'])) === IDO_League_Status::IN_BATTLE);
+check('and resolved the morning after, when it is opened',
+    IDO_League_Status::derive($march(['sent_at' => '2026-10-01 00:00:00',
+        'joined_at' => '2026-10-05 00:00:00', 'resolved_at' => '2026-10-06 00:00:00']))
+    === IDO_League_Status::RESOLVED);
+check('the four states are the whole vocabulary', IDO_League_Status::all() === [
+    'mustering', 'marching', 'in_battle', 'resolved']);
+check('the march tables exist to hold them',
+    (string) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', IDO_DB::t('league_marches')))
+    === IDO_DB::t('league_marches'));
+check('and the contributions beside them',
+    (string) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', IDO_DB::t('league_contributions')))
+    === IDO_DB::t('league_contributions'));
+
+$wpdb->delete(IDO_DB::t('packets_in'), ['id' => (int) $war_row->id], ['%d']);
 
 say('');
 say('=== the kill switch stops both directions ===');

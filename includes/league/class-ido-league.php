@@ -18,7 +18,8 @@ if (!defined('ABSPATH')) exit;
  */
 class IDO_League {
 
-    const TABLES  = ['leagues', 'sites', 'invites', 'packets_in', 'packets_out'];
+    const TABLES  = ['leagues', 'sites', 'invites', 'packets_in', 'packets_out',
+                     'league_marches', 'league_contributions'];
     const SETTING = 'league_enabled';
 
     /** Capped at what the inter-BBS node byte allowed, which is the ceiling worth keeping. */
@@ -47,6 +48,24 @@ class IDO_League {
     const DELAY_MAX_DAYS = 7;
 
     /**
+     * How long the dispatches take to ride home: one day, always.
+     *
+     * The outbound leg is a wide random draw because the suspense is the point.
+     * The homeward leg is not suspense, it is a courier, and making it another
+     * week would only mean a player who has already been waiting a week waits
+     * another one for news of a battle that is over.
+     *
+     * One day rather than none, because it does the work of a whole state. The
+     * result packet is sent the moment the battle is fought, arrives the same
+     * day, and is staged rather than applied. While it sits staged the attacker
+     * knows their army has arrived and is fighting, and the next daily tick
+     * reads out the dispatches. That is where "In battle" comes from: not a
+     * separate message to announce it, but a result already in hand and not yet
+     * opened.
+     */
+    const RESULT_DELAY_DAYS = 1;
+
+    /**
      * The draw for one packet: 3, 4, 5, 6 or 7 days, evenly.
      *
      * random_int, so it is drawn from the CSPRNG rather than from something an
@@ -66,7 +85,7 @@ class IDO_League {
      * end-of-round cutoff with it.
      */
     public static function longest_exchange_days(int $muster_days): int {
-        return max(0, $muster_days) + 2 * self::DELAY_MAX_DAYS;
+        return max(0, $muster_days) + self::DELAY_MAX_DAYS + self::RESULT_DELAY_DAYS;
     }
 
     private static ?object $league = null;

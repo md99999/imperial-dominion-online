@@ -189,9 +189,14 @@ follow from that, and all three are deliberate:
 - **The delay belongs to the receiver, and is not a setting.** Three to seven days, drawn fresh for
   every packet from the CSPRNG by the site receiving it, so a sender cannot shorten its own march or
   know what the defender will have standing when it lands. Three is the floor because the wait is
-  counted in daily cron runs: a packet arriving today lands on the third daily tick after it. News
-  waits for nothing, and only the daily run may land a march, so the dispatches arrive overnight
-  rather than at any hour.
+  counted in daily cron runs: a packet arriving today lands on the third daily tick after it. The
+  result rides home in a day, so a ruler sees the army in battle one morning and reads the dispatches
+  the next. News waits for nothing, and only the daily run may land a march, so the dispatches arrive
+  overnight rather than at any hour.
+- **A defender learns nothing until the battle is fought**, including the administrator. Not that a
+  march is inbound, not its size, not the day it is due, not a count in a queue. Surprise is the
+  mechanic, and a defender who could see something coming would reinforce, recall an army or empty
+  the treasury without it even being cheating.
 - **The endpoint stays cheap.** It writes one row and returns. A battle cannot resolve half way
   through an HTTP timeout, and a request that only stages is hard to abuse.
 - **A peer being down loses nothing.** The outbound queue retries with backoff and gives up after

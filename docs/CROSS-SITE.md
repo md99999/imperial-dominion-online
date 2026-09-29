@@ -571,7 +571,7 @@ flat number, so it scales with what the site is trying to do.
 ### What this costs the calendar
 
 The window is not free. It sits in front of a round trip that was already three to seven days out
-and the same back, so from the call to the return is **eleven to nineteen days** with the default
+and the same back, so from the call to the return is **nine to thirteen days** with the default
 five-day muster. Against a 45-day round that is two exchanges; against the 90-day league round it
 is four. This is the strongest argument yet for the longer league round, and the cutoff before the
 end of a round has to include the window, not just the flight:
@@ -768,7 +768,7 @@ packet is in flight. That is not a rule anybody added: the escrow exists so the 
 committed twice, and the exposure falls out of it. It is also the best thing about the mechanic,
 and the reason a league march should feel like a decision rather than a click.
 
-**The exposure is long.** Three to seven days out, a battle, then three to seven days back: an army
+**The exposure is long.** Three to seven days out, a battle, and the result the next morning: an army
 can be away for as much as fourteen days, and an empire that sent most of its legions is a soft
 target for that whole time. Not only to other league sites, but to its own neighbours, who can see
 the standings and can work out who has just marched.
@@ -918,22 +918,107 @@ next logs in, which is exactly the feel worth having.
 
 ### What each side is allowed to know
 
-A round trip is therefore six to fourteen days: the march out, the battle, and the result coming
-home. With the muster window in front of it, eleven to nineteen from the moment the war is
+A round trip is therefore four to eight days: the march out, the battle, and the result coming
+home. With the muster window in front of it, nine to thirteen from the moment the war is
 called. Against a 45-day round that is a handful of league exchanges at most, which is the intended
 weight. A league that wants more per round shortens the range rather than the round.
 
 The attacker knows the range, three to seven days, and never the draw. Waiting without knowing is
 the mechanic, not an absence of one.
 
-The defender should know less still, and this is worth stating because the staging table makes it
-easy to get wrong: **a staged war packet must not show the defending side what is coming**. An
-administrator who is also a player would otherwise read the force composition out of the admin
-screen and reinforce against it, which is not a cheat so much as an invitation.
+The defender knows **nothing at all** until the battle has been fought, and this is the strictest
+rule in the document because the staging table makes it so easy to get wrong.
 
-So the admin view of an inbound war packet shows that one exists, which peer sent it and roughly
-when it is due, and nothing about its contents until it has been processed. Results and news
-packets carry no such advantage and can be read freely.
+An earlier version of this design let the admin screen show that an inbound war packet existed, which
+peer sent it and roughly when it was due, on the reasoning that the contents were what mattered. That
+was wrong. The existence is the valuable part: a defender who knows something is coming will
+reinforce, recall an army of their own, or empty the treasury into the market, and every one of those
+turns a blind exchange into a scheduling exercise. None of it is even cheating, because the
+information would be sitting on their own dashboard.
+
+So **an inbound march is invisible until it resolves**: not its existence, not its size, not its due
+date, not a count of packets waiting in a queue. The receiving site's software knows, of course. It
+drew the delay and holds the bytes. The rule is that none of that reaches a person until the daily
+tick has fought it, and it applies to the administrator exactly as it applies to the players, because
+on most sites they are the same person.
+
+On the day the tick resolves it, the defending site learns the outcome, and that is the first and
+only thing it learns. Results and news packets carry no such advantage and can be read freely.
+
+The rule reaches further than the obvious screens, and the places it reaches are the ones worth
+listing, because each was a leak before it was closed:
+
+- **The packet queue counters** do not count a staged march. A number going up is enough.
+- **The admin log** records that a packet from a peer was refused, and withholds the reason when the
+  packet claimed to be a march or a result, because the reason names the type. "Refused a war packet
+  from Northmarch" tells a defender that Northmarch is marching on them. A refused march is still a
+  march somebody attempted.
+- **The cron summaries** report what was applied, never what is waiting.
+
+What this does not defend against is an administrator reading their own database, and it does not
+try. That is the same honest limit the rest of this document keeps: a site administrator owns their
+own state, detection is the answer rather than prevention, and the point here is that nothing on a
+screen hands them the surprise for free.
+
+## What a ruler sees while the army is away
+
+An exchange takes up to a fortnight and for most of it a ruler has committed an army and can see
+nothing. A march therefore has **three states and no more**:
+
+| State | When | What it says |
+| --- | --- | --- |
+| Marching | the army has left | Marching to the battlefield |
+| In battle | the wait has elapsed and it is being fought | In battle |
+| Resolved | the dispatches are home | Victory, or Defeat |
+
+Three, not five. Any more and the screen becomes a progress bar for something whose entire point is
+not knowing, and each extra state is another thing an attacker could read the timing off.
+
+These are not the packet statuses. `staged`, `sent` and `processed` describe what the software is
+doing with a packet; these describe what is happening to an army. Conflating them would mean a
+player reading the word "staged" about their legions.
+
+### The middle state cannot be calculated by the attacker
+
+This is the part that needs a decision rather than an implementation, and it is worth being clear
+about why.
+
+The defending site draws the delay, deliberately, so the attacker cannot know when the battle will be
+fought. That is the same rule that stops an attacker choosing what will be standing when they arrive.
+It also means **the attacking site cannot work out the day the battle happens**: if "In battle"
+appeared on its own on the right day, the attacker would have learned the draw, and a site that can
+learn the draw for one march can start predicting the next.
+
+The defending side has the opposite problem and a stricter rule, below: it must not see anything at
+all until the battle has been fought, so it has no timeline to show and nothing to derive.
+
+Three ways to give the attacker the middle state:
+
+- **Show it retrospectively.** The result packet carries the date the battle was fought, and the
+  timeline fills the middle state in when the result lands. No extra traffic, and no cost to the
+  mechanic. It also means the state is never shown while it is true, which is the one thing the
+  player actually asked for.
+- **Guess it.** Show "In battle" once the minimum delay has passed. Cheap, and dishonest: the status
+  would be wrong most of the time, and wrong in a way that leaks nothing but teaches players not to
+  trust the screen.
+- **Be told.** The defending site sends a short acknowledgement on the day it fights, carrying the
+  march id and the date and **no outcome at all**. The attacker sees "In battle" on the day it is
+  true, and learns the answer days later when the result arrives.
+
+**The recommendation is to be told.** It costs one more packet type, and the packet is trivial: it
+asserts nothing about the battle, so there is nothing in it to forge that matters and nothing to
+range-check beyond an identifier and a date. What it reveals is the delay that was drawn for a march
+already fought, which is worth nothing to anybody: the commitment was made days earlier and the
+result is still unknown. And it turns the middle state from a guess into a fact, which is the whole
+reason for having it.
+
+The acknowledgement travels with no delay of its own, like news. Delaying an "it is happening now"
+message would make it a lie.
+
+If that packet is ever a problem, the retrospective version is the fallback and needs no protocol
+change: the result packet should carry the battle date regardless, because a dispatch that does not
+say when the battle was fought is a strange dispatch.
+
 
 ### What comes home
 
@@ -1248,7 +1333,7 @@ report.
 ## Marches and the end of a round
 
 This is the consequence that changes the calendar. A round trip is three to seven days out and the
-same back, so an army can be away for fourteen days. A round is forty-five. A march begun on day
+same back, so an army can be away for eight days. A round is forty-five. A march begun on day
 forty cannot possibly resolve before the wipe.
 
 So a league **closes marching before the round ends**, by the worst case from the call to the
@@ -1302,7 +1387,7 @@ any length and is what the next one is for.
 
 ### Derive the cutoff, do not hardcode it
 
-The nineteen day close is the muster window plus two times the maximum delay, and it should be
+The thirteen day close is the muster window plus the longest march out plus the day the result takes to ride home, and it should be
 calculated that way rather than written down. A league that shortens its muster window to three days gets a
 seventeen day cutoff for free, without anyone having to remember to change a second number. The delay
 term is fixed, so the muster window is the only thing that moves it.
