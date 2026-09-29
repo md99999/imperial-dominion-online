@@ -251,10 +251,24 @@ every site would empty its garrison and the only skill left would be guessing wh
 Losing scores zero rather than negative, so nobody profits from arranging somebody else's defeat.
 Repeat exchanges with the same peer decay, so the weakest member cannot be farmed.
 
-**Current state:** everything above is built and tested: opting in, founding, invitations, the
-enrolment handshake, the packet queues, news, the muster, the march, battle resolution, spoils, the
-return leg, the escrow timeout, the league table and page, the cron workers, leaving and the kill
-switch. What remains is the War Room becoming a mustering hall, and the board reset.
+### What league mode does to local play
+
+**There is no war within a site while its league runs.** Every ruler is on the same side, and the
+enemy is another site. Local marches are refused, and so are covert missions against a neighbour:
+your agent rides with the army instead.
+
+Both are refused in the service rather than hidden from the screen. A page that does not offer an
+order is not the same as a game that will not carry one out, because the order is a POST and a POST
+can be sent by anybody who has seen the form once.
+
+The War Room says so and points at the League page, where armies are actually raised. Leaving a
+league gives local war back.
+
+**Current state:** league play is complete and playable: opting in, founding, invitations, the
+enrolment handshake, the packet queues, news, the muster with its window and escrow, the march,
+battle resolution, spoils, the agent who rides ahead, the return leg, the escrow timeout, the league
+table and page, local war standing down, the cron workers, leaving and the kill switch. The board
+reset and its grace period are designed and not yet built.
 
 ---
 

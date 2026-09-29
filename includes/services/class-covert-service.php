@@ -125,6 +125,16 @@ class IDO_Covert {
     public static function run(object $kingdom, int $target_id, string $op_key): array {
         global $wpdb;
 
+        // Burning an ally's granaries makes no sense when the site is one team,
+        // and the agent has somewhere better to be: he rides with the army.
+        // Refused in the service for the same reason local war is.
+        if (class_exists('IDO_League') && IDO_League::active()) {
+            throw new IDO_Game_Exception(
+                'Your agent will not work against a ruler you are marching beside. While the league '
+                . 'runs he rides ahead of the army instead: pledge him to a muster from the League page.'
+            );
+        }
+
         $op = self::op($op_key);
         if ((int) $kingdom->agents < 1) {
             throw new IDO_Game_Exception('You keep no agent. Hire one before ordering a mission.');

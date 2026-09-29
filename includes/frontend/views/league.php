@@ -70,13 +70,53 @@ $mine = IDO_League_Table::ruler_record((int) $kingdom->id);
 
 <div class="ido-panel">
     <h3 class="ido-panel-title">The muster</h3>
-    <?php if (!$march) : ?>
-        <p>No army is being raised. Any ruler may call one from the <a href="<?php
-            echo esc_url(IDO_UI::url('war')); ?>">War Room</a>.</p>
+    <?php if (!$march) :
+        $targets = [];
+        foreach (IDO_League_Queue::active_peers() as $peer_site) {
+            $under_grace = $peer_site->grace_until
+                && strtotime((string) $peer_site->grace_until . ' UTC') > time();
+            if (!$under_grace) $targets[] = $peer_site;
+        }
+    ?>
+        <p>No army is being raised. Any ruler may call one.</p>
         <p class="ido-dim">
             One muster at a time. Calling one costs <?php echo esc_html((string) IDO_League_Muster::CALL_TURN_COST); ?>
-            turns and the caller must commit the first force: nobody starts a war they are not in.
+            turns and the caller commits the first force: nobody starts a war they are not in. What you
+            pledge leaves your empire at once and does not stand in your defence.
         </p>
+
+        <?php if (!$targets) : ?>
+            <p class="ido-warning">
+                No member site can be marched on at the moment. Either nobody else has finished joining,
+                or the ones who have are rebuilding under a grace period.
+            </p>
+        <?php else : ?>
+            <?php echo IDO_UI::form_open('league_call'); ?>
+                <p>
+                    <label>March on
+                        <select name="peer_id" class="ido-select" required>
+                            <?php foreach ($targets as $peer_site) : ?>
+                                <option value="<?php echo esc_attr((int) $peer_site->id); ?>">
+                                    <?php echo esc_html($peer_site->site_name); ?>
+                                    <?php if ($peer_site->news_as_of) : ?>
+                                        &mdash; <?php echo esc_html(sprintf('%s empires, %s net worth, as of %s',
+                                            IDO_Game::fmt($peer_site->empire_count),
+                                            IDO_Game::fmt($peer_site->networth),
+                                            IDO_League::when($peer_site->news_as_of))); ?>
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </p>
+                <p class="ido-dim">
+                    Those figures are what each site says about itself, and they are as old as the date
+                    beside them. What your army meets is whatever is standing on the day it arrives.
+                </p>
+                <?php include __DIR__ . '/partials/pledge-fields.php'; ?>
+                <button type="submit" class="ido-btn">Call the muster</button>
+            </form>
+        <?php endif; ?>
     <?php else :
         $target = IDO_League_Queue::peer((int) $march->peer_id);
         $board = IDO_League_Table::muster_board();
@@ -110,11 +150,30 @@ $mine = IDO_League_Table::ruler_record((int) $kingdom->id);
             </tbody>
         </table>
 
-        <p><a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('war')); ?>">Join the muster</a></p>
-        <p class="ido-dim">
-            What you pledge leaves your empire at once and does not stand in your defence. You can take it
-            back while the window is open, and not after.
-        </p>
+        <?php $mine_here = IDO_League_Muster::contribution((int) $march->id, (int) $kingdom->id); ?>
+
+        <?php if ($mine_here) : ?>
+            <p><strong>You have pledged to this muster.</strong> Your force is gone from your empire until
+               the army returns.</p>
+            <?php echo IDO_UI::form_open('league_withdraw', 'ido-form-inline'); ?>
+                <input type="hidden" name="march_id" value="<?php echo esc_attr((int) $march->id); ?>">
+                <button type="submit" class="ido-btn ido-btn-alt">Withdraw my force</button>
+            </form>
+            <p class="ido-dim">
+                You can take it back while the window is open, and not after. The turns you spent stay
+                spent.
+            </p>
+        <?php else : ?>
+            <?php echo IDO_UI::form_open('league_join'); ?>
+                <input type="hidden" name="march_id" value="<?php echo esc_attr((int) $march->id); ?>">
+                <?php include __DIR__ . '/partials/pledge-fields.php'; ?>
+                <button type="submit" class="ido-btn">Join the muster</button>
+            </form>
+            <p class="ido-dim">
+                What you pledge leaves your empire at once and does not stand in your defence. You can take
+                it back while the window is open, and not after.
+            </p>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 

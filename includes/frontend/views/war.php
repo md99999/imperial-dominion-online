@@ -14,6 +14,29 @@ $band_max  = IDO_Settings::int('target_max_percent');
 $capture_pct = IDO_Settings::int('catapult_capture_percent');
 $destroy_pct = IDO_Settings::int('catapult_destroy_percent');
 ?>
+<?php
+// While the league runs there is no war within this site, so the two panels that
+// offer local targets are replaced by a signpost. The refusal itself lives in
+// IDO_Military::attack(), where it holds whether or not anybody reads this page:
+// a screen that does not offer an order is not the same as a game that will not
+// carry one out.
+$league_mode = class_exists('IDO_League') && IDO_League::active();
+?>
+<?php if ($league_mode) : ?>
+<div class="ido-panel">
+    <h3 class="ido-panel-title">The war room is quiet</h3>
+    <p>
+        There is no war within this site while the league runs. Every ruler here is on the same side
+        now, and the enemy is another site.
+    </p>
+    <p><a class="ido-btn" href="<?php echo esc_url(IDO_UI::url('league')); ?>">Go to the League</a></p>
+    <p class="ido-dim">
+        Armies are raised there: one muster at a time, any ruler may call one, and what you pledge
+        leaves your empire until the army comes home. Your agent rides with it rather than working
+        against your neighbours.
+    </p>
+</div>
+<?php else : ?>
 <div class="ido-panel">
     <h3 class="ido-panel-title">Order a march</h3>
     <?php if (IDO_Kingdom::is_protected($kingdom)) : ?>
@@ -123,6 +146,7 @@ $destroy_pct = IDO_Settings::int('catapult_destroy_percent');
         </tbody>
     </table>
 </div>
+<?php endif; ?>
 
 <div class="ido-panel">
     <h3 class="ido-panel-title">Dispatches</h3>

@@ -148,6 +148,18 @@ class IDO_Military {
     public static function attack(object $kingdom, int $target_id, string $type, array $force, array $train = []): array {
         global $wpdb;
 
+        // In league mode the site is one team and there is no local war at all.
+        // Refused here rather than merely hidden from the War Room, because a
+        // screen that does not offer an order is not the same as a game that
+        // will not carry one out: the action is a POST, and a POST can be sent
+        // from anywhere by anybody who has seen the form once.
+        if (class_exists('IDO_League') && IDO_League::active()) {
+            throw new IDO_Game_Exception(
+                'There is no war within this site while the league runs. Every ruler here is on the '
+                . 'same side now: raise an army with the others from the League page.'
+            );
+        }
+
         $types = self::attack_types();
         if (!isset($types[$type])) {
             throw new IDO_Game_Exception('Choose a kind of attack.');

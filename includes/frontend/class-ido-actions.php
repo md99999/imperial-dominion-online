@@ -148,6 +148,20 @@ class IDO_Actions {
             case 'attack':
                 return [IDO_Military::attack($kingdom, self::int('target_id'), self::key('attack_type'), self::force(), self::train()), 'war'];
 
+            // The league
+            case 'league_call':
+                return [IDO_League_Muster::call(
+                    $kingdom, self::int('peer_id'), self::force(), self::train(),
+                    !empty($_POST['send_agent'])
+                ), 'league'];
+            case 'league_join':
+                return [IDO_League_Muster::join(
+                    $kingdom, self::int('march_id'), self::force(), self::train(),
+                    !empty($_POST['send_agent'])
+                ), 'league'];
+            case 'league_withdraw':
+                return [[IDO_League_Muster::withdraw($kingdom, self::int('march_id'))], 'league'];
+
             // The spy court
             case 'hire_agent':
                 return [IDO_Covert::hire($kingdom), null];
