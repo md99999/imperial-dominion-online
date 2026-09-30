@@ -48,11 +48,21 @@ class IDO_UI {
     public static function enqueue_assets(): void {
         wp_register_style('imperial-dominion-online', IDO_URL . 'assets/css/imperial-dominion-online.css', [], IDO_VERSION);
         wp_register_script('imperial-dominion-online', IDO_URL . 'assets/js/imperial-dominion-online.js', [], IDO_VERSION, true);
+        // A widget is not post content, so the checks below never see one. The
+        // gazette embed is the tag most likely to live in a sidebar, and a
+        // stylesheet that arrives after the markup repaints the widget in front
+        // of the reader, so this one is worth a look in the head.
+        if (self::widgets_embed_news()) {
+            wp_enqueue_style('imperial-dominion-online');
+        }
+
         global $post;
         if (!is_singular() || !$post) return;
 
-        // The rules can be embedded in any page or post, so that tag counts too.
-        if (has_shortcode($post->post_content, 'ido_how_to_play')) {
+        // The rules and the gazette can be embedded in any page or post, so
+        // those tags count too.
+        if (has_shortcode($post->post_content, 'ido_how_to_play')
+            || has_shortcode($post->post_content, 'ido_news')) {
             wp_enqueue_style('imperial-dominion-online');
             return;
         }
@@ -64,6 +74,29 @@ class IDO_UI {
                 return;
             }
         }
+    }
+
+    /**
+     * Whether any widget holds the gazette embed.
+     *
+     * Block widgets live in widget_block, and the two classic widgets that can
+     * hold a shortcode are widget_text and widget_custom_html. All three are
+     * ordinary options, so this costs nothing a page load was not paying
+     * already, and it is the only way to know before wp_head that a sidebar is
+     * about to need the stylesheet.
+     */
+    private static function widgets_embed_news(): bool {
+        foreach (['widget_block', 'widget_text', 'widget_custom_html'] as $option) {
+            $stored = get_option($option);
+            if (!is_array($stored)) continue;
+
+            foreach ($stored as $instance) {
+                if (!is_array($instance)) continue;   // the _multiwidget marker
+                $content = (string) ($instance['content'] ?? $instance['text'] ?? '');
+                if ($content !== '' && has_shortcode($content, 'ido_news')) return true;
+            }
+        }
+        return false;
     }
 
     public static function flash(string $type, string $message): void {

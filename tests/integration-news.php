@@ -124,6 +124,35 @@ check('the Gazette page is unaffected and shows everything',
     strpos($page_all, 'LEAGUEITEM') !== false && strpos($page_all, 'MARKETITEM') !== false);
 
 say('');
+say('=== the stylesheet reaches the head, not the footer ===');
+// A widget is not post content. If nothing notices the tag before wp_head, the
+// CSS arrives after the markup and repaints the sidebar in front of the reader.
+$held_block = get_option('widget_block');
+$embeds = new ReflectionMethod('IDO_UI', 'widgets_embed_news');
+$embeds->setAccessible(true);
+
+update_option('widget_block', ['_multiwidget' => 1]);
+check('nothing is claimed when no widget holds the tag', !$embeds->invoke(null));
+
+update_option('widget_block', ['_multiwidget' => 1, 2 => [
+    'content' => '<!-- wp:shortcode -->[ido_news limit="10" compact="1"]<!-- /wp:shortcode -->']]);
+check('a block widget holding it is found', $embeds->invoke(null));
+
+wp_dequeue_style('imperial-dominion-online');
+IDO_UI::enqueue_assets();
+check('and the style is enqueued before the page renders',
+    wp_style_is('imperial-dominion-online', 'enqueued'));
+
+update_option('widget_block', ['_multiwidget' => 1]);
+$held_text = get_option('widget_text');
+update_option('widget_text', ['_multiwidget' => 1, 3 => ['text' => '[ido_news]']]);
+check('a classic text widget counts too', $embeds->invoke(null));
+
+if ($held_text === false) { delete_option('widget_text'); } else { update_option('widget_text', $held_text); }
+if ($held_block === false) { delete_option('widget_block'); } else { update_option('widget_block', $held_block); }
+check('and the options are put back as they were', !$embeds->invoke(null));
+
+say('');
 say('=== the gazette page itself, logged out ===');
 $page = IDO_Shortcodes::render('gazette');
 check('the page renders for somebody with no empire', strpos($page, 'Gazette') !== false);
