@@ -8,6 +8,16 @@
     --ido-bg: #0b0f14;
     --ido-panel: #111823;
     --ido-border: #1f3448;
+    /*
+     * Form fields get a brighter edge than panels do, because the two edges are
+     * doing different jobs: a panel edge only hints at a grouping, while a field
+     * edge has to say "type here". WCAG 2.1 SC 1.4.11 asks 3:1 for the boundary
+     * of a control, and measured against --ido-panel the old values were nowhere
+     * near it -- the border at 1.39:1 and the field background at 1.07:1. On a
+     * phone in daylight that is not a dim box, it is no box at all, and players
+     * could not see where to enter a number. This is 3.7:1.
+     */
+    --ido-field-border: #4a7794;
     --ido-text: #cfe3f2;
     --ido-dim: #a6c0d6;
     --ido-accent: #4fd6ff;
@@ -259,8 +269,9 @@
     color: var(--ido-text) !important;
     -webkit-text-fill-color: var(--ido-text) !important;
     opacity: 1 !important;
-    border: 1px solid var(--ido-border);
+    border: 1px solid var(--ido-field-border);
     border-radius: 3px;
+    box-sizing: border-box;
     padding: 5px 7px;
     font-family: inherit;
     font-size: 0.9rem;
@@ -285,6 +296,21 @@
     background: #0a1017;
     color: var(--ido-text);
 }
+/*
+ * Checkboxes are drawn by the operating system, which ignores colour and border
+ * rules, so accent-color is the only honest way to bring one into the palette.
+ * The size is a tap target rather than a style: the native box is around 13px,
+ * and the only checkbox in the game sits on the muster form, where a player is
+ * deciding whether to send an agent that cost 500,000 gold.
+ */
+.ido-game input[type="checkbox"] {
+    accent-color: var(--ido-accent);
+    width: 18px;
+    height: 18px;
+    vertical-align: -4px;
+    margin-right: 6px;
+}
+
 /* Browsers paint autofilled fields with their own background; override it. */
 .ido-game input:-webkit-autofill,
 .ido-game input:-webkit-autofill:hover,
@@ -387,6 +413,37 @@
     .ido-game { font-size: 14px; padding: 12px; }
     .ido-round { margin-left: 0; }
     .ido-text, .ido-select { min-width: 100%; }
+
+    /*
+     * 16px on fields is not a taste decision. Safari on iOS zooms the whole page
+     * when a field with smaller text takes focus, and the player is left pinching
+     * back out after every order. Anything below 16px triggers it, so this is the
+     * floor rather than a preference.
+     *
+     * The 44px is the tap target: this game is played in short bursts on a phone,
+     * and a 30px box asks for a precision nobody has one-handed.
+     */
+    .ido-game input[type="text"],
+    .ido-game input[type="number"],
+    .ido-game input[type="search"],
+    .ido-game textarea,
+    .ido-game select {
+        font-size: 16px;
+        min-height: 44px;
+    }
+    .ido-game input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        vertical-align: -5px;
+    }
+    /* Flex so the label stays centred once the button is taller than its text. */
+    .ido-game .ido-btn,
+    .ido-game button.ido-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+    }
 }
 
 
