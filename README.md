@@ -135,6 +135,7 @@ chose for themselves, and never a WordPress account.
 | --- | --- | --- |
 | `limit` | `12` | How many items, from 1 to 100 |
 | `compact` | `no` | `compact="1"` is widget mode: see below |
+| `title` | `The Imperial Dominion Gazette` | the heading above the list; `title=""` drops it |
 | `heading` | on, off in compact | the world name and game title above the news |
 | `heading` | `yes` | `heading="no"` drops the world name and game title |
 | `cta` | `yes` | `cta="no"` drops the invitation to take an empire |
@@ -172,8 +173,9 @@ The Gazette page is unaffected and still shows everything.
 | Event | Written when |
 | --- | --- |
 | `founding` | An empire is claimed |
-| `war` | A march is fought, won or lost |
+| `war` | A march is fought, naming the acres, plunder or siege train won |
 | `covert` | A mission leaves its mark, or an agent is caught and hanged |
+| `title` | A ruler crosses a net worth threshold and takes a higher rank |
 | `market` | A single trade worth 100,000 gold or more changes hands |
 | `rankings` | The lead changes hands, checked once a day |
 | `barbarians` | Raiders take gold and grain from a leading empire |

@@ -356,8 +356,44 @@ class IDO_Kingdom {
         $worth += (float) $kingdom->agents * 50000;
 
         $worth = IDO_Game::clamp($worth);
+        $before = (int) $kingdom->networth;
         self::update($kingdom, ['networth' => $worth]);
+        self::announce_promotion($kingdom, $before, (int) $worth);
         return $worth;
+    }
+
+    /**
+     * Announces a ruler crossing a title threshold.
+     *
+     * This is the hook rather than a nightly sweep because the crossing happens
+     * here and nowhere else: titles are worked out from net worth on demand and
+     * never stored on the empire, so the only moment anybody can tell that one
+     * has changed is the moment the number moves, with both figures in hand.
+     *
+     * Rises only. A ruler who loses a war and slips a rank has had a bad enough
+     * evening without the criers telling the board about it, and a gazette that
+     * printed both would read as a ticker rather than as news.
+     *
+     * Silent from a standing start, because an empire being founded or refounded
+     * goes from nothing to its opening package in one write, and arriving is not
+     * the same as rising. There are eleven titles, so this can fire at most ten
+     * times for a ruler in a round, and the top of the ladder is meant to take
+     * most of one.
+     */
+    private static function announce_promotion(object $kingdom, int $before, int $after): void {
+        if ($before <= 0 || $after <= $before) return;
+        if ((int) ($kingdom->is_defeated ?? 0) === 1) return;
+
+        $was = IDO_Game::title($before);
+        $now = IDO_Game::title($after);
+        if ($was === $now) return;
+
+        IDO_Log::news('title', sprintf(
+            '%s of %s has risen to %s.',
+            (string) ($kingdom->ruler_name ?? 'A ruler'),
+            (string) ($kingdom->kingdom_name ?? 'an unnamed empire'),
+            $now
+        ), (int) ($kingdom->round_id ?? 0));
     }
 
     public static function touch(object $kingdom): void {

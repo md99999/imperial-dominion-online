@@ -87,7 +87,9 @@ $nocta = do_shortcode('[ido_news cta="no"]');
 check('the call to action can be suppressed',
     strpos($nocta, 'Take an empire') === false);
 check('and is present by default for a visitor', strpos($out, 'Take an empire') !== false);
-check('the ordinary embed keeps its heading', strpos($out, 'ido-title') !== false);
+check('the ordinary embed keeps its heading', strpos($out, 'ido-title">') !== false);
+check('and still names this world rather than the game',
+    strpos($out, IDO_Game::dominion() . ' Gazette') !== false);
 check('and its panel title', strpos($out, 'ido-panel-title') !== false);
 
 say('');
@@ -107,8 +109,16 @@ check('the type chip is dropped', strpos($c10, 'ido-news-type') === false);
 check('the time is relative, not a date', strpos($c10, 'ago') !== false);
 check('the round meta line is dropped', strpos($c10, 'empires') === false);
 check('it starts at the news: no world name above it',
-    strpos($c10, 'ido-title') === false);
-check('and no panel heading either', strpos($c10, 'ido-panel-title') === false);
+    strpos($c10, 'ido-title">') === false);
+check('but it says what it is',
+    strpos($c10, 'The Imperial Dominion Gazette') !== false);
+
+$c_own = do_shortcode('[ido_news limit="3" compact="1" title="Court News"]');
+check('the title can be replaced', strpos($c_own, 'Court News') !== false
+    && strpos($c_own, 'Imperial Dominion Gazette') === false);
+$c_none = do_shortcode('[ido_news limit="3" compact="1" title=""]');
+check('and dropped, for a widget that titles itself',
+    strpos($c_none, 'ido-panel-title') === false);
 
 $c_head = do_shortcode('[ido_news limit="5" compact="1" heading="yes"]');
 check('asking for the heading brings it back',
@@ -231,6 +241,68 @@ $next = (string) $wpdb->get_var($wpdb->prepare(
     'SELECT message FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND event_type = %s'
     . ' ORDER BY id DESC LIMIT 1', $round_id, 'rankings'));
 check('a fallen empire does not hold the lead', strpos($next, 'Aldric') !== false, $next);
+
+say('');
+say('=== a ruler rising through the titles ===');
+$climber = $make('Doran', 0);
+$wpdb->update(IDO_DB::t('kingdoms'),
+    ['land' => 600, 'networth' => 200000], ['id' => $climber]);
+check('starts below the first threshold',
+    IDO_Game::title(200000) === 'Freeholder', IDO_Game::title(200000));
+
+$before_t = (int) $wpdb->get_var($wpdb->prepare(
+    'SELECT COUNT(*) FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND event_type = %s',
+    $round_id, 'title'));
+IDO_Kingdom::recalc_networth(IDO_Kingdom::find($climber));
+$after_t = (int) $wpdb->get_var($wpdb->prepare(
+    'SELECT COUNT(*) FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND event_type = %s',
+    $round_id, 'title'));
+check('crossing a threshold is news', $after_t - $before_t === 1, (string) ($after_t - $before_t));
+$promo = (string) $wpdb->get_var($wpdb->prepare(
+    'SELECT message FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND event_type = %s'
+    . ' ORDER BY id DESC LIMIT 1', $round_id, 'title'));
+check('and it names the ruler and the rank', strpos($promo, 'Doran') !== false
+    && strpos($promo, 'Thane') !== false, $promo);
+
+IDO_Kingdom::recalc_networth(IDO_Kingdom::find($climber));
+$again_t = (int) $wpdb->get_var($wpdb->prepare(
+    'SELECT COUNT(*) FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND event_type = %s',
+    $round_id, 'title'));
+check('standing still is not news', $again_t === $after_t);
+
+// Falling back down must stay quiet.
+$wpdb->update(IDO_DB::t('kingdoms'), ['land' => 10], ['id' => $climber]);
+IDO_Kingdom::recalc_networth(IDO_Kingdom::find($climber));
+$fell_t = (int) $wpdb->get_var($wpdb->prepare(
+    'SELECT COUNT(*) FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d AND event_type = %s',
+    $round_id, 'title'));
+check('losing a rank is not announced', $fell_t === $after_t);
+
+say('');
+say('=== a battle line that says what was won ===');
+$war = new ReflectionMethod('IDO_Military', 'war_news');
+$war->setAccessible(true);
+$A = (object) ['kingdom_name' => 'Vaelmark'];
+$B = (object) ['kingdom_name' => 'Northmarch'];
+$none = ['land' => 0, 'gold' => 0, 'grain' => 0, 'iron' => 0, 'weapons_taken' => 0, 'demolished' => 0];
+
+$lost = $war->invoke(null, $A, $B, false, $none);
+check('a defeat stays short', strpos($lost, 'thrown back') !== false, $lost);
+
+$conquest = $war->invoke(null, $A, $B, true, array_merge($none, ['land' => 240, 'weapons_taken' => 12]));
+check('a conquest names the acres and the catapults',
+    strpos($conquest, '240 acres') !== false && strpos($conquest, '12 catapults') !== false, $conquest);
+
+$raid = $war->invoke(null, $A, $B, true, array_merge($none, ['gold' => 48000, 'grain' => 9000, 'iron' => 2000]));
+check('a raid names the plunder and reads as a sentence',
+    strpos($raid, '48,000 gold, 9,000 grain and 2,000 iron') !== false, $raid);
+
+$siege = $war->invoke(null, $A, $B, true, array_merge($none, ['demolished' => 180]));
+check('a siege names what it threw down', strpos($siege, '180 buildings') !== false, $siege);
+
+$empty = $war->invoke(null, $A, $B, true, $none);
+check('a victory that took nothing does not trail off',
+    substr($empty, -1) === '.' && strpos($empty, 'taking') === false, $empty);
 
 say('');
 say('=== the other new criers are wired in ===');

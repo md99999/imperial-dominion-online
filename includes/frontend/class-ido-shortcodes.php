@@ -92,7 +92,9 @@ class IDO_Shortcodes {
      *   [ido_news]                          twelve most recent items
      *   [ido_news limit="25"]               more of them, up to 100
      *   [ido_news limit="10" compact="1"]   widget mode
-     *   [ido_news heading="no"]             drop the titles above the news
+     *   [ido_news title="Court News"]       a title of your own above the list
+     *   [ido_news title=""]                 no title, for a widget that titles itself
+     *   [ido_news heading="no"]             drop the world and game names
      *   [ido_news compact="1" heading="yes"]  compact, but with them back
      *   [ido_news cta="no"]                 no invitation to claim an empire
      *
@@ -116,6 +118,7 @@ class IDO_Shortcodes {
         $atts = shortcode_atts([
             'limit'   => 12,
             'compact' => 'no',
+            'title'   => 'The Imperial Dominion Gazette',
             'heading' => 'yes',
             'cta'     => 'yes',
         ], $raw, 'ido_news');
@@ -137,6 +140,19 @@ class IDO_Shortcodes {
         $ido_news_heading = array_key_exists('heading', $raw)
             ? $show($atts['heading'])
             : !$ido_news_compact;
+
+        // A widget still needs to say what it is. The world name and the game
+        // title were three lines of chrome, but one line naming the thing is not
+        // chrome, it is the label a reader needs to know what they are looking
+        // at -- and on a site whose dominion is named something else entirely,
+        // the game's own name is what tells a stranger which game this is.
+        // title="" drops it for a widget that titles itself.
+        // Only compact takes the game's name by default. The page-style embed
+        // already prints the world and the game above the panel, so a third line
+        // naming the game again would be the very chrome compact exists to drop.
+        $ido_news_title = array_key_exists('title', $raw)
+            ? trim((string) $atts['title'])
+            : ($ido_news_compact ? trim((string) $atts['title']) : IDO_Game::dominion() . ' Gazette');
 
         wp_enqueue_style('imperial-dominion-online');
 

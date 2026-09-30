@@ -342,10 +342,7 @@ class IDO_Military {
                 'created_at'        => IDO_Game::now(),
             ], ['%d', '%d', '%d', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%s', '%s']);
 
-            IDO_Log::news('war', $won
-                ? sprintf('%s marched on %s and carried the field.', $kingdom->kingdom_name, $target->kingdom_name)
-                : sprintf('%s marched on %s and was thrown back.', $kingdom->kingdom_name, $target->kingdom_name)
-            );
+            IDO_Log::news('war', self::war_news($kingdom, $target, $won, $result));
 
             return array_merge($messages, [[$won ? 'success' : 'warning', implode("\n", $attacker_report)]]);
         } finally {
@@ -583,6 +580,46 @@ class IDO_Military {
         $lines[] = 'Your losses: ' . (self::losses_text($for_attacker ? $attacker_losses : $defender_losses) ?: 'none');
         $lines[] = 'Enemy losses: ' . (self::losses_text($for_attacker ? $defender_losses : $attacker_losses) ?: 'none');
         return $lines;
+    }
+
+    /**
+     * The gazette line for a battle, naming what actually changed hands.
+     *
+     * "Carried the field" told a reader that something happened and nothing
+     * about what. Acres, plunder and captured siege trains are the part a
+     * stranger can understand without knowing a single rule of this game, and
+     * they cost no extra lines: the same one sentence simply says more.
+     */
+    private static function war_news(object $kingdom, object $target, bool $won, array $result): string {
+        if (!$won) {
+            return sprintf('%s marched on %s and was thrown back.',
+                $kingdom->kingdom_name, $target->kingdom_name);
+        }
+
+        $took = [];
+        if ((int) $result['land'] > 0)          $took[] = IDO_Game::fmt((int) $result['land']) . ' acres';
+        if ((int) $result['gold'] > 0)          $took[] = IDO_Game::fmt((int) $result['gold']) . ' gold';
+        if ((int) $result['grain'] > 0)         $took[] = IDO_Game::fmt((int) $result['grain']) . ' grain';
+        if ((int) $result['iron'] > 0)          $took[] = IDO_Game::fmt((int) $result['iron']) . ' iron';
+        if ((int) $result['weapons_taken'] > 0) $took[] = IDO_Game::fmt((int) $result['weapons_taken']) . ' catapults';
+
+        $line = sprintf('%s marched on %s and carried the field',
+            $kingdom->kingdom_name, $target->kingdom_name);
+
+        $listed = (bool) $took;
+        if ($took) {
+            $last = array_pop($took);
+            $line .= ', taking ' . ($took ? implode(', ', $took) . ' and ' . $last : $last);
+        }
+        if ((int) $result['demolished'] > 0) {
+            // The comma only earns its place after a list. A siege that took
+            // nothing else reads "carried the field and threw down 180
+            // buildings", which is one clause rather than two.
+            $line .= sprintf('%s threw down %s buildings',
+                $listed ? ', and' : ' and', IDO_Game::fmt((int) $result['demolished']));
+        }
+
+        return $line . '.';
     }
 
     private static function losses_text(array $losses): string {

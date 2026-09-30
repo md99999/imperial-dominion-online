@@ -42,14 +42,19 @@ $exclude = $compact ? ['league', 'market'] : [];
 $news    = $round_id > 0 ? IDO_Rankings::news($round_id, $limit, $exclude) : [];
 ?>
 <?php
-// The panel heading follows the embed's: when the titles above have been turned
-// off there is no sense restating the world's name immediately under where they
-// were. The page always has it, because a page needs to say what it is.
-$show_title = !isset($ido_news_heading) || $ido_news_heading;
+/*
+ * The heading. On the page it names the world, because a player reading it is
+ * already inside that world and wants to know which one. An embed is read by
+ * somebody who may be neither, so it takes a plain title naming the game, which
+ * the shortcode supplies and a page author can replace or empty.
+ */
+$title = isset($ido_news_title)
+    ? (string) $ido_news_title
+    : IDO_Game::dominion() . ' Gazette';
 ?>
 <div class="ido-panel<?php echo $compact ? ' ido-news-compact' : ''; ?>">
-    <?php if ($show_title) : ?>
-        <h3 class="ido-panel-title"><?php echo esc_html(IDO_Game::dominion()); ?> Gazette</h3>
+    <?php if ($title !== '') : ?>
+        <h3 class="ido-panel-title"><?php echo esc_html($title); ?></h3>
     <?php endif; ?>
     <?php if ($round && !$compact) : ?>
         <p class="ido-dim">
