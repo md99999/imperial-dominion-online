@@ -233,6 +233,16 @@ class IDO_Covert {
         if ($op_key !== 'recon' && $success) {
             IDO_Log::news('covert', sprintf('Word spreads of foul play in %s.', $target->kingdom_name));
         }
+        if ($agent_lost) {
+            // Named nowhere, like the line above it. Covert work is anonymous in
+            // this game, and a gazette that printed whose agent it was would turn
+            // every failed mission into a declaration of war the ruler never made.
+            // A body on the gates is public; whose body it is stays a rumour.
+            IDO_Log::news('covert', sprintf(
+                'An agent was taken in %s and hanged before the gates. Whose he was, nobody is saying.',
+                $target->kingdom_name
+            ));
+        }
 
         $messages[] = [$success ? 'success' : ($agent_lost ? 'error' : 'warning'), implode("\n", $actor_report)];
         return $messages;

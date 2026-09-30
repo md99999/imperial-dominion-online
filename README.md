@@ -120,6 +120,47 @@ public.
 | `heading` | `yes` | `heading="no"` drops the world name and game title, for a page with its own |
 | `cta` | `yes` | `cta="no"` drops the sign-in panel, leaving the rules alone |
 
+### The gazette, on a page or in a widget
+
+`[ido_news]` renders the Imperial Gazette anywhere: a sidebar widget, a front page, a post. The
+**Gazette page itself is public too**, so a visitor who has never signed in can read it.
+
+That is deliberate, and it is the same argument as the public rules: nobody joins a game they
+cannot see the shape of. A list of wars fought, empires founded, floods, hanged spies and the lead
+changing hands is a board that is plainly alive, which is a better invitation than any description
+of one. Nothing in it is private. The gazette names empires and rulers, which are names players
+chose for themselves, and never a WordPress account.
+
+| Attribute | Default | What it does |
+| --- | --- | --- |
+| `limit` | `12` | How many items, from 1 to 100 |
+| `heading` | `yes` | `heading="no"` drops the world name and game title |
+| `cta` | `yes` | `cta="no"` drops the invitation to take an empire |
+
+Twelve is the default because a sidebar has to be readable at a glance rather than scrolled, and
+twelve is roughly a day of a busy board. The Gazette page itself still shows a hundred.
+
+### What reaches the gazette
+
+| Event | Written when |
+| --- | --- |
+| `founding` | An empire is claimed |
+| `war` | A march is fought, won or lost |
+| `covert` | A mission leaves its mark, or an agent is caught and hanged |
+| `market` | A single trade worth 100,000 gold or more changes hands |
+| `rankings` | The lead changes hands, checked once a day |
+| `barbarians` | Raiders take gold and grain from a leading empire |
+| `disaster` | A drought, a plague of insects or a flood |
+| `defeat` / `relief` | An empire is ruined, or given relief |
+| `round` / `reset` | A round begins or ends, or the board is refounded |
+| `league` | Musters, marches and results between sites (league play only) |
+
+Covert lines never name who sent the agent, in either direction. A body on the gates is public;
+whose body it is stays a rumour, because a gazette that printed it would turn every failed mission
+into a declaration of war the ruler never made. Market lines name neither party, for the same
+reason: who is buying iron in quantity is exactly what a rival would pay an agent to find out, and
+the spy court is where that answer belongs.
+
 ---
 
 ## League play (optional, off by default)

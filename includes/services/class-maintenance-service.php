@@ -93,6 +93,8 @@ class IDO_Maintenance {
             }
 
             $expired = IDO_Market::expire((int) $round->id);
+            self::announce_leader((int) $round->id);
+
             $rollover = IDO_Rounds::maybe_roll_over();
 
             self::record('hourly', $source);
@@ -224,6 +226,45 @@ class IDO_Maintenance {
     private static function record(string $which, string $source): void {
         update_option('ido_last_' . $which, IDO_Game::now(), false);
         update_option('ido_last_' . $which . '_source', sanitize_text_field($source), false);
+    }
+
+    /**
+     * Announces the lead changing hands, once a day at most.
+     *
+     * Checked on the daily tick rather than whenever a net worth is recalculated,
+     * which happens several times inside a single order. A gazette that reported
+     * every swap during one ruler's turn would read as noise and would tell
+     * everybody precisely when a rival was mid-build.
+     *
+     * Silent on a board too small for a lead to mean anything, and silent the
+     * first time it looks at a round: there is no news in discovering that
+     * somebody is in front, only in them taking it from somebody else.
+     */
+    private static function announce_leader(int $round_id): void {
+        if (IDO_Rankings::kingdom_count($round_id) < 3) return;
+
+        // A handful, not one: standings include the defeated, and a fallen
+        // empire still holding a high net worth must not be crowned.
+        $leader = null;
+        foreach (IDO_Rankings::standings($round_id, 10) as $row) {
+            if ((int) $row->is_defeated === 0) { $leader = $row; break; }
+        }
+        if (!$leader) return;
+
+        // One option for the whole game, holding the round it refers to, so a
+        // new round starts the question again without leaving rows behind.
+        $held  = explode(':', (string) get_option('ido_leader', ''));
+        $same_round = (int) ($held[0] ?? 0) === $round_id;
+        $was   = $same_round ? (int) ($held[1] ?? 0) : 0;
+
+        if ($was === (int) $leader->id) return;
+        update_option('ido_leader', $round_id . ':' . (int) $leader->id, false);
+        if ($was === 0) return;
+
+        IDO_Log::news('rankings', sprintf(
+            '%s of %s has taken the lead, with a net worth of %s.',
+            $leader->ruler_name, $leader->kingdom_name, IDO_Game::fmt((int) $leader->networth)
+        ), $round_id);
     }
 
     public static function last_source(string $which): string {

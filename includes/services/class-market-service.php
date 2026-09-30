@@ -8,6 +8,16 @@ if (!defined('ABSPATH')) exit;
  */
 class IDO_Market {
 
+    /**
+     * What a single purchase has to be worth before the gazette cares.
+     *
+     * A coded value rather than a setting: it exists to keep the gazette
+     * readable, not to balance anything, and one more number on the settings
+     * screen costs an admin more attention than it saves.
+     */
+    const NEWS_MIN_GOLD = 100000;
+
+
     /** Everything that may be traded, and the column it lives in. */
     public static function tradeable(): array {
         $items = [
@@ -224,6 +234,17 @@ class IDO_Market {
                 IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($seller));
             }
             IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
+
+            // Big trades are news; a ruler topping up two hundred grain is not.
+            // Neither party is named: who is buying iron in quantity is exactly
+            // the sort of thing a rival would pay an agent to find out, and the
+            // spy court is where that answer belongs.
+            if ($total >= self::NEWS_MIN_GOLD) {
+                IDO_Log::news('market', sprintf(
+                    '%s %s changed hands in the market for %s gold.',
+                    IDO_Game::fmt($qty), strtolower($item['label']), IDO_Game::fmt($total)
+                ));
+            }
 
             return sprintf(
                 'Bought %s %s for %s gold.',

@@ -33,6 +33,9 @@ class IDO_Shortcodes {
         // The rules on their own, for an ordinary page or post: no navigation,
         // no status bar, nothing that assumes the reader is playing.
         add_shortcode('ido_how_to_play', ['IDO_Shortcodes', 'render_how_to_play']);
+
+        // The gazette on its own, for a sidebar widget, a front page or a post.
+        add_shortcode('ido_news', ['IDO_Shortcodes', 'render_news']);
     }
 
     /**
@@ -82,6 +85,60 @@ class IDO_Shortcodes {
         return (string) ob_get_clean();
     }
 
+    /**
+     * The gazette with none of the game's furniture around it, so it can sit in
+     * a sidebar widget, a front page or a post.
+     *
+     *   [ido_news]                     twelve most recent items
+     *   [ido_news limit="25"]          more of them, up to 100
+     *   [ido_news heading="no"]        for a widget that has its own title
+     *   [ido_news cta="no"]            no invitation to claim an empire
+     *
+     * Twelve is the default because the likeliest home for this is a sidebar,
+     * where it has to be readable at a glance rather than scrolled, and twelve
+     * is roughly a day of a busy board. A page wanting the full run can ask for
+     * it, and the gazette page itself still shows a hundred.
+     */
+    public static function render_news($atts = []): string {
+        if (is_admin() || (defined('REST_REQUEST') && REST_REQUEST)) {
+            return '<p>[Imperial Dominion Online: Gazette]</p>';
+        }
+
+        $atts = shortcode_atts([
+            'limit'   => 12,
+            'heading' => 'yes',
+            'cta'     => 'yes',
+        ], is_array($atts) ? $atts : [], 'ido_news');
+
+        $show = static function ($value): bool {
+            return !in_array(strtolower(trim((string) $value)), ['no', 'false', '0', ''], true);
+        };
+
+        // Clamped rather than trusted: this number reaches a LIMIT clause, and
+        // a page author typing 100000 should get a long list rather than a
+        // query that takes the site down with it.
+        $ido_news_limit = max(1, min(100, (int) $atts['limit']));
+
+        wp_enqueue_style('imperial-dominion-online');
+
+        $round   = IDO_Rounds::current();
+        $kingdom = is_user_logged_in() && $round ? IDO_Kingdom::current() : null;
+
+        ob_start();
+        echo '<div class="ido-game ido-embed ido-page-gazette">';
+        if ($show($atts['heading'])) {
+            echo '<div class="ido-title">' . esc_html(IDO_Game::dominion()) . '</div>';
+            echo '<div class="ido-subtitle">' . esc_html(IDO_Game::NAME) . '</div>';
+        }
+        include IDO_PATH . 'includes/frontend/views/gazette.php';
+        if ($show($atts['cta']) && !$kingdom) {
+            echo '<p class="ido-dim"><a class="ido-btn" href="'
+                . esc_url(IDO_UI::url('guide')) . '">Take an empire</a></p>';
+        }
+        echo '</div>';
+        return (string) ob_get_clean();
+    }
+
     public static function render(string $key): string {
         // Shortcodes also run in admin and REST contexts (block editor previews); keep those cheap.
         if (is_admin() || (defined('REST_REQUEST') && REST_REQUEST)) {
@@ -117,6 +174,16 @@ class IDO_Shortcodes {
                 include IDO_PATH . 'includes/frontend/views/welcome.php';
             }
             include IDO_PATH . 'includes/frontend/views/guide.php';
+        } elseif ($key === 'gazette') {
+            // Public for the same reason the rules are public: nobody joins a
+            // game they cannot see the shape of, and a gazette full of wars,
+            // floods and hanged spies is the shape of this one. It names only
+            // what rulers named themselves -- empires and rulers, never a
+            // WordPress account -- so there is nothing here to withhold.
+            include IDO_PATH . 'includes/frontend/views/gazette.php';
+            if (!$kingdom) {
+                include IDO_PATH . 'includes/frontend/views/welcome.php';
+            }
         } elseif (!is_user_logged_in()) {
             include IDO_PATH . 'includes/frontend/views/welcome.php';
         } elseif (!$round) {
