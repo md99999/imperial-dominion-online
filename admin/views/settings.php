@@ -260,7 +260,7 @@ $help = [
 
     <hr>
 
-    <h2>Refound the board now</h2>
+    <h2>DANGER AREA - Refound the Board Now</h2>
     <div class="notice notice-error inline" style="max-width:46em">
         <p><strong>This starts the whole board again, and it cannot be undone.</strong></p>
         <p>
