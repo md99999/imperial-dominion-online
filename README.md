@@ -417,6 +417,14 @@ wreck forges or set peasants against their lord.
 your stores the moment you post them and return if the lot expires or you withdraw it. The crown
 takes 5% of every sale.
 
+**Weather and raiders.** Two things happen to an empire that nobody aimed at it. **Barbarians**
+raid the leading empires for a share of gold and grain, as a brake on a runaway lead; see
+[docs/BARBARIANS.md](docs/BARBARIANS.md). **Disasters** fall on anybody: a drought burns
+farmsteads, insects eat stored grain, a flood sweeps away homesteads, each taking 7% of the one
+thing, about one turn in sixty. Never two at once, and never during a crown truce, relief or a
+board grace period. Destroyed buildings hand their acres back to wilderness. See
+[docs/DISASTERS.md](docs/DISASTERS.md).
+
 **The round ends** after 45 days. The standings are carved into the Hall of Fame, every empire is
 retired, and the next round opens automatically, so a player who joins late is never permanently
 behind.

@@ -130,6 +130,12 @@ class IDO_Settings {
             'barbarian_chance_percent' => 5,
             'barbarian_gold_percent'   => 10,
             'barbarian_grain_percent'  => 10,
+            // Disasters: these fall on anybody, where barbarians only visit the
+            // top of the table. One in 60 turns is a little under one a week at
+            // ten turns a day, and never during any kind of grace period.
+            'disasters_enabled'      => 1,
+            'disaster_one_in'        => 60,
+            'disaster_percent'       => 7,
             // Market
             'market_tax_percent'     => 5,
             'listing_days'           => 3,

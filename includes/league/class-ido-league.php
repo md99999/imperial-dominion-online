@@ -268,6 +268,7 @@ class IDO_League {
             'agent_gold_cost', 'max_agents',
             'barbarians_enabled', 'barbarian_min_players', 'barbarian_top_ranks',
             'barbarian_chance_percent', 'barbarian_gold_percent', 'barbarian_grain_percent',
+            'disasters_enabled', 'disaster_one_in', 'disaster_percent',
             'market_tax_percent', 'listing_days', 'max_listings_per_kingdom',
             'round_days',
         ];

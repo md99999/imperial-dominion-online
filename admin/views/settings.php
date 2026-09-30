@@ -14,6 +14,7 @@ $groups = [
     'Covert work' => ['agent_gold_cost', 'max_agents'],
     'Barbarians' => ['barbarians_enabled', 'barbarian_min_players', 'barbarian_top_ranks',
         'barbarian_chance_percent', 'barbarian_gold_percent', 'barbarian_grain_percent'],
+    'Disasters' => ['disasters_enabled', 'disaster_one_in', 'disaster_percent'],
     'Market' => ['market_tax_percent', 'listing_days', 'max_listings_per_kingdom'],
     'Rounds and housekeeping' => ['round_days', 'auto_start_next_round', 'news_retention_days', 'allow_new_kingdoms', 'use_wp_cron'],
 ];
@@ -37,6 +38,11 @@ $help = [
     'catapult_destroy_percent' => 'Share of the losing side catapults at stake that is smashed outright. Added to the captured share, this is what a defeat costs in weapons.',
     'agent_gold_cost'        => 'Gold to hire an agent. Deliberately steep.',
     'max_agents'             => 'Agents one empire may keep. One is the intended limit.',
+    'disasters_enabled'      => 'Whether drought, insects and floods can strike at all.',
+    'disaster_one_in'         => 'Odds of a disaster during any one turn, as one in this many. '
+        . 'Never during a crown truce, relief or a board grace period, and never two at once.',
+    'disaster_percent'       => 'The share a disaster destroys: farmsteads for a drought, '
+        . 'stored grain for insects, homesteads for a flood.',
     'market_tax_percent'     => 'Cut the crown takes from every sale.',
     'barbarians_enabled'       => '1 lets barbarians raid the leading empires, 0 turns them off entirely.',
     'barbarian_min_players'    => 'Barbarians stay away until this many empires are playing. On a small board the top three is most of the board.',

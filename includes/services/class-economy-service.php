@@ -78,6 +78,13 @@ class IDO_Economy {
         $raids = 0;
         $raided = ['gold' => 0, 'grain' => 0];
 
+        // Same reasoning, same once-per-order cost. $disaster stays null until
+        // one lands and never fills twice: disasters do not combine, so the
+        // first to settle is the only one this batch of turns will see.
+        $strikeable = IDO_Disasters::eligible($kingdom);
+        $disaster = null;
+        $buildings_lost = [];
+
         // A scratch copy so per_turn() sees the compounding numbers.
         $scratch = clone $kingdom;
 
@@ -107,6 +114,31 @@ class IDO_Economy {
                     $raided['gold']  += $taken['gold'];
                     $raided['grain'] += $taken['grain'];
                     $raids++;
+                }
+            }
+
+            if ($strikeable && $disaster === null && IDO_Disasters::rolls()) {
+                // Read off the scratch copy so a disaster sees the empire as it
+                // stands this turn, and taken before starvation is worked out,
+                // for the same reason the barbarians are: losing the granaries
+                // to insects is exactly the kind of thing that starts a famine,
+                // and the famine should follow in the same handful of turns
+                // rather than wait for the next order.
+                $event = IDO_Disasters::strike($scratch, $grain);
+                if ($event !== null) {
+                    $spec = IDO_Disasters::kinds()[$event['kind']];
+                    if ($spec['stock'] === 'grain') {
+                        $grain = max(0, $grain - (int) $event['lost']);
+                    } else {
+                        // Fed back into the scratch copy so the turns after this
+                        // one produce what the empire can actually produce. A
+                        // drought on turn two of ten has to cost nine turns of
+                        // grain, not one, or the loss is cosmetic.
+                        $column = IDO_Buildings::column($spec['key']);
+                        $buildings_lost[$column] = (int) $event['lost'];
+                        $scratch->{$column} = max(0, (int) $scratch->{$column} - (int) $event['lost']);
+                    }
+                    $disaster = $event;
                 }
             }
 
@@ -140,6 +172,9 @@ class IDO_Economy {
         foreach ($troop_losses as $key => $lost) {
             $fields[IDO_Units::column($key)] = max(0, (int) $kingdom->{IDO_Units::column($key)} - $lost);
         }
+        foreach ($buildings_lost as $column => $lost) {
+            $fields[$column] = max(0, (int) $kingdom->{$column} - $lost);
+        }
         IDO_Kingdom::update($kingdom, $fields);
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
@@ -153,6 +188,10 @@ class IDO_Economy {
         if ($raids > 0) {
             IDO_Barbarians::announce($kingdom, $raided);
             $lines[] = ['warning', IDO_Barbarians::report($raided, $raids)];
+        }
+        if ($disaster !== null) {
+            IDO_Disasters::announce($kingdom, $disaster);
+            $lines[] = ['warning', IDO_Disasters::report($disaster)];
         }
         if ($starved['peasants'] > 0 || $starved['troops'] > 0) {
             $lines[] = ['error', sprintf(
