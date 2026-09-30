@@ -19,12 +19,31 @@ $round_id = isset($kingdom) && $kingdom && isset($kingdom->round_id)
     ? (int) $kingdom->round_id
     : (int) ($round->id ?? 0);
 
-$limit = isset($ido_news_limit) ? (int) $ido_news_limit : 100;
-$news  = $round_id > 0 ? IDO_Rankings::news($round_id, $limit) : [];
+$limit   = isset($ido_news_limit) ? (int) $ido_news_limit : 100;
+$compact = !empty($ido_news_compact);
+
+/*
+ * Compact is widget mode, and it drops two whole types.
+ *
+ * 'league' carries both the drama and the plumbing under one name -- a march
+ * won and a muster's escrow accounting and "the heralds have lost their place
+ * in the ledgers", which is a database restore notice and the worst possible
+ * line to greet a prospective player with. Until those are separate types this
+ * is blunt on purpose: on a league board that traffic would otherwise fill
+ * every slot in a ten-line widget with cross-site book-keeping.
+ *
+ * 'market' is dropped for being repetitive rather than for being noise. It
+ * reads well on the page, where there is room for it.
+ *
+ * Everything else stays, including 'round' and 'reset': a new round beginning
+ * with the land unclaimed is the best recruiting line the game has.
+ */
+$exclude = $compact ? ['league', 'market'] : [];
+$news    = $round_id > 0 ? IDO_Rankings::news($round_id, $limit, $exclude) : [];
 ?>
-<div class="ido-panel">
+<div class="ido-panel<?php echo $compact ? ' ido-news-compact' : ''; ?>">
     <h3 class="ido-panel-title"><?php echo esc_html(IDO_Game::dominion()); ?> Gazette</h3>
-    <?php if ($round) : ?>
+    <?php if ($round && !$compact) : ?>
         <p class="ido-dim">
             <?php echo esc_html($round->round_name); ?>
             <?php $left = IDO_Rounds::days_left($round); ?>
@@ -41,8 +60,21 @@ $news  = $round_id > 0 ? IDO_Rankings::news($round_id, $limit) : [];
         <ul class="ido-news">
             <?php foreach ($news as $item) : ?>
                 <li>
-                    <span class="ido-news-time"><?php echo esc_html(date_i18n(get_option('date_format') . ' H:i', strtotime($item->created_at))); ?></span>
-                    <span class="ido-news-type ido-news-<?php echo esc_attr($item->event_type); ?>"><?php echo esc_html($item->event_type); ?></span>
+                    <?php if ($compact) : ?>
+                        <?php /* Relative, because a sidebar has no room for a date and
+                                 "3 hours ago" says what a reader actually wants to know:
+                                 whether this board is alive today. */ ?>
+                        <span class="ido-news-time"><?php
+                            echo esc_html(sprintf(
+                                /* translators: %s is a length of time, e.g. "3 hours" */
+                                __('%s ago', 'imperial-dominion-online'),
+                                human_time_diff(strtotime($item->created_at), current_time('timestamp'))
+                            ));
+                        ?></span>
+                    <?php else : ?>
+                        <span class="ido-news-time"><?php echo esc_html(date_i18n(get_option('date_format') . ' H:i', strtotime($item->created_at))); ?></span>
+                        <span class="ido-news-type ido-news-<?php echo esc_attr($item->event_type); ?>"><?php echo esc_html($item->event_type); ?></span>
+                    <?php endif; ?>
                     <span class="ido-news-text"><?php echo esc_html((string) $item->message); ?></span>
                 </li>
             <?php endforeach; ?>

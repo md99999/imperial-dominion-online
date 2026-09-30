@@ -134,11 +134,33 @@ chose for themselves, and never a WordPress account.
 | Attribute | Default | What it does |
 | --- | --- | --- |
 | `limit` | `12` | How many items, from 1 to 100 |
+| `compact` | `no` | `compact="1"` is widget mode: see below |
 | `heading` | `yes` | `heading="no"` drops the world name and game title |
 | `cta` | `yes` | `cta="no"` drops the invitation to take an empire |
 
 Twelve is the default because a sidebar has to be readable at a glance rather than scrolled, and
 twelve is roughly a day of a busy board. The Gazette page itself still shows a hundred.
+
+For a sidebar, reach for compact:
+
+```
+[ido_news limit="10" compact="1"]
+```
+
+`compact="1"` means *suitable for a narrow column*, which turns out to be two things rather than
+one. It renders tighter -- a relative time above each line instead of a date and a type chip
+beside it, no round summary -- and it leaves the house-keeping traffic out, so ten slots hold ten
+things a stranger would find interesting.
+
+What it drops is `league` and `market`. League news carries the drama and the plumbing under one
+name: a march won, a muster's escrow accounting, and "the heralds have lost their place in the
+ledgers", which is a database restore notice and the worst possible line to greet a prospective
+player with. On a league board that traffic would otherwise fill every slot in a ten-line widget.
+Market lines go for being repetitive rather than for being noise; they read fine on the page,
+where there is room. Everything else stays, including `round` and `reset`, because a new round
+beginning with the land unclaimed is the best recruiting line the game has.
+
+The Gazette page is unaffected and still shows everything.
 
 ### What reaches the gazette
 

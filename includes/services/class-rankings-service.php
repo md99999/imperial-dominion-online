@@ -34,12 +34,31 @@ class IDO_Rankings {
         ));
     }
 
-    /** Gazette items for a round, newest first. */
-    public static function news(int $round_id, int $limit = 50): array {
+    /**
+     * Gazette items for a round, newest first.
+     *
+     * $exclude drops whole event types, which is how the compact embed keeps
+     * house-keeping out of a sidebar. The placeholders are built from the count
+     * of the list rather than pasted in, so the types themselves still go
+     * through prepare() and never reach the SQL as text.
+     */
+    public static function news(int $round_id, int $limit = 50, array $exclude = []): array {
         global $wpdb;
+
+        $exclude = array_values(array_filter(array_map('strval', $exclude)));
+        if (!$exclude) {
+            return $wpdb->get_results($wpdb->prepare(
+                'SELECT * FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d ORDER BY id DESC LIMIT %d',
+                $round_id, $limit
+            ));
+        }
+
+        $slots = implode(',', array_fill(0, count($exclude), '%s'));
+        $args  = array_merge([$round_id], $exclude, [$limit]);
         return $wpdb->get_results($wpdb->prepare(
-            'SELECT * FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d ORDER BY id DESC LIMIT %d',
-            $round_id, $limit
+            'SELECT * FROM ' . IDO_DB::t('news') . ' WHERE round_id = %d'
+            . ' AND event_type NOT IN (' . $slots . ') ORDER BY id DESC LIMIT %d',
+            $args
         ));
     }
 

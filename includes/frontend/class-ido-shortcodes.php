@@ -89,10 +89,17 @@ class IDO_Shortcodes {
      * The gazette with none of the game's furniture around it, so it can sit in
      * a sidebar widget, a front page or a post.
      *
-     *   [ido_news]                     twelve most recent items
-     *   [ido_news limit="25"]          more of them, up to 100
-     *   [ido_news heading="no"]        for a widget that has its own title
-     *   [ido_news cta="no"]            no invitation to claim an empire
+     *   [ido_news]                          twelve most recent items
+     *   [ido_news limit="25"]               more of them, up to 100
+     *   [ido_news limit="10" compact="1"]   widget mode
+     *   [ido_news heading="no"]             for a widget that has its own title
+     *   [ido_news cta="no"]                 no invitation to claim an empire
+     *
+     * compact is the one to reach for in a sidebar. It means "suitable for a
+     * narrow column", which is two things rather than one: a tighter line with a
+     * relative time and no type chip, and the house-keeping traffic left out, so
+     * ten slots hold ten things a stranger would find interesting. The Gazette
+     * page is unaffected and still shows everything.
      *
      * Twelve is the default because the likeliest home for this is a sidebar,
      * where it has to be readable at a glance rather than scrolled, and twelve
@@ -106,6 +113,7 @@ class IDO_Shortcodes {
 
         $atts = shortcode_atts([
             'limit'   => 12,
+            'compact' => 'no',
             'heading' => 'yes',
             'cta'     => 'yes',
         ], is_array($atts) ? $atts : [], 'ido_news');
@@ -117,7 +125,8 @@ class IDO_Shortcodes {
         // Clamped rather than trusted: this number reaches a LIMIT clause, and
         // a page author typing 100000 should get a long list rather than a
         // query that takes the site down with it.
-        $ido_news_limit = max(1, min(100, (int) $atts['limit']));
+        $ido_news_limit   = max(1, min(100, (int) $atts['limit']));
+        $ido_news_compact = $show($atts['compact']);
 
         wp_enqueue_style('imperial-dominion-online');
 

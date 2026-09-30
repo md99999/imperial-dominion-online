@@ -89,6 +89,30 @@ check('the call to action can be suppressed',
 check('and is present by default for a visitor', strpos($out, 'Take an empire') !== false);
 
 say('');
+say('=== compact, for a sidebar ===');
+IDO_Log::news('league', sprintf('%s LEAGUEITEM: the heralds have lost their place.', $tag), $round_id);
+IDO_Log::news('market', sprintf('%s MARKETITEM: grain changed hands.', $tag), $round_id);
+
+$c10 = do_shortcode('[ido_news limit="10" compact="1"]');
+check('it renders', strpos($c10, 'Gazette') !== false);
+check('ten items', substr_count($c10, '<li>') === 10, (string) substr_count($c10, '<li>'));
+check('the compact class is on the panel', strpos($c10, 'ido-news-compact') !== false);
+check('league house-keeping is left out', strpos($c10, 'LEAGUEITEM') === false);
+check('and so is the market', strpos($c10, 'MARKETITEM') === false);
+check('the type chip is dropped', strpos($c10, 'ido-news-type') === false);
+check('the time is relative, not a date', strpos($c10, 'ago') !== false);
+check('the round meta line is dropped', strpos($c10, 'empires') === false);
+check('but the news still reads', strpos($c10, $tag) !== false);
+
+$full = do_shortcode('[ido_news limit="40"]');
+check('the page-style embed still shows the league item', strpos($full, 'LEAGUEITEM') !== false);
+check('and still shows the type chip', strpos($full, 'ido-news-type') !== false);
+
+$page_all = IDO_Shortcodes::render('gazette');
+check('the Gazette page is unaffected and shows everything',
+    strpos($page_all, 'LEAGUEITEM') !== false && strpos($page_all, 'MARKETITEM') !== false);
+
+say('');
 say('=== the gazette page itself, logged out ===');
 $page = IDO_Shortcodes::render('gazette');
 check('the page renders for somebody with no empire', strpos($page, 'Gazette') !== false);

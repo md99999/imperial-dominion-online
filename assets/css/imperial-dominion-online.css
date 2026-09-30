@@ -409,6 +409,33 @@
 
 .ido-filters { display: flex; flex-wrap: wrap; gap: 4px; }
 
+/*
+ * Compact gazette: the widget rendering.
+ *
+ * The page version lays each item out in three columns, which needs width the
+ * page has and a sidebar does not. Here the time sits above its line instead of
+ * beside it, and the min-width that keeps the page's columns aligned is dropped,
+ * because in a 250px column it is what forces the wrap in the first place.
+ */
+.ido-news-compact .ido-news li {
+    display: block;
+    padding: 6px 0;
+}
+.ido-news-compact .ido-news-time {
+    display: block;
+    min-width: 0;
+    font-size: 0.72rem;
+    color: var(--ido-dim);
+    margin-bottom: 1px;
+}
+.ido-news-compact .ido-news-text {
+    display: block;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+/* The embed brings its own frame; a second border inside a widget is a box in a box. */
+.ido-news-compact { border: 0; padding: 0; background: none; }
+
 @media (max-width: 640px) {
     .ido-game { font-size: 14px; padding: 12px; }
     .ido-round { margin-left: 0; }
