@@ -135,9 +135,8 @@ chose for themselves, and never a WordPress account.
 | --- | --- | --- |
 | `limit` | `12` | How many items, from 1 to 100 |
 | `compact` | `no` | `compact="1"` is widget mode: see below |
-| `title` | `The Imperial Dominion Gazette` | the heading above the list; `title=""` drops it |
-| `heading` | on, off in compact | the world name and game title above the news |
-| `heading` | `yes` | `heading="no"` drops the world name and game title |
+| `title` | `The Imperial Dominion Gazette` | The heading above the list; `title=""` drops it |
+| `heading` | `yes`, off in compact | The world name and game title above the heading |
 | `cta` | `yes` | `cta="no"` drops the invitation to take an empire |
 
 Twelve is the default because a sidebar has to be readable at a glance rather than scrolled, and
@@ -150,13 +149,19 @@ For a sidebar, reach for compact:
 ```
 
 `compact="1"` means *suitable for a narrow column*, which turns out to be three things rather
-than one. It **starts at the news**, because a widget has a title field of its own and the world
-name, the game title and a "... Gazette" heading beneath them are three lines saying much the same
-thing before a reader reaches anything worth reading. It renders tighter -- a relative time above
-each line instead of a date and a type chip beside it, and no round summary. And it leaves the
-house-keeping traffic out, so ten slots hold ten things a stranger would find interesting.
+than one.
 
-`[ido_news compact="1" heading="yes"]` puts the titles back if you want them.
+**One line of heading, then the news.** The page-style embed prints the world name, the game title
+and a "... Gazette" heading beneath them both, which is three lines saying much the same thing
+before a reader reaches anything worth reading. Compact keeps the title and drops the other two.
+
+**A tighter line.** A relative time above each item instead of a date and a type chip beside it,
+and no round summary.
+
+**None of the house-keeping**, so ten slots hold ten things a stranger would find interesting.
+
+`[ido_news compact="1" heading="yes"]` puts the world and game names back above the title if you
+want them.
 
 What it drops is `league` and `market`. League news carries the drama and the plumbing under one
 name: a march won, a muster's escrow accounting, and "the heralds have lost their place in the
@@ -167,6 +172,42 @@ where there is room. Everything else stays, including `round` and `reset`, becau
 beginning with the land unclaimed is the best recruiting line the game has.
 
 The Gazette page is unaffected and still shows everything.
+
+#### Putting it in a sidebar widget
+
+**Block themes** (Twenty Twenty-Three, Twenty Twenty-Four, Twenty Twenty-Five and most themes
+released since 2023) have no Widgets screen. Go to **Appearance -> Editor**, open the template or
+template part that holds the area you want, add a **Shortcode** block where you want the news, and
+paste the tag into it.
+
+**Classic themes** use **Appearance -> Widgets**. Add a **Shortcode** block to the sidebar, or a
+**Text** or **Custom HTML** widget, and paste the tag in.
+
+Either way the tag is the same:
+
+```
+[ido_news limit="10" compact="1"]
+```
+
+If the widget or block already has a title of its own, drop the plugin's so the heading is not
+said twice:
+
+```
+[ido_news limit="10" compact="1" title=""]
+```
+
+The stylesheet is loaded for you. The plugin normally decides whether a page needs it by looking
+for its shortcodes in the post content, and a widget is not post content, so it also checks the
+widget options directly -- `widget_block` for block widgets, `widget_text` and `widget_custom_html`
+for the classic pair. That check is what keeps the CSS in the page head: without it the stylesheet
+arrives after the markup and the widget visibly repaints on every cold load.
+
+Two things worth knowing before you put it on a busy front page:
+
+- The gazette is **per round**. When a round ends and the next opens, the widget empties and fills
+  again from the new round, which is correct but looks like a fault if it takes you by surprise.
+- Items are **deleted after 14 days** by the daily job (`news_retention_days`). A board that goes
+  quiet for a fortnight shows an empty widget reading *The criers have nothing to report.*
 
 ### What reaches the gazette
 
