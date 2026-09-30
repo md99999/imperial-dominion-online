@@ -87,6 +87,8 @@ $nocta = do_shortcode('[ido_news cta="no"]');
 check('the call to action can be suppressed',
     strpos($nocta, 'Take an empire') === false);
 check('and is present by default for a visitor', strpos($out, 'Take an empire') !== false);
+check('the ordinary embed keeps its heading', strpos($out, 'ido-title') !== false);
+check('and its panel title', strpos($out, 'ido-panel-title') !== false);
 
 say('');
 say('=== compact, for a sidebar ===');
@@ -94,7 +96,9 @@ IDO_Log::news('league', sprintf('%s LEAGUEITEM: the heralds have lost their plac
 IDO_Log::news('market', sprintf('%s MARKETITEM: grain changed hands.', $tag), $round_id);
 
 $c10 = do_shortcode('[ido_news limit="10" compact="1"]');
-check('it renders', strpos($c10, 'Gazette') !== false);
+// Deliberately not looking for the word "Gazette": compact has no heading, so
+// the news list itself is the only thing that proves it rendered.
+check('it renders', strpos($c10, 'ido-news') !== false && substr_count($c10, '<li>') > 0);
 check('ten items', substr_count($c10, '<li>') === 10, (string) substr_count($c10, '<li>'));
 check('the compact class is on the panel', strpos($c10, 'ido-news-compact') !== false);
 check('league house-keeping is left out', strpos($c10, 'LEAGUEITEM') === false);
@@ -102,6 +106,13 @@ check('and so is the market', strpos($c10, 'MARKETITEM') === false);
 check('the type chip is dropped', strpos($c10, 'ido-news-type') === false);
 check('the time is relative, not a date', strpos($c10, 'ago') !== false);
 check('the round meta line is dropped', strpos($c10, 'empires') === false);
+check('it starts at the news: no world name above it',
+    strpos($c10, 'ido-title') === false);
+check('and no panel heading either', strpos($c10, 'ido-panel-title') === false);
+
+$c_head = do_shortcode('[ido_news limit="5" compact="1" heading="yes"]');
+check('asking for the heading brings it back',
+    strpos($c_head, 'ido-title') !== false && strpos($c_head, 'ido-panel-title') !== false);
 check('but the news still reads', strpos($c10, $tag) !== false);
 
 $full = do_shortcode('[ido_news limit="40"]');

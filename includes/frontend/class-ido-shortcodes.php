@@ -92,7 +92,8 @@ class IDO_Shortcodes {
      *   [ido_news]                          twelve most recent items
      *   [ido_news limit="25"]               more of them, up to 100
      *   [ido_news limit="10" compact="1"]   widget mode
-     *   [ido_news heading="no"]             for a widget that has its own title
+     *   [ido_news heading="no"]             drop the titles above the news
+     *   [ido_news compact="1" heading="yes"]  compact, but with them back
      *   [ido_news cta="no"]                 no invitation to claim an empire
      *
      * compact is the one to reach for in a sidebar. It means "suitable for a
@@ -111,12 +112,13 @@ class IDO_Shortcodes {
             return '<p>[Imperial Dominion Online: Gazette]</p>';
         }
 
+        $raw  = is_array($atts) ? $atts : [];
         $atts = shortcode_atts([
             'limit'   => 12,
             'compact' => 'no',
             'heading' => 'yes',
             'cta'     => 'yes',
-        ], is_array($atts) ? $atts : [], 'ido_news');
+        ], $raw, 'ido_news');
 
         $show = static function ($value): bool {
             return !in_array(strtolower(trim((string) $value)), ['no', 'false', '0', ''], true);
@@ -128,6 +130,14 @@ class IDO_Shortcodes {
         $ido_news_limit   = max(1, min(100, (int) $atts['limit']));
         $ido_news_compact = $show($atts['compact']);
 
+        // Compact starts at the news. A widget has a title field of its own, so
+        // the world name, the game name and a "... Gazette" heading under them
+        // are three lines of chrome saying much the same thing before a reader
+        // reaches anything worth reading. Still available by asking for it.
+        $ido_news_heading = array_key_exists('heading', $raw)
+            ? $show($atts['heading'])
+            : !$ido_news_compact;
+
         wp_enqueue_style('imperial-dominion-online');
 
         $round   = IDO_Rounds::current();
@@ -135,7 +145,7 @@ class IDO_Shortcodes {
 
         ob_start();
         echo '<div class="ido-game ido-embed ido-page-gazette">';
-        if ($show($atts['heading'])) {
+        if ($ido_news_heading) {
             echo '<div class="ido-title">' . esc_html(IDO_Game::dominion()) . '</div>';
             echo '<div class="ido-subtitle">' . esc_html(IDO_Game::NAME) . '</div>';
         }

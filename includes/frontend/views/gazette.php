@@ -41,8 +41,16 @@ $compact = !empty($ido_news_compact);
 $exclude = $compact ? ['league', 'market'] : [];
 $news    = $round_id > 0 ? IDO_Rankings::news($round_id, $limit, $exclude) : [];
 ?>
+<?php
+// The panel heading follows the embed's: when the titles above have been turned
+// off there is no sense restating the world's name immediately under where they
+// were. The page always has it, because a page needs to say what it is.
+$show_title = !isset($ido_news_heading) || $ido_news_heading;
+?>
 <div class="ido-panel<?php echo $compact ? ' ido-news-compact' : ''; ?>">
-    <h3 class="ido-panel-title"><?php echo esc_html(IDO_Game::dominion()); ?> Gazette</h3>
+    <?php if ($show_title) : ?>
+        <h3 class="ido-panel-title"><?php echo esc_html(IDO_Game::dominion()); ?> Gazette</h3>
+    <?php endif; ?>
     <?php if ($round && !$compact) : ?>
         <p class="ido-dim">
             <?php echo esc_html($round->round_name); ?>

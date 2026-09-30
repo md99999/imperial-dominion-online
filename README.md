@@ -135,6 +135,7 @@ chose for themselves, and never a WordPress account.
 | --- | --- | --- |
 | `limit` | `12` | How many items, from 1 to 100 |
 | `compact` | `no` | `compact="1"` is widget mode: see below |
+| `heading` | on, off in compact | the world name and game title above the news |
 | `heading` | `yes` | `heading="no"` drops the world name and game title |
 | `cta` | `yes` | `cta="no"` drops the invitation to take an empire |
 
@@ -147,10 +148,14 @@ For a sidebar, reach for compact:
 [ido_news limit="10" compact="1"]
 ```
 
-`compact="1"` means *suitable for a narrow column*, which turns out to be two things rather than
-one. It renders tighter -- a relative time above each line instead of a date and a type chip
-beside it, no round summary -- and it leaves the house-keeping traffic out, so ten slots hold ten
-things a stranger would find interesting.
+`compact="1"` means *suitable for a narrow column*, which turns out to be three things rather
+than one. It **starts at the news**, because a widget has a title field of its own and the world
+name, the game title and a "... Gazette" heading beneath them are three lines saying much the same
+thing before a reader reaches anything worth reading. It renders tighter -- a relative time above
+each line instead of a date and a type chip beside it, and no round summary. And it leaves the
+house-keeping traffic out, so ten slots hold ten things a stranger would find interesting.
+
+`[ido_news compact="1" heading="yes"]` puts the titles back if you want them.
 
 What it drops is `league` and `market`. League news carries the drama and the plumbing under one
 name: a march won, a muster's escrow accounting, and "the heralds have lost their place in the
