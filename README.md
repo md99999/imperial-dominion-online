@@ -550,6 +550,30 @@ Two scheduled ticks keep the world turning:
   finished round.
 - **Hourly** returns expired market lots and catches a round whose time ran out between daily runs.
 
+### The Cron Maintenance Log
+
+**Imperial Dominion Online -> Maintenance** keeps a log of both scheduled jobs: one line per job
+per day, for the last ten days.
+
+| Column | What it is |
+| --- | --- |
+| Day | The game day, in the site's timezone |
+| Ran at | When the run that did the work finished |
+| Started by | WP-Cron, `system cron`, or *Run now by* whoever pressed the button |
+| Started | How many times the job was set going that day, including the ones that stood down |
+| What it did | The summary from the run that did the work |
+
+The count and the summary are kept deliberately apart. A tick can be started many times in a day
+and most of those starts do nothing, because the second arrival finds the lock held or finds the
+work already done. **A start that stands down never overwrites the run that did the work** --
+otherwise midnight's real run would show as "skipped: it already ran today" from a 1am duplicate,
+and a working site would read as a broken one.
+
+So a job started three times with one line of work is normal and healthy; it means cron is
+reaching the site from more than one direction, which is the arrangement this plugin recommends.
+The row worth looking at is one with starts and nothing done: that line shows the reason instead,
+whether it was no round running or a lock that never cleared.
+
 **Running WP-Cron and a real cron together is safe.** Each tick takes a named database lock
 before doing anything, so only one run of a kind happens at a time whatever started it, and a
 second run arriving mid-way stands down instead of repeating the work. Each also refuses to run

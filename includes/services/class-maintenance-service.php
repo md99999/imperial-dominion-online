@@ -78,10 +78,12 @@ class IDO_Maintenance {
         $league_note = self::league_traffic();
 
         $round = IDO_Rounds::current();
-        if (!$round) return trim('No round is running. ' . $league_note);
+        if (!$round) return self::log_tick('hourly', $source,
+            trim('No round is running. ' . $league_note), false);
 
         if (!IDO_Lock::acquire('maintenance_hourly', 0)) {
-            return 'Hourly upkeep skipped: another run is already in progress.';
+            return self::log_tick('hourly', $source,
+                'Hourly upkeep skipped: another run is already in progress.', false);
         }
 
         try {
@@ -89,17 +91,18 @@ class IDO_Maintenance {
             // ago may have finished while this one was waiting.
             $last = strtotime((string) get_option('ido_last_hourly'));
             if (!$force && $last && current_time('timestamp') - $last < 50 * MINUTE_IN_SECONDS) {
-                return 'Hourly upkeep skipped: it already ran at ' . get_option('ido_last_hourly') . '.';
+                return self::log_tick('hourly', $source,
+                    'Hourly upkeep skipped: it already ran at ' . get_option('ido_last_hourly') . '.', false);
             }
 
             $expired = IDO_Market::expire((int) $round->id);
-            self::announce_leader((int) $round->id);
 
             $rollover = IDO_Rounds::maybe_roll_over();
 
             self::record('hourly', $source);
-            return trim(sprintf('Hourly upkeep: %d market lots returned to their owners.%s %s',
-                $expired, $rollover ? ' ' . $rollover : '', $league_note));
+            return self::log_tick('hourly', $source, trim(sprintf(
+                'Hourly upkeep: %d market lots returned to their owners.%s %s',
+                $expired, $rollover ? ' ' . $rollover : '', $league_note)), true);
         } finally {
             IDO_Lock::release('maintenance_hourly');
         }
@@ -161,16 +164,18 @@ class IDO_Maintenance {
     public static function daily(bool $force = false, string $source = 'WP-Cron'): string {
         global $wpdb;
         $round = IDO_Rounds::current();
-        if (!$round) return 'No round is running.';
+        if (!$round) return self::log_tick('daily', $source, 'No round is running.', false);
 
         if (!IDO_Lock::acquire('maintenance_daily', 0)) {
-            return 'Daily upkeep skipped: another run is already in progress.';
+            return self::log_tick('daily', $source,
+                'Daily upkeep skipped: another run is already in progress.', false);
         }
 
         try {
             $today = IDO_Game::today();
             if (!$force && substr((string) get_option('ido_last_daily'), 0, 10) === $today) {
-                return 'Daily upkeep skipped: it already ran today at ' . get_option('ido_last_daily') . '.';
+                return self::log_tick('daily', $source,
+                    'Daily upkeep skipped: it already ran today at ' . get_option('ido_last_daily') . '.', false);
             }
 
             global $wpdb;
@@ -203,12 +208,14 @@ class IDO_Maintenance {
             $reset_note = IDO_Board::reset_if_ruined((int) $round->id);
             if ($reset_note !== '') $league_note = trim($league_note . ' ' . $reset_note);
 
+            self::announce_leader((int) $round->id);
+
             self::record('daily', $source);
             // Saying how many were skipped matters: pressing Run now after the
             // tick has already run reports "0 granted", which reads as a fault
             // when the truth is that everyone already holds today's turns.
             $skipped = max(0, $eligible - $granted);
-            return trim(sprintf(
+            return self::log_tick('daily', $source, trim(sprintf(
                 'Daily upkeep: turns granted to %d %s%s, %d buildings finished.%s %s',
                 $granted,
                 $granted === 1 ? 'empire' : 'empires',
@@ -216,10 +223,100 @@ class IDO_Maintenance {
                 $built,
                 $rollover ? ' ' . $rollover : '',
                 $league_note
-            ));
+            )), true);
         } finally {
             IDO_Lock::release('maintenance_daily');
         }
+    }
+
+    /** How many days of each tick the log keeps. */
+    const LOG_OPTION = 'ido_cron_log';
+    const LOG_DAYS   = 10;
+
+    /**
+     * Records one invocation of a tick and returns its message unchanged, so a
+     * caller can write `return self::log_tick(...)` at every exit and none of
+     * them can be forgotten.
+     *
+     * One row per job per day. A tick can be started many times in a day --
+     * WP-Cron and a server cron both firing, somebody pressing Run now, the
+     * hourly tick by design -- and most of those starts do nothing, because the
+     * second arrival finds the lock held or finds the work already done. The
+     * count is of starts, which is the number that answers "is cron actually
+     * reaching this site", while the time, the source and the summary belong to
+     * the run that did the work.
+     *
+     * That is the whole point of keeping them apart. A skipped repeat must never
+     * overwrite the run that did the work, or the log would show midnight's real
+     * run replaced by "skipped: it already ran today" from a 1am duplicate, and
+     * the screen would read as though turns were never granted.
+     *
+     * A later run that does work does replace an earlier one, which is right:
+     * the hourly tick works many times a day and the most recent is the useful
+     * one. The skip reason is kept separately and only shown on a day where
+     * nothing worked at all, because then it is the only explanation available.
+     */
+    private static function log_tick(string $which, string $source, string $summary, bool $did_work): string {
+        $log = get_option(self::LOG_OPTION, []);
+        if (!is_array($log)) $log = [];
+
+        $day   = IDO_Game::today();
+        $entry = $log[$which][$day] ?? [
+            'starts' => 0, 'worked' => 0, 'ran_at' => '', 'source' => '', 'summary' => '', 'note' => '',
+        ];
+
+        $entry['starts'] = (int) $entry['starts'] + 1;
+        if ($did_work) {
+            $entry['worked']  = (int) $entry['worked'] + 1;
+            $entry['ran_at']  = IDO_Game::now();
+            $entry['source']  = self::describe_source($source);
+            $entry['summary'] = $summary;
+        } else {
+            $entry['note'] = $summary;
+        }
+
+        $log[$which][$day] = $entry;
+
+        // Newest first, then cut. Keyed by day, so a tick started forty times in
+        // one day is still one row and the log cannot grow without bound.
+        krsort($log[$which]);
+        $log[$which] = array_slice($log[$which], 0, self::LOG_DAYS, true);
+
+        update_option(self::LOG_OPTION, $log, false);
+        return $summary;
+    }
+
+    /**
+     * What started a run, in words a person reads rather than a token.
+     *
+     * 'admin' means somebody pressed Run now, and which somebody is worth
+     * recording: on a site with more than one administrator, a tick that ran at
+     * an odd hour is a different thing depending on whether a person or a
+     * machine started it.
+     */
+    private static function describe_source(string $source): string {
+        if ($source !== 'admin') return sanitize_text_field($source);
+
+        $user = wp_get_current_user();
+        $who  = ($user && $user->exists()) ? $user->user_login : '';
+        return $who !== '' ? 'Run now by ' . sanitize_text_field($who) : 'Run now';
+    }
+
+    /**
+     * The log for the Maintenance screen: newest day first, per job.
+     *
+     * @return array<string, array<string, array>>
+     */
+    public static function log(): array {
+        $log = get_option(self::LOG_OPTION, []);
+        if (!is_array($log)) return [];
+
+        foreach ($log as $which => $days) {
+            if (!is_array($days)) { unset($log[$which]); continue; }
+            krsort($days);
+            $log[$which] = array_slice($days, 0, self::LOG_DAYS, true);
+        }
+        return $log;
     }
 
     /** Notes when a tick ran and what started it, for the Maintenance screen. */

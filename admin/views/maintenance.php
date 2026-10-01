@@ -106,6 +106,88 @@ $dir = rtrim(str_replace('\\', '/', IDO_PATH), '/') . '/maintenance';
     </p>
 
 
+    <h2>Cron Maintenance Log</h2>
+    <p>
+        One line per job per day, for the last ten days. <em>Started</em> counts every time the job was
+        set going, including the times it stood down because another run held the lock or because the
+        work was already done. <em>Ran at</em>, <em>Started by</em> and <em>What it did</em> always
+        belong to the run that actually did the work, so a duplicate standing down never hides it.
+    </p>
+    <p class="description">
+        A daily job started more than once is normal and is not a fault: WP-Cron and a server cron
+        firing within the same hour both count, and only the first does anything. A day with starts
+        but nothing done is the one worth looking at.
+    </p>
+
+    <?php
+    $cron_log = IDO_Maintenance::log();
+    $jobs = ['daily' => 'Daily', 'hourly' => 'Hourly'];
+    ?>
+    <?php foreach ($jobs as $which => $label) : ?>
+        <?php $days = $cron_log[$which] ?? []; ?>
+        <h3 style="margin-bottom:4px"><?php echo esc_html($label); ?></h3>
+        <?php if (!$days) : ?>
+            <p class="description" style="margin-top:0">
+                Nothing recorded yet. The log fills as the job runs, so this stays empty until the
+                next tick or until you press the button above.
+            </p>
+        <?php else : ?>
+            <table class="widefat striped" style="max-width:1100px;margin-bottom:18px">
+                <thead>
+                    <tr>
+                        <th style="width:110px">Day</th>
+                        <th style="width:90px">Ran at</th>
+                        <th style="width:170px">Started by</th>
+                        <th style="width:80px">Started</th>
+                        <th>What it did</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($days as $day => $entry) : ?>
+                    <?php
+                    $worked  = (int) ($entry['worked'] ?? 0);
+                    $starts  = (int) ($entry['starts'] ?? 0);
+                    $ran_at  = (string) ($entry['ran_at'] ?? '');
+                    $stamp   = $ran_at ? strtotime($ran_at) : false;
+                    ?>
+                    <tr>
+                        <td><?php echo esc_html((string) $day); ?></td>
+                        <td><?php echo $stamp ? esc_html(date_i18n('H:i', $stamp)) : '&mdash;'; ?></td>
+                        <td>
+                            <?php echo $worked > 0
+                                ? esc_html((string) ($entry['source'] ?? 'unknown'))
+                                : '<span class="description">nothing ran</span>'; ?>
+                        </td>
+                        <td>
+                            <?php echo esc_html((string) $starts); ?>
+                            <?php if ($starts > $worked && $worked > 0) : ?>
+                                <span class="description"
+                                      title="<?php echo esc_attr(sprintf('%d stood down', $starts - $worked)); ?>">
+                                    (<?php echo esc_html((string) ($starts - $worked)); ?> stood down)
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($worked > 0) : ?>
+                                <?php echo esc_html((string) ($entry['summary'] ?? '')); ?>
+                                <?php if ($worked > 1) : ?>
+                                    <br><span class="description">
+                                        Ran <?php echo esc_html((string) $worked); ?> times; this is the last.
+                                    </span>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color:#996800">
+                                    <?php echo esc_html((string) ($entry['note'] ?: 'Started, but did no work.')); ?>
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    <?php endforeach; ?>
+
     <h2>Turn grants</h2>
     <p>
         What each empire holds, when it last received turns, and what the next tick will do for it.
