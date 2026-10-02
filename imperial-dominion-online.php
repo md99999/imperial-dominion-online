@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.18.0
+Version: 2.19.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -24,11 +24,86 @@ See the GNU General Public License for more details. A copy is included in LICEN
 */
 if (!defined('ABSPATH')) exit;
 
-define('IDO_VERSION', '2.18.0');
+/*
+ * A second copy of this plugin, loading after another one.
+ *
+ * This happens for a reason that is nobody's fault: GitHub's Download ZIP button
+ * produces a folder called imperial-dominion-online-main, and WordPress installs
+ * it under that name. Install the proper release later and the site holds two
+ * plugins, both activatable, with different folder names and no obvious sign
+ * that they are the same thing.
+ *
+ * It does not crash, which is the problem. IDO_PATH is a constant, so the second
+ * copy's define() is ignored and its require_once calls resolve to the first
+ * copy's files, which are already loaded. The second copy quietly becomes inert
+ * and whichever WordPress loaded first is the code that runs -- so a game master
+ * can install a release to fix something, see the old behaviour continue, and
+ * have nothing to go on.
+ *
+ * So it says so, and stops. Returning here is what keeps it harmless: without it
+ * this file would re-register every hook against the other copy's paths.
+ */
+if (defined('IDO_VERSION')) {
+    $GLOBALS['ido_extra_copies'][] = plugin_dir_path(__FILE__);
+
+    if (!function_exists('ido_notice_extra_copies')) {
+        function ido_notice_extra_copies(): void {
+            if (!current_user_can('activate_plugins')) return;
+
+            $copies = array_unique((array) ($GLOBALS['ido_extra_copies'] ?? []));
+            if (!$copies) return;
+
+            echo '<div class="notice notice-error"><p><strong>'
+                . 'Imperial Dominion Online is installed more than once.</strong></p>';
+            echo '<p>The copy actually running is the one in <code>'
+                . esc_html(IDO_PATH) . '</code>, version ' . esc_html(IDO_VERSION)
+                . '. These are also active and are doing nothing:</p><ul style="list-style:disc;margin-left:22px">';
+            foreach ($copies as $copy) {
+                echo '<li><code>' . esc_html($copy) . '</code></li>';
+            }
+            echo '</ul><p>Deactivate and delete the ones you do not want, under '
+                . '<a href="' . esc_url(admin_url('plugins.php')) . '">Plugins</a>. '
+                . 'Until then, changes you install may appear to do nothing, because the '
+                . 'copy you updated may not be the copy that is running.</p></div>';
+        }
+        add_action('admin_notices', 'ido_notice_extra_copies');
+    }
+    return;
+}
+
+define('IDO_VERSION', '2.19.0');
 define('IDO_DB_VERSION', '14');   // 14: leagues.resync_required and its note
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
 define('IDO_URL', plugin_dir_url(__FILE__));
+
+/*
+ * Installed from a repository archive rather than a release.
+ *
+ * Told plainly in the admin, because the people most likely to do this are the
+ * ones least likely to have read the README that explains it. tests/ is the
+ * marker: no release has ever contained it, and it is the directory with the
+ * most business not being in a webroot.
+ */
+if (is_admin() && is_dir(IDO_PATH . 'tests')) {
+    add_action('admin_notices', static function (): void {
+        if (!current_user_can('activate_plugins')) return;
+
+        $extra = array_filter(['tests', 'tools', 'docs'],
+            static fn($dir) => is_dir(IDO_PATH . $dir));
+
+        echo '<div class="notice notice-warning"><p><strong>'
+            . 'Imperial Dominion Online was installed from a source archive, not a release.</strong></p>';
+        echo '<p>These directories are not part of the plugin and are sitting in your site, '
+            . 'where nothing needs them: <code>'
+            . implode('</code>, <code>', array_map('esc_html', $extra))
+            . '</code>. Nothing in them will run &mdash; they refuse to execute outside a command '
+            . 'line &mdash; but they are readable, and the rest is dead weight.</p>';
+        echo '<p>You can delete them where they sit, or replace this with a built release. '
+            . 'If a <code>.git</code> directory came with it, delete that first: it holds every '
+            . 'version of every file the project has ever had.</p></div>';
+    });
+}
 
 require_once IDO_PATH . 'includes/class-ido-core.php';
 require_once IDO_PATH . 'includes/class-ido-installer.php';
