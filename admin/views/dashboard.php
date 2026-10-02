@@ -17,6 +17,34 @@ $pages_made = is_array($page_ids) ? count($page_ids) : 0;
         </div>
     <?php endif; ?>
 
+    <?php $ido_issues = IDO_Health::issues(); ?>
+    <h2>Install health</h2>
+    <div class="card" style="max-width:860px;padding:4px 16px 12px<?php echo $ido_issues ? ';border-left:4px solid #d63638' : ''; ?>">
+        <p class="description">
+            How this copy was installed, and whether that will cause trouble later. Running from
+            <code><?php echo esc_html(IDO_Health::folder()); ?></code>.
+        </p>
+        <?php if (!$ido_issues) : ?>
+            <p><strong>Nothing to report.</strong> The plugin is in the folder updates expect, there is
+            only one copy of it, and no repository furniture is sitting in your site.</p>
+        <?php else : ?>
+            <?php foreach ($ido_issues as $issue) : ?>
+                <h3 style="margin-bottom:4px;color:<?php echo $issue['level'] === 'error' ? '#d63638' : '#996800'; ?>">
+                    <?php echo esc_html($issue['title']); ?>
+                </h3>
+                <?php
+                // Built in IDO_Health, which escapes every value it interpolates;
+                // the tags around them are the point of it being HTML.
+                echo $issue['body'];
+                ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        <p class="description">
+            Building an installable zip from a checkout is covered in the plugin's
+            <code>README.md</code>, under <em>Building the installable zip</em>.
+        </p>
+    </div>
+
     <h2>Where the game stands</h2>
     <table class="widefat striped" style="max-width:760px">
         <tbody>

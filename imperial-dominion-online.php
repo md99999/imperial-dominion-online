@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.19.2
+Version: 2.20.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -44,99 +44,25 @@ if (!defined('ABSPATH')) exit;
  * this file would re-register every hook against the other copy's paths.
  */
 if (defined('IDO_VERSION')) {
-    $GLOBALS['ido_extra_copies'][] = plugin_dir_path(__FILE__);
-
-    if (!function_exists('ido_notice_extra_copies')) {
-        function ido_notice_extra_copies(): void {
-            if (!current_user_can('activate_plugins')) return;
-
-            $copies = array_unique((array) ($GLOBALS['ido_extra_copies'] ?? []));
-            if (!$copies) return;
-
-            echo '<div class="notice notice-error"><p><strong>'
-                . 'Imperial Dominion Online is installed more than once.</strong></p>';
-            echo '<p>The copy actually running is the one in <code>'
-                . esc_html(IDO_PATH) . '</code>, version ' . esc_html(IDO_VERSION)
-                . '. These are also active and are doing nothing:</p><ul style="list-style:disc;margin-left:22px">';
-            foreach ($copies as $copy) {
-                echo '<li><code>' . esc_html($copy) . '</code></li>';
-            }
-            echo '</ul><p>Deactivate and delete the ones you do not want, under '
-                . '<a href="' . esc_url(admin_url('plugins.php')) . '">Plugins</a>. '
-                . 'Until then, changes you install may appear to do nothing, because the '
-                . 'copy you updated may not be the copy that is running.</p></div>';
-        }
-        add_action('admin_notices', 'ido_notice_extra_copies');
-    }
+    // A second copy, loading after another one. It cannot simply carry on:
+    // IDO_PATH is already defined, so its requires would resolve to the other
+    // copy's files and its hooks would register against the other copy's paths.
+    //
+    // It does not warn here. IDO_Health finds a second copy by looking at
+    // wp-content/plugins, which catches one that is merely installed as well as
+    // one that is running, and says so where an administrator is already
+    // looking. All this has to do is stand down.
     return;
 }
 
-define('IDO_VERSION', '2.19.2');
+define('IDO_VERSION', '2.20.0');
 define('IDO_DB_VERSION', '14');   // 14: leagues.resync_required and its note
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
 define('IDO_URL', plugin_dir_url(__FILE__));
 
-/*
- * Installed from a repository archive rather than a release.
- *
- * Said plainly in the admin, on every screen, because the people most likely to
- * install a source archive are the ones least likely to have read the page that
- * explains why not to.
- *
- * Every marker is looked for rather than assumed from one of them. An earlier
- * version keyed the whole notice on tests/ and only *mentioned* .git in the
- * wording, which left the most dangerous directory of the four as the one thing
- * nobody actually checked for -- and it is the one that can be there on its own,
- * because deleting the test suite by hand is exactly what a tidy-minded person
- * does before thinking about the dot-directory they cannot see in their file
- * manager.
- */
-if (is_admin()) {
-    $ido_strays = array_values(array_filter(
-        ['.git', 'tests', 'tools', 'docs'],
-        static fn($dir) => is_dir(IDO_PATH . $dir)
-    ));
-
-    if ($ido_strays) {
-        add_action('admin_notices', static function () use ($ido_strays): void {
-            if (!current_user_can('activate_plugins')) return;
-
-            // .git is a different order of problem from a stray test suite: it
-            // holds every version of every file ever committed, including any
-            // that were committed by mistake and removed later.
-            $has_git = in_array('.git', $ido_strays, true);
-
-            echo '<div class="notice notice-' . ($has_git ? 'error' : 'warning') . '"><p><strong>'
-                . 'Imperial Dominion Online was installed from a source archive, not a release.'
-                . '</strong></p>';
-
-            echo '<p>No part of the plugin needs these, and they are sitting in your site at '
-                . '<code>' . esc_html(IDO_PATH) . '</code>: <code>'
-                . implode('</code>, <code>', array_map('esc_html', $ido_strays))
-                . '</code>.</p>';
-
-            if ($has_git) {
-                echo '<p><strong>Delete <code>.git</code> first.</strong> It holds every version of '
-                    . 'every file the project has ever had, and on a web server that is not '
-                    . 'configured to refuse it, anybody can read the lot.</p>';
-            }
-
-            // "The rest" only means something when there is a rest: .git can be
-            // the only stray, and usually is once somebody has tidied by hand.
-            if (count($ido_strays) > ($has_git ? 1 : 0)) {
-                echo '<p>The others will not run &mdash; every file in them refuses to execute '
-                    . 'outside a command line &mdash; but they are readable and they are dead '
-                    . 'weight.</p>';
-            }
-
-            echo '<p>Delete them where they sit, or replace this install with a built release, '
-                . 'which contains none of them.</p></div>';
-        });
-    }
-}
-
 require_once IDO_PATH . 'includes/class-ido-core.php';
+require_once IDO_PATH . 'includes/class-ido-health.php';
 require_once IDO_PATH . 'includes/class-ido-installer.php';
 require_once IDO_PATH . 'includes/class-ido-menu.php';
 require_once IDO_PATH . 'includes/data/class-ido-buildings.php';

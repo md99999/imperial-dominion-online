@@ -10,6 +10,7 @@ class IDO_Admin {
     const CAP = 'manage_options';
 
     public static function init(): void {
+        add_action('admin_notices', ['IDO_Health', 'notice']);
         add_action('admin_menu', [__CLASS__, 'menu']);
         add_action('admin_post_ido_admin', [__CLASS__, 'handle']);
     }
