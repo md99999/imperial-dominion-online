@@ -6,6 +6,7 @@
  * not that it renames, but what it refuses to touch: a title an administrator
  * chose themselves, and a page it has already handled once.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 define('IDO_DB_VERSION', '1.0');
 

@@ -7,6 +7,7 @@
  * against a real database in tests/integration-queue.php, because a race is not
  * something a stub can prove anything about.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 function wp_rand($min = 0, $max = 1) { return $GLOBALS['ido_forced_roll'] ?? random_int($min, $max); }

@@ -5,6 +5,7 @@
  * The arithmetic is the easy part. What matters is who qualifies, so most of
  * this is about the two gates: standing, and the size of the board.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 function number_format_i18n($n, $d = 0) { return number_format((float) $n, $d); }

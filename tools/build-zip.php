@@ -44,7 +44,12 @@ $dest = rtrim(str_replace('\\', '/', $out_dir), '/') . '/' . $name . '-' . $vers
 // where tooling puts its working directories, and one of them, .claude, can
 // hold an entire second checkout of this plugin in a git worktree. Listing
 // only the dotted names known at the time silently shipped that copy.
-$skip = ['tests', 'tools'];
+// docs/ is design documentation, never read at runtime, and about half the
+// weight of the archive. It also publishes a maintained list of this design's
+// unanswered gaps and the name of the constant that turns off the SSRF guard,
+// which is fine in a repository somebody has gone looking for and needless on
+// every installation at a guessable URL. README.md ships; the rest is on GitHub.
+$skip = ['tests', 'tools', 'docs'];
 $is_furniture = static function (string $relative) use ($skip): bool {
     $top = explode('/', $relative)[0];
     return $top !== '' && ($top[0] === '.' || in_array($top, $skip, true));

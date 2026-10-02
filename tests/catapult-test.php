@@ -10,6 +10,7 @@
  * catapult is worked by legionnaires, so one with nobody on it counts for
  * nothing, however many an empire has paid for.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 function number_format_i18n($n, $d = 0) { return number_format((float) $n, $d); }

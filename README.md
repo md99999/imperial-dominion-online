@@ -75,6 +75,10 @@ it off.
 
 ## Installing
 
+**Install the built zip, not the repository.** A zip of the whole repository will run, but it
+carries the test suite, the build tool and about twice the files it needs. Download a release, or
+build one yourself with the two commands below.
+
 1. Copy this folder into `wp-content/plugins/` and activate **Imperial Dominion Online**.
    Activation creates the tables, writes the default settings and opens **Round 1**.
 2. Go to **Imperial Dominion &rarr; Dashboard** and press **Create any missing game pages**.
@@ -88,6 +92,46 @@ it off.
    from the page list, since the game carries its own navigation on every screen.
 4. On a quiet site, set up a real cron (see **Maintenance** below). WP-Cron only fires when
    somebody visits, which is no good for a game where turns arrive at midnight.
+
+### Building the installable zip
+
+The archive is built from a checkout by one script, which reads the version straight out of the
+plugin header so an archive can never claim a version the code does not carry:
+
+```
+php tools/build-zip.php
+```
+
+It writes `imperial-dominion-online-<version>.zip` beside the checkout, or into a directory you
+name as the first argument. It needs PHP's `zip` extension, which some builds ship without
+enabling:
+
+```
+php -d extension=php_zip.dll tools/build-zip.php
+```
+
+**What it leaves out**, and why each one matters if you ever package this by hand instead:
+
+| Left out | Reason |
+| --- | --- |
+| `tests/` | The suite, including tests that create and drop real tables |
+| `tools/` | This script; nothing in it belongs on a live site |
+| `docs/` | Design documentation, never read at runtime, about half the weight |
+| Anything starting with `.` | `.git`, `.gitignore`, and tooling directories such as `.claude`, which can hold an entire second checkout in a git worktree |
+
+That last rule is deliberately a rule rather than a list. Naming the dotted directories known at
+the time is how a whole second copy of the plugin once shipped inside an archive.
+
+Everything that remains is needed at runtime: `sql/` is read when the tables are created,
+`maintenance/` holds the CLI entry points a server cron calls, and `README.md`, `SECURITY.md` and
+`LICENSE` are what a plugin is expected to carry.
+
+### If you install the repository anyway
+
+Nothing is reachable over the web that should not be. Every PHP file in the plugin refuses to run
+unless WordPress loaded it, every file under `tests/` and `tools/` refuses to run unless it was
+started from a command line, and `uninstall.php` runs only during an uninstall. The cost of
+installing a repository zip is weight and clutter, not exposure.
 
 ### The pages
 

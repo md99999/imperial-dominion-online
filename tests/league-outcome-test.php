@@ -8,6 +8,7 @@
  * difference no player could see or influence. This is the rule that stops that,
  * so it is worth being exact about where it starts and stops.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 class IDO_Game { const MAX_VALUE = 9000000000000000;

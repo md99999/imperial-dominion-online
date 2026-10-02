@@ -236,7 +236,9 @@ if ($invite) delete_transient('ido_league_invitation');
         <p class="description" style="max-width:46em">
             The hub has to be able to reach this site over HTTPS for step one to work, which means incoming
             packets must be switched on under Settings. On two sites on one machine it also means the
-            development allowance described in <code>docs/TWO-SITE-TESTING.md</code>.
+            development allowance described in <code>docs/TWO-SITE-TESTING.md</code> in the
+            <a href="https://github.com/md99999/imperial-dominion-online/blob/main/docs/TWO-SITE-TESTING.md"
+               target="_blank" rel="noopener noreferrer">source repository</a>.
         </p>
     <?php endif; ?>
 

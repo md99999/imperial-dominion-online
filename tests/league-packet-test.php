@@ -13,6 +13,7 @@
  * been inert anyway: nothing from a packet is executed, and there is no shell,
  * eval or unserialize anywhere in the plugin for it to reach.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 function wp_json_encode($data) { return json_encode($data); }

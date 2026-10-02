@@ -6,6 +6,7 @@
  * directions and a rounding error here is a slow leak of troops or gold that
  * nobody would notice until the numbers stopped adding up.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 require __DIR__ . '/../includes/league/class-ido-league-share.php';

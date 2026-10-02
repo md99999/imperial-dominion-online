@@ -6,6 +6,7 @@
  * proving: that the default keeps every table, and that the opt-in really does
  * remove them.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('WP_UNINSTALL_PLUGIN', true);
 
 $fails = 0;

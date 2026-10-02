@@ -14,6 +14,7 @@
  * goes. And that none of it assumes the wp_ prefix, since a site may have been
  * installed on any prefix at all, and hardening one is common advice.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 define('IDO_PATH', dirname(__DIR__) . '/');
 define('IDO_DB_VERSION', 'test');

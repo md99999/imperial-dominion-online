@@ -6,6 +6,7 @@
  * Everything else in Phase 2 is built on these, so they are tested first and
  * tested for what they refuse rather than for what they accept.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 
 function wp_json_encode($data) { return json_encode($data); }

@@ -3,6 +3,7 @@
  * Loads the plugin with WordPress stubbed out, to catch fatals that happen at
  * include time or on the activation path.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 define('MINUTE_IN_SECONDS', 60);
 define('HOUR_IN_SECONDS', 3600);

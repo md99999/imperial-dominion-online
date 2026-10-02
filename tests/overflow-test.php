@@ -2,6 +2,7 @@
 /**
  * Tries to make the score go negative, the way the old BRE exploit did.
  */
+if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 define('ABSPATH', __DIR__ . '/');
 function number_format_i18n($n, $d = 0) { return number_format((float) $n, $d); }
 function esc_html($s) { return $s; }
