@@ -110,6 +110,19 @@ enabling:
 php -d extension=php_zip.dll tools/build-zip.php
 ```
 
+**If `php` is not on your PATH**, which is usual on Windows and on any machine where PHP came
+bundled with something else rather than being installed on its own, call the binary by its full
+path. Local (Flywheel) keeps one per PHP version, so the version number in the path changes as
+Local updates:
+
+```
+"C:/Users/<you>/AppData/Roaming/Local/lightning-services/php-8.2.29+0/bin/win64/php.exe"     -d extension=php_zip.dll tools/build-zip.php
+```
+
+XAMPP keeps its binary at `C:/xampp/php/php.exe`, and MAMP under
+`/Applications/MAMP/bin/php/php<version>/bin/php`. Any PHP 7.4 or later will do: the script only
+reads files and writes a zip, so it does not need the version the plugin runs on.
+
 **What it leaves out**, and why each one matters if you ever package this by hand instead:
 
 | Left out | Reason |
@@ -128,10 +141,30 @@ Everything that remains is needed at runtime: `sql/` is read when the tables are
 
 ### If you install the repository anyway
 
-Nothing is reachable over the web that should not be. Every PHP file in the plugin refuses to run
-unless WordPress loaded it, every file under `tests/` and `tools/` refuses to run unless it was
-started from a command line, and `uninstall.php` runs only during an uninstall. The cost of
-installing a repository zip is weight and clutter, not exposure.
+No code runs that should not. Every PHP file in the plugin refuses to run unless WordPress loaded
+it, every file under `tests/` and `tools/` refuses to run unless it was started from a command
+line, and `uninstall.php` runs only during an uninstall. Those guards are plain PHP and work on
+every server.
+
+What a repository archive adds is **readable files**, not runnable ones: the design docs, the
+schema, and -- if you archived your own working copy rather than using GitHub's download button --
+the whole `.git` directory, which holds every version of every file ever committed.
+
+Two things in the plugin push back on that:
+
+- **`index.php`** in every directory, so a listing shows nothing wherever the host leaves indexing
+  on. Plain files, so this works everywhere.
+- **`.htaccess`** at the plugin root, which returns 404 for any path inside a dot-directory and for
+  `.sql`, `.md` and similar readable files.
+
+`.htaccess` is Apache and LiteSpeed only. **nginx ignores it entirely**, and on nginx the schema
+and the docs in a repository archive stay readable. It uses only `mod_alias` directives, which
+need just the `FileInfo` override, deliberately: `Options -Indexes` and `<FilesMatch>` with
+`Require` both need overrides a host may not grant, and where it does not the result is a 500 on
+every request rather than a rule that quietly does nothing.
+
+None of which is a substitute for installing the built zip, which simply does not contain any of
+it.
 
 ### The pages
 

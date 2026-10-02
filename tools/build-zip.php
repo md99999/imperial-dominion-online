@@ -50,7 +50,14 @@ $dest = rtrim(str_replace('\\', '/', $out_dir), '/') . '/' . $name . '-' . $vers
 // which is fine in a repository somebody has gone looking for and needless on
 // every installation at a guessable URL. README.md ships; the rest is on GitHub.
 $skip = ['tests', 'tools', 'docs'];
-$is_furniture = static function (string $relative) use ($skip): bool {
+
+// One dotted file does belong in a release: .htaccess hardens the installed
+// directory on Apache, and the blanket dot rule below would otherwise drop the
+// one piece of furniture that is not furniture.
+$keep = ['.htaccess'];
+
+$is_furniture = static function (string $relative) use ($skip, $keep): bool {
+    if (in_array($relative, $keep, true)) return false;
     $top = explode('/', $relative)[0];
     return $top !== '' && ($top[0] === '.' || in_array($top, $skip, true));
 };

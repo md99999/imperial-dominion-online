@@ -1,0 +1,51 @@
+# Imperial Dominion Online
+#
+# Defence in depth for the plugin directory, and nothing more than that.
+#
+# This file works on Apache and LiteSpeed. **nginx ignores it completely**, so
+# nothing here may ever be the only thing between a request and something that
+# matters. What actually keeps the plugin safe works on every server: every PHP
+# file refuses to run unless WordPress loaded it, every file under tests/ and
+# tools/ refuses to run unless a command line started it, and uninstall.php runs
+# only during an uninstall.
+#
+# What this is for is the installation nobody planned: a zip of the repository
+# rather than a built release. That carries the test suite and the design docs,
+# and if somebody archived their own working copy rather than using GitHub's
+# download button, the entire .git directory with every version of every file
+# that was ever committed.
+#
+# Two deliberate omissions:
+#
+# "Options -Indexes" is not here. On a host that allows .htaccess but not
+# Options, it returns 500 for the whole plugin, which is a worse failure than
+# the directory listing it would have prevented. The index.php files in every
+# directory do that job instead and behave the same on every server.
+#
+# <FilesMatch> with Require or Deny is not here either, for the same class of
+# reason: those need AllowOverride to grant Limit or AuthConfig, and where it
+# does not, the result is 500 on every request rather than a rule that quietly
+# does nothing. Everything below is mod_alias, which needs only FileInfo, the
+# one override class a host that allows .htaccess at all almost always grants.
+
+<IfModule mod_alias.c>
+
+    # Anything inside a dot-directory, .git above all.
+    #
+    # A path rule rather than a filename rule, because the files inside .git are
+    # named "config", "HEAD" and "index": no rule matching dotted *filenames*
+    # would catch a single one of them. Matching a dot straight after a slash
+    # catches the directory and everything beneath it, and cannot match an
+    # ordinary path, because a normal URL never has one.
+    RedirectMatch 404 /\.
+
+    # Readable text that is not meant to be served: the schema, the
+    # documentation, and any tooling manifest or editor leftover.
+    #
+    # The schema is the one with any weight. It is public on GitHub, so it is no
+    # secret, but it names every table and column, which is the first thing
+    # worth having if an injection point ever turned up, and there is no reason
+    # to hand it to anyone who asks.
+    RedirectMatch 404 \.(sql|md|json|ya?ml|lock|dist|ini|log|sh|bak|orig|rej|swp)$
+
+</IfModule>
