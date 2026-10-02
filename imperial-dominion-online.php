@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.19.0
+Version: 2.19.1
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -71,7 +71,7 @@ if (defined('IDO_VERSION')) {
     return;
 }
 
-define('IDO_VERSION', '2.19.0');
+define('IDO_VERSION', '2.19.1');
 define('IDO_DB_VERSION', '14');   // 14: leagues.resync_required and its note
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
@@ -80,29 +80,60 @@ define('IDO_URL', plugin_dir_url(__FILE__));
 /*
  * Installed from a repository archive rather than a release.
  *
- * Told plainly in the admin, because the people most likely to do this are the
- * ones least likely to have read the README that explains it. tests/ is the
- * marker: no release has ever contained it, and it is the directory with the
- * most business not being in a webroot.
+ * Said plainly in the admin, on every screen, because the people most likely to
+ * install a source archive are the ones least likely to have read the page that
+ * explains why not to.
+ *
+ * Every marker is looked for rather than assumed from one of them. An earlier
+ * version keyed the whole notice on tests/ and only *mentioned* .git in the
+ * wording, which left the most dangerous directory of the four as the one thing
+ * nobody actually checked for -- and it is the one that can be there on its own,
+ * because deleting the test suite by hand is exactly what a tidy-minded person
+ * does before thinking about the dot-directory they cannot see in their file
+ * manager.
  */
-if (is_admin() && is_dir(IDO_PATH . 'tests')) {
-    add_action('admin_notices', static function (): void {
-        if (!current_user_can('activate_plugins')) return;
+if (is_admin()) {
+    $ido_strays = array_values(array_filter(
+        ['.git', 'tests', 'tools', 'docs'],
+        static fn($dir) => is_dir(IDO_PATH . $dir)
+    ));
 
-        $extra = array_filter(['tests', 'tools', 'docs'],
-            static fn($dir) => is_dir(IDO_PATH . $dir));
+    if ($ido_strays) {
+        add_action('admin_notices', static function () use ($ido_strays): void {
+            if (!current_user_can('activate_plugins')) return;
 
-        echo '<div class="notice notice-warning"><p><strong>'
-            . 'Imperial Dominion Online was installed from a source archive, not a release.</strong></p>';
-        echo '<p>These directories are not part of the plugin and are sitting in your site, '
-            . 'where nothing needs them: <code>'
-            . implode('</code>, <code>', array_map('esc_html', $extra))
-            . '</code>. Nothing in them will run &mdash; they refuse to execute outside a command '
-            . 'line &mdash; but they are readable, and the rest is dead weight.</p>';
-        echo '<p>You can delete them where they sit, or replace this with a built release. '
-            . 'If a <code>.git</code> directory came with it, delete that first: it holds every '
-            . 'version of every file the project has ever had.</p></div>';
-    });
+            // .git is a different order of problem from a stray test suite: it
+            // holds every version of every file ever committed, including any
+            // that were committed by mistake and removed later.
+            $has_git = in_array('.git', $ido_strays, true);
+
+            echo '<div class="notice notice-' . ($has_git ? 'error' : 'warning') . '"><p><strong>'
+                . 'Imperial Dominion Online was installed from a source archive, not a release.'
+                . '</strong></p>';
+
+            echo '<p>No part of the plugin needs these, and they are sitting in your site at '
+                . '<code>' . esc_html(IDO_PATH) . '</code>: <code>'
+                . implode('</code>, <code>', array_map('esc_html', $ido_strays))
+                . '</code>.</p>';
+
+            if ($has_git) {
+                echo '<p><strong>Delete <code>.git</code> first.</strong> It holds every version of '
+                    . 'every file the project has ever had, and on a web server that is not '
+                    . 'configured to refuse it, anybody can read the lot.</p>';
+            }
+
+            // "The rest" only means something when there is a rest: .git can be
+            // the only stray, and usually is once somebody has tidied by hand.
+            if (count($ido_strays) > ($has_git ? 1 : 0)) {
+                echo '<p>The others will not run &mdash; every file in them refuses to execute '
+                    . 'outside a command line &mdash; but they are readable and they are dead '
+                    . 'weight.</p>';
+            }
+
+            echo '<p>Delete them where they sit, or replace this install with a built release, '
+                . 'which contains none of them.</p></div>';
+        });
+    }
 }
 
 require_once IDO_PATH . 'includes/class-ido-core.php';

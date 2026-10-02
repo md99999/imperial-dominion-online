@@ -50,8 +50,43 @@ if ($is_source) {
         strpos($out, '<code>tests</code>') !== false, 'tests listed in <code>');
     check('the markup is markup, not escaped text',
         strpos($out, '&lt;/code&gt;') === false);
-    check('it says they cannot run', stripos($out, 'refuse to execute') !== false);
-    check('and warns about .git separately', strpos($out, '.git') !== false);
+    check('it says they cannot run', stripos($out, 'refuses to execute') !== false);
+    // The old notice named .git whether or not one was there, which is advice
+    // dressed up as a finding. It is mentioned only when it has been found.
+    check('and says nothing about .git when there is none',
+        is_dir(IDO_PATH . '.git') || strpos($out, '.git') === false);
+}
+
+say('');
+say('=== .git is looked for, not merely mentioned ===');
+// The gap this closes: somebody deletes tests/ tools/ docs/ by hand and leaves
+// the dot-directory their file manager never showed them. Keying the notice on
+// tests/ meant that install said nothing at all.
+$git = IDO_PATH . '.git';
+$made_git = false;
+if (!is_dir($git)) { $made_git = @mkdir($git) && (bool) @file_put_contents($git . '/config', "x
+"); }
+register_shutdown_function(static function () use ($git, $made_git) {
+    if (!$made_git) return;
+    @unlink($git . '/config');
+    @rmdir($git);
+});
+
+if ($made_git) {
+    // Re-evaluate the same way the plugin file does, since it already ran.
+    $found = array_values(array_filter(['.git', 'tests', 'tools', 'docs'],
+        static fn($d) => is_dir(IDO_PATH . $d)));
+    check('.git is among the directories looked for', in_array('.git', $found, true),
+        implode(', ', $found));
+    check('and the plugin file looks for it by name',
+        strpos(file_get_contents(IDO_FILE), "['.git', 'tests', 'tools', 'docs']") !== false);
+    check('and treats it as the serious one',
+        strpos(file_get_contents(IDO_FILE), 'Delete <code>.git</code> first') !== false);
+} else {
+    say('  (could not create a .git directory here; skipped)');
+}
+
+if ($is_source) {
 } else {
     check('a built release shows no such warning',
         strpos($out, 'installed from a source archive') === false);
