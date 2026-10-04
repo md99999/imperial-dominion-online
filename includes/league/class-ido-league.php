@@ -217,8 +217,10 @@ class IDO_League {
     public static function install_tables(): void {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        $sql = file_get_contents(IDO_PATH . 'sql/league.sql');
-        if ($sql === false) return;
+        // PHP rather than a .sql file, so the schema is not a readable document
+        // in the web root. See the note at the top of sql/league.php.
+        $sql = require IDO_PATH . 'sql/league.php';
+        if (!is_string($sql) || $sql === '') return;
         dbDelta(str_replace(
             ['{prefix}', '{charset_collate}'],
             [$wpdb->prefix, $wpdb->get_charset_collate()],

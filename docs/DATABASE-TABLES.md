@@ -1,7 +1,7 @@
 # Database tables
 
 All tables use the site's `$wpdb->prefix` followed by `ido_`. They are created by
-`sql/install.sql` through `dbDelta()` and dropped by `uninstall.php`.
+`sql/install.php` through `dbDelta()` and dropped by `uninstall.php`.
 
 | Table | Holds |
 | --- | --- |
@@ -17,7 +17,7 @@ All tables use the site's `$wpdb->prefix` followed by `ido_`. They are created b
 
 ## League tables
 
-Created from `sql/league.sql` only when a site opts in to league play, so a site that never does
+Created from `sql/league.php` only when a site opts in to league play, so a site that never does
 carries none of them. Leaving a league keeps them, and the record in them; they are dropped when an
 administrator opts out and chooses to drop them, or by `uninstall.php` with the delete setting on.
 

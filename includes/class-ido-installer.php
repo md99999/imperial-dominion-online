@@ -155,13 +155,19 @@ class IDO_Installer {
         if ($changed) update_option(IDO_Settings::OPTION, $saved);
     }
 
-    /** Runs sql/install.sql through dbDelta, substituting the table prefix. */
+    /**
+     * Runs the schema through dbDelta, substituting the table prefix.
+     *
+     * The schema is returned by a PHP file rather than read from a .sql one, so
+     * that it is not a readable document sitting in the web root. See the note
+     * at the top of sql/install.php.
+     */
     public static function install_schema(): void {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         self::rename_legacy_columns();
-        $sql = file_get_contents(IDO_PATH . 'sql/install.sql');
-        if ($sql === false) return;
+        $sql = require IDO_PATH . 'sql/install.php';
+        if (!is_string($sql) || $sql === '') return;
         $sql = str_replace(
             ['{prefix}', '{charset_collate}'],
             [$wpdb->prefix, $wpdb->get_charset_collate()],

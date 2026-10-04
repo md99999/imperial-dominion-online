@@ -1,3 +1,27 @@
+<?php
+/**
+ * The league schema, as PHP rather than as a .sql file.
+ *
+ * Not a style choice. A .sql file inside wp-content/plugins is readable text,
+ * and a web server will hand it to anybody who asks: every table, column, type
+ * and index. Nothing in it is secret -- the same file is public on GitHub, and
+ * the prefix here is a placeholder rather than this site's real one -- so it is
+ * hygiene rather than a hole. But it is the first thing worth having if an
+ * injection point ever turned up, and there is no reason to serve it.
+ *
+ * The .htaccess this plugin ships refuses it on Apache and LiteSpeed. nginx
+ * never reads .htaccess, and a great many WordPress hosts are nginx, so that
+ * mitigation covers some deployments and silently covers none of the others.
+ * A .php file guarded like every other file here is 0 bytes over HTTP on any
+ * server, which is the only answer that does not depend on who is hosting.
+ *
+ * The text below is byte-for-byte what sql/league.sql contained. A nowdoc is used
+ * rather than a heredoc so that nothing in it is interpolated: the braces are
+ * placeholders the installer substitutes, not PHP.
+ */
+if (!defined('ABSPATH')) exit;
+
+return <<<'IDO_SQL'
 CREATE TABLE {prefix}ido_leagues (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   league_uuid varchar(36) NOT NULL DEFAULT '',
@@ -145,3 +169,4 @@ CREATE TABLE {prefix}ido_league_contributions (
   UNIQUE KEY march_kingdom (march_id,kingdom_id),
   KEY kingdom_id (kingdom_id)
 ) {charset_collate};
+IDO_SQL;
