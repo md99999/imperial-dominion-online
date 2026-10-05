@@ -544,6 +544,11 @@ new empire is founded with 25.
 Every order costs turns, and every turn spent pays out your income at that instant. Turns sitting
 unspent earn nothing at all, which is what keeps the game moving.
 
+**People have to be fed.** A hundred peasants eat 140 grain a turn, so one farmstead feeds about
+two homesteads of people rather than eight. That is what makes the map a decision: population costs
+land that would otherwise have made gold, and an army eats on top of it. Both figures are settings,
+and lowering the appetite turns farms back into an afterthought.
+
 **Land and buildings.** Send settlers to claim wilderness, then raise buildings on it. The bigger
 your empire, the fewer acres a scouting party finds and the more each one costs, until taking land
 from a neighbour is cheaper than settling it. Building orders finish on the daily tick.
@@ -555,7 +560,7 @@ by the economy, the guide and the admin alike.
 | Building | What it does |
 | --- | --- |
 | Homesteads | House 30 peasants each, and peasants pay the taxes |
-| Farmsteads | 85 grain a turn |
+| Farmsteads | 85 grain a turn. One feeds about two homesteads of people |
 | Mints | 60 gold a turn |
 | Foundries | 25 iron a turn |
 | Barracks | Trim up to 35% from the gold price of training |

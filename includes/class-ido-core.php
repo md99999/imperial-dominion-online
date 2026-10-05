@@ -119,6 +119,17 @@ class IDO_Settings {
             // Gold per hundred peasants per turn. Held per hundred because a
             // setting is a whole number and the rate is not: 55 means 0.55 each.
             'tax_per_100_peasants'   => 55,
+            // Grain a hundred peasants eat each turn. This is the dial that
+            // decides whether feeding your people is a decision or an
+            // afterthought, and it used to be fixed at 35.
+            //
+            // At 35, one farmstead fed eight homesteads of people, so a ruler
+            // needed one field for every eight villages and could spend the rest
+            // of the map on mints. There was no choice to make. At 140 a
+            // farmstead feeds two homesteads, so population has to be paid for
+            // in land that would otherwise have made gold -- and growing it
+            // costs more of both.
+            'grain_per_100_peasants' => 140,
             // A night's produce, granted on the daily tick without a turn being
             // spent. 0 keeps the old rule that nothing arrives unless a ruler
             // spends a turn on it. 1 means every empire wakes up with one turn's

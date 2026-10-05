@@ -11,7 +11,6 @@ class IDO_Economy {
     // PEASANTS_PER_HOMESTEAD and TAX_PER_PEASANT used to live here. They are
     // settings now (homestead_capacity, tax_per_100_peasants) and leaving the
     // constants behind would have left two numbers claiming to be the same one.
-    const GRAIN_PER_PEASANT      = 0.35;
     const GOLD_UPKEEP_PER_BUILDING = 6;
     const GROWTH_RATE            = 0.015;
     const DECLINE_RATE           = 0.01;
@@ -38,7 +37,8 @@ class IDO_Economy {
         $gold_in    = $peasants * $tax + (int) ($yield['gold'] ?? 0);
         $gold_out   = $buildings * self::GOLD_UPKEEP_PER_BUILDING;
         $grain_in   = (int) ($yield['grain'] ?? 0);
-        $grain_out  = $peasants * self::GRAIN_PER_PEASANT + IDO_Units::upkeep($kingdom)
+        $appetite   = IDO_Settings::int('grain_per_100_peasants') / 100;
+        $grain_out  = $peasants * $appetite + IDO_Units::upkeep($kingdom)
             + IDO_Weapons::upkeep($kingdom);
 
         $capacity = self::peasant_capacity($kingdom);

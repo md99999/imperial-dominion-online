@@ -121,6 +121,33 @@ IDO_Settings::update(['mint_gold_yield' => 60, 'farmstead_grain_yield' => 85,
                       'tax_per_100_peasants' => 55]);
 
 say('');
+say('=== feeding people is a decision ===');
+IDO_Settings::update(['grain_per_100_peasants' => 140, 'farmstead_grain_yield' => 85,
+                      'homestead_capacity' => 30]);
+$fed = IDO_Economy::per_turn(IDO_Kingdom::find($me));
+check('peasants eat what the setting says',
+    $fed['grain_out'] >= 3000 * 1.4, IDO_Game::fmt($fed['grain_out']));
+
+// The ratio is the whole point: a farmstead should feed about two homesteads,
+// not eight, or a ruler builds one field and spends the rest of the map on gold.
+$per_home = IDO_Settings::int('homestead_capacity') * (IDO_Settings::int('grain_per_100_peasants') / 100);
+$ratio = IDO_Settings::int('farmstead_grain_yield') / max(1, $per_home);
+check('one farmstead feeds about two homesteads, not eight',
+    $ratio > 1.5 && $ratio < 3.0, sprintf('%.1f homesteads', $ratio));
+
+IDO_Settings::update(['grain_per_100_peasants' => 35]);
+$cheap = IDO_Economy::per_turn(IDO_Kingdom::find($me));
+check('lowering it makes farms an afterthought again',
+    $cheap['grain'] > $fed['grain'],
+    IDO_Game::fmt($fed['grain']) . ' -> ' . IDO_Game::fmt($cheap['grain']));
+IDO_Settings::update(['grain_per_100_peasants' => 140]);
+
+check('an army eats on top of the people',
+    IDO_Economy::per_turn((object) array_merge((array) IDO_Kingdom::find($me),
+        ['u_centurion' => 5000]))['grain_out'] > $fed['grain_out'],
+    'centurions counted');
+
+say('');
 say('=== the nightly produce ===');
 $before = IDO_Kingdom::find($me);
 check('off by default, nothing comes',

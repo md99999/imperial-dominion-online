@@ -10,7 +10,7 @@ $groups = [
     'A new empire' => ['starting_land', 'starting_gold', 'starting_grain', 'starting_iron',
         'starting_peasants', 'starting_pawns', 'starting_legionnaires', 'protection_hours'],
     'The economy' => ['mint_gold_yield', 'farmstead_grain_yield', 'foundry_iron_yield',
-        'homestead_capacity', 'tax_per_100_peasants', 'daily_yield_turns'],
+        'homestead_capacity', 'tax_per_100_peasants', 'grain_per_100_peasants', 'daily_yield_turns'],
     'Land and building' => ['explore_base_acres', 'build_gold_per_acre', 'build_iron_per_acre', 'build_days', 'demolish_refund_percent'],
     'Siege weapons' => ['catapult_gold_cost', 'catapult_iron_cost', 'catapult_crew', 'catapult_capture_percent', 'catapult_destroy_percent'],
     'War' => ['target_min_percent', 'target_max_percent', 'max_hits_per_target', 'conquest_land_percent'],
@@ -45,6 +45,12 @@ $help = [
         . 'and population pays the taxes, so it is the quietest lever on the whole economy.',
     'tax_per_100_peasants'   => 'Gold a hundred peasants pay each turn. 55 means 0.55 each. Held per '
         . 'hundred because a setting is a whole number and the rate is not.',
+    'grain_per_100_peasants' => 'Grain a hundred peasants eat each turn. 140 means 1.4 each. '
+        . 'This is what makes feeding your people a decision: at 140 one farmstead feeds about two '
+        . 'homesteads of people, so population costs land that would otherwise have made gold. '
+        . 'Lower it and farms become an afterthought; raise it and growth has to be earned. '
+        . 'Raise it on a running board with care, since an empire that cannot feed itself loses '
+        . 'peasants and troops.',
     'daily_yield_turns'      => 'A night\'s produce, granted on the daily tick without a turn being '
         . 'spent. 0 is the original rule: nothing arrives unless a ruler spends a turn on it. 1 means '
         . 'every empire wakes with one turn\'s worth already in the stores, which is the gentlest way '
