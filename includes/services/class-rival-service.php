@@ -145,6 +145,19 @@ class IDO_Rivals {
             $tier = $tiers[$i % count($tiers)];
             if (self::create($round_id, $tier)) $made++;
         }
+
+        // Said out loud. Without this the only way to learn these exist is to
+        // open the War Dept and happen to have one in reach, which is no way to
+        // find out that the map has changed.
+        if ($made > 0) {
+            IDO_Log::news('rival', sprintf(
+                $made === 1
+                    ? 'A province of the old empire still stands without a ruler. Its granaries are unguarded.'
+                    : '%d provinces of the old empire still stand without a ruler. Their granaries are unguarded.',
+                $made
+            ), $round_id);
+        }
+
         return $made;
     }
 

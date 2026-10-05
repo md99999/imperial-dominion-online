@@ -308,6 +308,23 @@ class IDO_Covert {
     }
 
     /** Missions run by or against an empire, newest first. */
+    /**
+     * Whether this empire has had a report brought back on that one.
+     *
+     * Read off the missions already recorded rather than stored anywhere new.
+     * Only a success counts: an agent who was turned away at the wall learned
+     * nothing, and a ruler who paid for silence should not be shown figures.
+     */
+    public static function scouted(object $kingdom, int $target_id): bool {
+        global $wpdb;
+        return (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('ops')
+            . ' WHERE actor_kingdom_id = %d AND target_kingdom_id = %d'
+            . ' AND op_type = %s AND outcome = %s',
+            (int) $kingdom->id, $target_id, 'recon', 'success'
+        )) > 0;
+    }
+
     public static function history(object $kingdom, int $limit = 25): array {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
