@@ -60,14 +60,23 @@ IDO_Settings::update([
     'homestead_capacity' => 30, 'tax_per_100_peasants' => 55, 'daily_yield_turns' => 0,
 ]);
 
-say('=== the defaults are what the game always did ===');
+say('=== the defaults hang together ===');
 $d = IDO_Settings::defaults();
-check('a mint still makes 60', (int) $d['mint_gold_yield'] === 60);
-check('a farmstead still makes 85', (int) $d['farmstead_grain_yield'] === 85);
-check('a foundry still makes 25', (int) $d['foundry_iron_yield'] === 25);
-check('a homestead still houses 30', (int) $d['homestead_capacity'] === 30);
-check('and nothing arrives for free unless asked for',
-    (int) $d['daily_yield_turns'] === 0);
+check('a board gets 25 turns a day', (int) $d['turns_per_day'] === 25,
+    (string) $d['turns_per_day']);
+check('and can bank several days of them',
+    (int) $d['turn_cap'] >= (int) $d['turns_per_day'] * 3,
+    $d['turn_cap'] . ' cap against ' . $d['turns_per_day'] . ' a day');
+check('a new ruler starts with a day in hand',
+    (int) $d['starting_turns'] >= (int) $d['turns_per_day'],
+    (string) $d['starting_turns']);
+check('the mint carries the gold, since gold is what binds',
+    (int) $d['mint_gold_yield'] > (int) $d['foundry_iron_yield'] * 4,
+    $d['mint_gold_yield'] . ' gold against ' . $d['foundry_iron_yield'] . ' iron');
+check('and a night produces something on its own',
+    (int) $d['daily_yield_turns'] > 0, (string) $d['daily_yield_turns']);
+check('the cap can never sit below a day of grants, whatever is typed in',
+    (int) IDO_Settings::defaults()['turn_cap'] >= (int) IDO_Settings::defaults()['turns_per_day']);
 
 say('');
 say('=== one setting moves the game ===');

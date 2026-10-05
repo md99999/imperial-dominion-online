@@ -539,8 +539,8 @@ board stalling between visits, since a ruler who misses a day otherwise returns 
 they left. Upkeep and appetite are charged as on any turn, so an empire that cannot feed itself
 still will not, and neither barbarians nor disasters are rolled on a night nobody ordered.
 
-**Turns are the currency.** You are granted 10 turns a day (configurable), stored up to 30, and a new
-empire is founded with 15.
+**Turns are the currency.** You are granted 25 turns a day (configurable), stored up to 100, and a
+new empire is founded with 25.
 Every order costs turns, and every turn spent pays out your income at that instant. Turns sitting
 unspent earn nothing at all, which is what keeps the game moving.
 

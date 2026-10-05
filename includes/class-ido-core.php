@@ -76,13 +76,21 @@ class IDO_Settings {
             // Blank means "name it after the WordPress site": see IDO_Game::dominion().
             'dominion_name'          => '',
             // Turns
-            'turns_per_day'          => 10,
+            // 25 a day, which is what this kind of game has always given. It
+            // is also the quietest lever on the whole economy: income is paid
+            // per turn spent, so this multiplies what a board earns in a day
+            // without changing what anything costs -- an order of any size
+            // costs one turn either way.
+            'turns_per_day'          => 25,
             // Three days' worth: enough to forgive a weekend away, not enough
             // to bank a fortnight and spend it in one sitting.
-            'turn_cap'               => 30,
+            // Four days of banking. A cap of thirty against twenty-five a day
+            // would start throwing turns away before a ruler had missed two
+            // days, which punishes a weekend rather than idleness.
+            'turn_cap'               => 100,
             // What an empire is founded with, so a new ruler has more than one
             // day's worth to learn the game with on their first sitting.
-            'starting_turns'         => 15,
+            'starting_turns'         => 25,
             'attack_turn_cost'       => 2,
             'op_turn_cost'           => 1,
             // Starting empire
@@ -99,7 +107,12 @@ class IDO_Settings {
             // a bare number inside the economy -- so changing one changed what
             // the game said without changing what it did. They are one number
             // now, and this is it.
-            'mint_gold_yield'        => 60,
+            // Gold is the binding constraint and iron is not: measured on a
+            // played empire, a day's gold bought 132 acres of building and a
+            // day's iron bought 1,041. So the mint moves and the foundry does
+            // not. Doubled rather than tripled, because twenty-five turns a day
+            // has already multiplied what a board earns.
+            'mint_gold_yield'        => 120,
             'farmstead_grain_yield'  => 85,
             'foundry_iron_yield'     => 25,
             'homestead_capacity'     => 30,
@@ -110,7 +123,10 @@ class IDO_Settings {
             // spent. 0 keeps the old rule that nothing arrives unless a ruler
             // spends a turn on it. 1 means every empire wakes up with one turn's
             // worth already in the stores.
-            'daily_yield_turns'      => 0,
+            // Two turns' produce overnight. A turn-based game where nothing
+            // arrives unless a turn is spent means a ruler who misses a day
+            // returns to exactly what they left; this is the floor under that.
+            'daily_yield_turns'      => 2,
             'starting_land'          => 250,
             'starting_gold'          => 75000,
             'starting_grain'         => 40000,
