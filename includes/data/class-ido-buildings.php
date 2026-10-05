@@ -28,26 +28,38 @@ class IDO_Buildings {
             'homestead' => [
                 'label'   => 'Homestead',
                 'plural'  => 'Homesteads',
-                'effect'  => 'Houses 30 peasants. Peasants pay your taxes, so homesteads set the ceiling on every other income.',
-                'yield'   => ['peasant_capacity' => 30],
+                'effect'  => sprintf(
+                    'Houses %s peasants. Peasants pay your taxes, so homesteads set the ceiling on every other income.',
+                    IDO_Game::fmt(IDO_Settings::int('homestead_capacity'))
+                ),
+                'yield'   => ['peasant_capacity' => IDO_Settings::int('homestead_capacity')],
             ],
             'farmstead' => [
                 'label'   => 'Farmstead',
                 'plural'  => 'Farmsteads',
-                'effect'  => 'Produces 85 grain a turn. Grain feeds your peasants and your army; run out and both start to desert.',
-                'yield'   => ['grain' => 85],
+                'effect'  => sprintf(
+                    'Produces %s grain a turn. Grain feeds your peasants and your army; run out and both start to desert.',
+                    IDO_Game::fmt(IDO_Settings::int('farmstead_grain_yield'))
+                ),
+                'yield'   => ['grain' => IDO_Settings::int('farmstead_grain_yield')],
             ],
             'mint' => [
                 'label'   => 'Mint',
                 'plural'  => 'Mints',
-                'effect'  => 'Produces 60 gold a turn on top of the taxes your peasants pay.',
-                'yield'   => ['gold' => 60],
+                'effect'  => sprintf(
+                    'Produces %s gold a turn on top of the taxes your peasants pay.',
+                    IDO_Game::fmt(IDO_Settings::int('mint_gold_yield'))
+                ),
+                'yield'   => ['gold' => IDO_Settings::int('mint_gold_yield')],
             ],
             'foundry' => [
                 'label'   => 'Foundry',
                 'plural'  => 'Foundries',
-                'effect'  => 'Produces 25 iron a turn. Iron is needed for construction and for every soldier you train.',
-                'yield'   => ['iron' => 25],
+                'effect'  => sprintf(
+                    'Produces %s iron a turn. Iron is needed for construction and for every soldier you train.',
+                    IDO_Game::fmt(IDO_Settings::int('foundry_iron_yield'))
+                ),
+                'yield'   => ['iron' => IDO_Settings::int('foundry_iron_yield')],
             ],
             'barracks' => [
                 'label'   => 'Barracks',
@@ -111,6 +123,28 @@ class IDO_Buildings {
      * so a corrupt row can never overflow the sum into a float and fail the
      * int return type, or wrap into a negative count.
      */
+    /**
+     * What everything standing on this empire's acres produces in one turn.
+     *
+     * Summed from the yield table rather than worked out again in the economy,
+     * so a building's output is stated once. Adding a building type is now a row
+     * in all() and nothing else.
+     *
+     * @return array<string, int> resource => amount
+     */
+    public static function yields(object $kingdom): array {
+        $out = [];
+        foreach (self::all() as $key => $building) {
+            $standing = (int) ($kingdom->{self::column($key)} ?? 0);
+            if ($standing < 1) continue;
+
+            foreach ((array) $building['yield'] as $resource => $per) {
+                $out[$resource] = ($out[$resource] ?? 0) + $standing * (int) $per;
+            }
+        }
+        return $out;
+    }
+
     public static function total(object $kingdom): int {
         $total = 0.0;
         foreach (self::keys() as $key) {

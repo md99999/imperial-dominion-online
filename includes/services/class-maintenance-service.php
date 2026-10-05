@@ -184,6 +184,9 @@ class IDO_Maintenance {
                 (int) $round->id
             ));
             $granted = IDO_Kingdom::grant_daily_turns((int) $round->id);
+            // Before the building work finishes, so a farmstead raised tonight
+            // starts earning tomorrow rather than retrospectively.
+            $nightly = IDO_Economy::nightly_yield((int) $round->id);
             $built   = IDO_Construction::complete_due((int) $round->id);
             IDO_Market::expire((int) $round->id);
 
@@ -231,6 +234,13 @@ class IDO_Maintenance {
             }
             if (!empty($rivals_war['marched'])) {
                 $league_note = trim($league_note . sprintf(' %d struck back.', (int) $rivals_war['marched']));
+            }
+
+            if (!empty($nightly['empires'])) {
+                $league_note = trim($league_note . sprintf(
+                    ' %d empire(s) took a night\'s produce of %d turn(s).',
+                    (int) $nightly['empires'], (int) $nightly['turns']
+                ));
             }
 
             $skipped = max(0, $eligible - $granted);

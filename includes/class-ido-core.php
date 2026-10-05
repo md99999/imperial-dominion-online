@@ -94,6 +94,23 @@ class IDO_Settings {
             'demolish_turn_cost'     => 0,
             'train_turn_cost'        => 1,
             'disband_turn_cost'      => 0,
+            // What a building makes. These were written into three places at
+            // once -- the yield table, the sentence describing it on screen, and
+            // a bare number inside the economy -- so changing one changed what
+            // the game said without changing what it did. They are one number
+            // now, and this is it.
+            'mint_gold_yield'        => 60,
+            'farmstead_grain_yield'  => 85,
+            'foundry_iron_yield'     => 25,
+            'homestead_capacity'     => 30,
+            // Gold per hundred peasants per turn. Held per hundred because a
+            // setting is a whole number and the rate is not: 55 means 0.55 each.
+            'tax_per_100_peasants'   => 55,
+            // A night's produce, granted on the daily tick without a turn being
+            // spent. 0 keeps the old rule that nothing arrives unless a ruler
+            // spends a turn on it. 1 means every empire wakes up with one turn's
+            // worth already in the stores.
+            'daily_yield_turns'      => 0,
             'starting_land'          => 250,
             'starting_gold'          => 75000,
             'starting_grain'         => 40000,

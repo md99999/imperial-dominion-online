@@ -9,6 +9,8 @@ $groups = [
         'build_turn_cost', 'demolish_turn_cost', 'train_turn_cost', 'disband_turn_cost'],
     'A new empire' => ['starting_land', 'starting_gold', 'starting_grain', 'starting_iron',
         'starting_peasants', 'starting_pawns', 'starting_legionnaires', 'protection_hours'],
+    'The economy' => ['mint_gold_yield', 'farmstead_grain_yield', 'foundry_iron_yield',
+        'homestead_capacity', 'tax_per_100_peasants', 'daily_yield_turns'],
     'Land and building' => ['explore_base_acres', 'build_gold_per_acre', 'build_iron_per_acre', 'build_days', 'demolish_refund_percent'],
     'Siege weapons' => ['catapult_gold_cost', 'catapult_iron_cost', 'catapult_crew', 'catapult_capture_percent', 'catapult_destroy_percent'],
     'War' => ['target_min_percent', 'target_max_percent', 'max_hits_per_target', 'conquest_land_percent'],
@@ -35,6 +37,19 @@ $help = [
     'train_turn_cost'        => 'Turns spent on one order of troops.',
     'disband_turn_cost'      => 'Turns spent standing troops down. 0 makes it free, which is the default.',
     'protection_hours'       => 'Hours of crown truce a new empire gets. Marching on someone ends it early.',
+    'mint_gold_yield'        => 'Gold a mint produces each turn spent. The game shipped at 60, '
+        . 'which is deliberately modest; raise it if gold feels like the thing holding play back.',
+    'farmstead_grain_yield'  => 'Grain a farmstead produces each turn spent.',
+    'foundry_iron_yield'     => 'Iron a foundry produces each turn spent.',
+    'homestead_capacity'     => 'Peasants one homestead houses. This sets the ceiling on population, '
+        . 'and population pays the taxes, so it is the quietest lever on the whole economy.',
+    'tax_per_100_peasants'   => 'Gold a hundred peasants pay each turn. 55 means 0.55 each. Held per '
+        . 'hundred because a setting is a whole number and the rate is not.',
+    'daily_yield_turns'      => 'A night\'s produce, granted on the daily tick without a turn being '
+        . 'spent. 0 is the original rule: nothing arrives unless a ruler spends a turn on it. 1 means '
+        . 'every empire wakes with one turn\'s worth already in the stores, which is the gentlest way '
+        . 'to stop a board stalling between visits. Upkeep and appetite are charged as on any turn, '
+        . 'so an empire that cannot feed itself still will not.',
     'explore_base_acres'     => 'Acres a small empire finds per exploration; the yield falls as the empire grows.',
     'build_days'             => 'Days before ordered buildings stand. Zero means they finish on the next daily tick.',
     'target_min_percent'     => 'Lowest net worth, as a percentage of your own, that you may attack.',

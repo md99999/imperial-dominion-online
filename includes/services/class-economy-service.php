@@ -8,8 +8,9 @@ if (!defined('ABSPATH')) exit;
  */
 class IDO_Economy {
 
-    const PEASANTS_PER_HOMESTEAD = 30;
-    const TAX_PER_PEASANT        = 0.55;
+    // PEASANTS_PER_HOMESTEAD and TAX_PER_PEASANT used to live here. They are
+    // settings now (homestead_capacity, tax_per_100_peasants) and leaving the
+    // constants behind would have left two numbers claiming to be the same one.
     const GRAIN_PER_PEASANT      = 0.35;
     const GOLD_UPKEEP_PER_BUILDING = 6;
     const GROWTH_RATE            = 0.015;
@@ -18,7 +19,7 @@ class IDO_Economy {
     const STARVATION_TROOPS      = 0.01;
 
     public static function peasant_capacity(object $kingdom): int {
-        return (int) $kingdom->b_homestead * self::PEASANTS_PER_HOMESTEAD;
+        return (int) (IDO_Buildings::yields($kingdom)['peasant_capacity'] ?? 0);
     }
 
     /**
@@ -29,9 +30,14 @@ class IDO_Economy {
         $buildings = IDO_Buildings::total($kingdom);
         $peasants  = (int) $kingdom->peasants;
 
-        $gold_in    = $peasants * self::TAX_PER_PEASANT + (int) $kingdom->b_mint * 60;
+        // Asked of the buildings rather than restated here. These numbers used
+        // to sit in three places and only one of them was the game.
+        $yield = IDO_Buildings::yields($kingdom);
+        $tax   = IDO_Settings::int('tax_per_100_peasants') / 100;
+
+        $gold_in    = $peasants * $tax + (int) ($yield['gold'] ?? 0);
         $gold_out   = $buildings * self::GOLD_UPKEEP_PER_BUILDING;
-        $grain_in   = (int) $kingdom->b_farmstead * 85;
+        $grain_in   = (int) ($yield['grain'] ?? 0);
         $grain_out  = $peasants * self::GRAIN_PER_PEASANT + IDO_Units::upkeep($kingdom)
             + IDO_Weapons::upkeep($kingdom);
 
@@ -49,7 +55,7 @@ class IDO_Economy {
             'grain_in'   => (int) round($grain_in),
             'grain_out'  => (int) round($grain_out),
             'grain'      => (int) round($grain_in - $grain_out),
-            'iron'       => (int) $kingdom->b_foundry * 25,
+            'iron'       => (int) ($yield['iron'] ?? 0),
             'peasants'   => $growth,
             'capacity'   => $capacity,
         ];
@@ -61,7 +67,7 @@ class IDO_Economy {
      *
      * @return string[] lines describing the outcome, shown as flash notices
      */
-    public static function advance(object $kingdom, int $turns): array {
+    public static function advance(object $kingdom, int $turns, bool $hazards = true): array {
         $turns = max(1, $turns);
         $totals = ['gold' => 0, 'grain' => 0, 'iron' => 0, 'peasants' => 0];
         $starved = ['peasants' => 0, 'troops' => 0];
@@ -74,14 +80,17 @@ class IDO_Economy {
 
         // Worked out once, not per turn: it costs a query, and nobody climbs
         // the standings midway through spending a handful of turns.
-        $raidable = IDO_Barbarians::eligible($kingdom);
+        // Barbarians and disasters belong to a turn somebody chose to spend. A
+        // night's produce arriving on its own is not that, and a board waking to
+        // a flood nobody ordered would read as the game misfiring.
+        $raidable = $hazards && IDO_Barbarians::eligible($kingdom);
         $raids = 0;
         $raided = ['gold' => 0, 'grain' => 0];
 
         // Same reasoning, same once-per-order cost. $disaster stays null until
         // one lands and never fills twice: disasters do not combine, so the
         // first to settle is the only one this batch of turns will see.
-        $strikeable = IDO_Disasters::eligible($kingdom);
+        $strikeable = $hazards && IDO_Disasters::eligible($kingdom);
         $disaster = null;
         $buildings_lost = [];
 
@@ -200,6 +209,48 @@ class IDO_Economy {
             )];
         }
         return $lines;
+    }
+
+    /**
+     * Grants every living empire a night's produce on the daily tick.
+     *
+     * A turn-based game where nothing arrives unless a turn is spent means a
+     * ruler who misses a day comes back to exactly what they left, and an empire
+     * of a thousand farmsteads idles at nothing. This is the counterweight: the
+     * fields were worked whether or not anybody gave an order.
+     *
+     * Expressed in turns rather than in gold, because a turn's produce is
+     * already defined, already accounts for upkeep and appetite, and already
+     * grows the population. One number, set to 0 by default, keeps the old rule
+     * exactly: nothing arrives unless somebody spends a turn on it.
+     *
+     * The weather is not rolled: see advance(). And masterless provinces are
+     * skipped, since they mend towards their own template and a night's income
+     * on top would only be taken back again in the morning.
+     *
+     * @return array{empires:int,turns:int}
+     */
+    public static function nightly_yield(int $round_id): array {
+        global $wpdb;
+
+        $turns = max(0, IDO_Settings::int('daily_yield_turns'));
+        if ($turns === 0) return ['empires' => 0, 'turns' => 0];
+
+        $rows = (array) $wpdb->get_results($wpdb->prepare(
+            'SELECT id FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_defeated = 0 AND is_rival = 0',
+            $round_id
+        ));
+
+        $fed = 0;
+        foreach ($rows as $row) {
+            $kingdom = IDO_Kingdom::find((int) $row->id);
+            if (!$kingdom) continue;
+            self::advance($kingdom, $turns, false);
+            $fed++;
+        }
+
+        return ['empires' => $fed, 'turns' => $turns];
     }
 
     /**

@@ -532,6 +532,13 @@ stop discounting past theirs, so the game refuses an order that would go beyond 
 would still count. The Lands screen shows the ceiling before you order. In a game where turns are the
 currency, a building that quietly does nothing is a trap rather than a choice.
 
+**A night's produce, if you want it.** `daily_yield_turns` grants every empire the produce of
+that many turns on the daily tick, without a turn being spent. 0 is the original rule &mdash;
+nothing arrives unless a ruler spends a turn on it &mdash; and 1 is the gentlest way to stop a
+board stalling between visits, since a ruler who misses a day otherwise returns to exactly what
+they left. Upkeep and appetite are charged as on any turn, so an empire that cannot feed itself
+still will not, and neither barbarians nor disasters are rolled on a night nobody ordered.
+
 **Turns are the currency.** You are granted 10 turns a day (configurable), stored up to 30, and a new
 empire is founded with 15.
 Every order costs turns, and every turn spent pays out your income at that instant. Turns sitting
@@ -540,6 +547,10 @@ unspent earn nothing at all, which is what keeps the game moving.
 **Land and buildings.** Send settlers to claim wilderness, then raise buildings on it. The bigger
 your empire, the fewer acres a scouting party finds and the more each one costs, until taking land
 from a neighbour is cheaper than settling it. Building orders finish on the daily tick.
+
+Every one of these figures is a setting under **Settings &rarr; The economy**, and the figure the
+game uses is the figure the screen quotes: a building's output is stated once and read from there
+by the economy, the guide and the admin alike.
 
 | Building | What it does |
 | --- | --- |

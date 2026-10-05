@@ -263,6 +263,8 @@ class IDO_League {
             'starting_land', 'starting_gold', 'starting_grain', 'starting_iron',
             'starting_peasants', 'starting_pawns', 'starting_legionnaires',
             'protection_hours', 'explore_base_acres',
+            'mint_gold_yield', 'farmstead_grain_yield', 'foundry_iron_yield',
+            'homestead_capacity', 'tax_per_100_peasants', 'daily_yield_turns',
             'build_turn_cost', 'demolish_turn_cost', 'train_turn_cost', 'disband_turn_cost',
             'build_gold_per_acre', 'build_iron_per_acre', 'build_days', 'demolish_refund_percent',
             'catapult_gold_cost', 'catapult_iron_cost', 'catapult_crew',
