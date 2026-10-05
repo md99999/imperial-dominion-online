@@ -330,6 +330,15 @@
 .ido-game button.ido-btn {
     color: #04121b !important;
     -webkit-text-fill-color: #04121b !important;
+    /*
+     * The background is forced for the same reason the colour is, and leaving it
+     * out was a real bug rather than an omission: themes reset button
+     * backgrounds to transparent at a specificity that beats a lone .ido-btn, so
+     * the text stayed the near-black this rule insists on while the cyan behind
+     * it quietly went away. Measured on a block theme at 1.11:1 -- a button
+     * nobody could read, on every primary action in the game.
+     */
+    background-color: var(--ido-accent) !important;
     background-image: none !important;
     -webkit-background-clip: border-box !important;
     background-clip: border-box !important;
@@ -358,7 +367,8 @@
 .ido-game a.ido-btn-alt:hover,
 .ido-game a.ido-btn-alt:focus,
 .ido-game button.ido-btn-alt {
-    background: transparent;
+    /* !important here only because the rule above now needs outbidding. */
+    background-color: transparent !important;
     color: var(--ido-accent) !important;
     -webkit-text-fill-color: var(--ido-accent) !important;
 }
@@ -369,7 +379,7 @@
 .ido-game a.ido-btn-danger:hover,
 .ido-game a.ido-btn-danger:focus,
 .ido-game button.ido-btn-danger {
-    background: var(--ido-bad);
+    background-color: var(--ido-bad) !important;
     border-color: var(--ido-bad);
     color: #180404 !important;
     -webkit-text-fill-color: #180404 !important;
@@ -408,6 +418,41 @@
 .ido-news-text { flex: 1 1 260px; }
 
 .ido-filters { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/*
+ * The War Dept jump links.
+ *
+ * Deliberately quieter than the main navigation: these move the reader inside a
+ * page they are already on, and dressing them like the page tabs above would
+ * make the screen look as though it had two rows of navigation and leave a
+ * player unsure which one took them somewhere.
+ *
+ * scroll-margin-top on the sections keeps a heading from landing flush against
+ * the top of the viewport, and off underneath an admin bar or a sticky theme
+ * header, which is where an anchor normally drops you.
+ */
+.ido-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+}
+.ido-game .ido-subnav-item,
+.ido-game a.ido-subnav-item,
+.ido-game a.ido-subnav-item:link,
+.ido-game a.ido-subnav-item:visited {
+    color: var(--ido-accent) !important;
+    -webkit-text-fill-color: var(--ido-accent) !important;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--ido-field-border);
+    padding-bottom: 1px;
+}
+.ido-game a.ido-subnav-item:hover,
+.ido-game a.ido-subnav-item:focus {
+    border-bottom-style: solid;
+}
+.ido-section { scroll-margin-top: 48px; }
 
 /*
  * Compact gazette: the widget rendering.
