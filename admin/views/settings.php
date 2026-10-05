@@ -25,10 +25,10 @@ $groups = [
 ];
 
 $help = [
-    'turns_per_day'          => 'Turns granted to every empire on the daily tick.',
-    'turn_cap'               => 'The most turns an empire can have stored at once.',
-    'attack_turn_cost'       => 'Turns spent on one march.',
-    'op_turn_cost'           => 'Turns spent on one covert mission.',
+    'turns_per_day'          => 'Turns granted to every empire on the daily tick. Ships at 25, which is what this kind of game has always given. It is also the quietest lever on the economy: income is paid per turn spent, so raising this raises what a board earns in a day without making anything cost more.',
+    'turn_cap'               => 'The most turns an empire can have stored at once. Ships at 100, four days of a 25-turn day. Keep it at least three times the daily grant or a ruler starts losing turns over a weekend, which punishes a life rather than idleness.',
+    'attack_turn_cost'       => 'Turns spent on one march. Ships at 2, so a 25-turn day is about twelve marches if a ruler does nothing else.',
+    'op_turn_cost'           => 'Turns spent on one covert mission. Ships at 1.',
     'build_turn_cost'        => 'Turns spent on one building order, and on one order of siege weapons. '
         . 'An order of any size costs the same, so this is the price of the decision, not of the bricks.',
     'demolish_turn_cost'     => 'Turns spent pulling buildings down or breaking up siege weapons. '
@@ -36,28 +36,38 @@ $help = [
         . 'loss already falls on the salvage.',
     'train_turn_cost'        => 'Turns spent on one order of troops.',
     'disband_turn_cost'      => 'Turns spent standing troops down. 0 makes it free, which is the default.',
-    'protection_hours'       => 'Hours of crown truce a new empire gets. Marching on someone ends it early.',
-    'mint_gold_yield'        => 'Gold a mint produces each turn spent. The game shipped at 60, '
-        . 'which is deliberately modest; raise it if gold feels like the thing holding play back.',
-    'farmstead_grain_yield'  => 'Grain a farmstead produces each turn spent.',
-    'foundry_iron_yield'     => 'Iron a foundry produces each turn spent.',
-    'homestead_capacity'     => 'Peasants one homestead houses. This sets the ceiling on population, '
+    'protection_hours'       => 'How long a new empire cannot be attacked. Ships at 72. Marching on somebody ends it early, which is the ruler\'s own choice to make.',
+    'mint_gold_yield'        => 'Gold a mint produces each turn spent. Ships at 120. Gold is what '
+        . 'binds: measured on a played empire, a day of gold bought 132 acres of building and a day '
+        . 'of iron bought 1,041, which is why this moved and the foundry did not. Mints are meant to '
+        . 'out-earn population by a wide margin, because the acre was spent on gold rather than on '
+        . 'people and should pay for the choice.',
+    'farmstead_grain_yield'  => 'Grain a farmstead produces each turn spent. Ships at 85, which at '
+        . 'the shipped appetite feeds about two homesteads of people.',
+    'foundry_iron_yield'     => 'Iron a foundry produces each turn spent. Ships at 25. Iron has never '
+        . 'been the shortage; raise it only if you have raised what things cost in iron.',
+    'homestead_capacity'     => 'Peasants one homestead houses. Ships at 30. Sets the ceiling on population, '
         . 'and population pays the taxes, so it is the quietest lever on the whole economy.',
-    'tax_per_100_peasants'   => 'Gold a hundred peasants pay each turn. 55 means 0.55 each. Held per '
-        . 'hundred because a setting is a whole number and the rate is not.',
-    'grain_per_100_peasants' => 'Grain a hundred peasants eat each turn. 140 means 1.4 each. '
+    'tax_per_100_peasants'   => 'Gold a hundred peasants pay each turn. Ships at 55, meaning 0.55 '
+        . 'each. Held per hundred because a setting is a whole number and the rate is not. '
+        . 'Deliberately modest: population earns its keep in the soldiers trained out of it and the '
+        . 'ceiling it sets on everything else, not in revenue. Raise it far and you remove the reason '
+        . 'to build a mint.',
+    'grain_per_100_peasants' => 'Grain a hundred peasants eat each turn. Ships at 140, meaning '
+        . '1.4 each. '
         . 'This is what makes feeding your people a decision: at 140 one farmstead feeds about two '
         . 'homesteads of people, so population costs land that would otherwise have made gold. '
         . 'Lower it and farms become an afterthought; raise it and growth has to be earned. '
         . 'Raise it on a running board with care, since an empire that cannot feed itself loses '
         . 'peasants and troops.',
-    'daily_yield_turns'      => 'A night\'s produce, granted on the daily tick without a turn being '
-        . 'spent. 0 is the original rule: nothing arrives unless a ruler spends a turn on it. 1 means '
-        . 'every empire wakes with one turn\'s worth already in the stores, which is the gentlest way '
-        . 'to stop a board stalling between visits. Upkeep and appetite are charged as on any turn, '
-        . 'so an empire that cannot feed itself still will not.',
-    'explore_base_acres'     => 'Acres a small empire finds per exploration; the yield falls as the empire grows.',
-    'build_days'             => 'Days before ordered buildings stand. Zero means they finish on the next daily tick.',
+    'daily_yield_turns'      => 'A night of produce, granted on the daily tick without a turn '
+        . 'being spent. Ships at 2. A turn-based game where nothing arrives unless a turn is '
+        . 'spent means a ruler who misses a day returns to exactly what they left, and this is '
+        . 'the floor under that; 0 restores the original rule. Upkeep and appetite are charged '
+        . 'as on any turn, so an empire that cannot feed itself still will not, and no weather '
+        . 'is rolled on a night nobody ordered.',
+    'explore_base_acres'     => 'Acres a scouting party finds on an empty map, before the diminishing return for size. Ships at 30. Exploring costs one turn, so this sets how fast land can be taken peacefully against how fast it can be taken from a neighbour.',
+    'build_days'             => 'Days a building order takes to finish. Ships at 1, so an order placed today stands tomorrow.',
     'target_min_percent'     => 'Lowest net worth, as a percentage of your own, that you may attack.',
     'target_max_percent'     => 'Highest net worth, as a percentage of your own, that you may attack.',
     'max_hits_per_target'    => 'Times one empire may attack the same rival in a day. Zero removes the limit.',
@@ -73,10 +83,8 @@ $help = [
     'agent_gold_cost'        => 'Gold to hire an agent. Deliberately steep.',
     'max_agents'             => 'Agents one empire may keep. One is the intended limit.',
     'disasters_enabled'      => 'Whether drought, insects and floods can strike at all.',
-    'disaster_one_in'         => 'Odds of a disaster during any one turn, as one in this many. '
-        . 'Never during a crown truce, relief or a board grace period, and never two at once.',
-    'disaster_percent'       => 'The share a disaster destroys: farmsteads for a drought, '
-        . 'stored grain for insects, homesteads for a flood.',
+    'disaster_one_in'         => 'Odds of a disaster during any one turn, as one in this many. Ships at 150, which against a 25-turn day is one every six days or so. Like the barbarian chance this counts turns rather than days, so it moves with the length of the day. Never during a crown truce, relief or a board grace period, and never two at once.',
+    'disaster_percent'       => 'The share a disaster destroys: farmsteads for a drought, stored grain for insects, homesteads for a flood. Ships at 7.',
     'rivals_enabled'         => 'Whether the board carries empires that no living ruler holds. '
         . 'They never attack and never trade; they exist so that a board with few players still has '
         . 'somewhere to march. Always off during league play.',
@@ -93,13 +101,13 @@ $help = [
         . 'many days and it forgets, so a feud ends when a ruler stops picking at it.',
     'rival_attack_chance'    => 'The chance each day that a provoked empire marches. No ruler is '
         . 'struck more than once a night however many of them hold a grudge.',
-    'market_tax_percent'     => 'Cut the crown takes from every sale.',
+    'market_tax_percent'     => 'The crown\'s cut of every market sale. Ships at 5.',
     'barbarians_enabled'       => '1 lets barbarians raid the leading empires, 0 turns them off entirely.',
-    'barbarian_min_players'    => 'Barbarians stay away until this many empires are playing. On a small board the top three is most of the board.',
-    'barbarian_top_ranks'      => 'How far down the standings they will go. Three keeps it a brake on the leaders.',
-    'barbarian_chance_percent' => 'Chance per turn spent that they turn up.',
-    'barbarian_gold_percent'   => 'Share of the treasury they carry off.',
-    'barbarian_grain_percent'  => 'Share of the granaries they carry off.',
+    'barbarian_min_players'    => 'Barbarians stay away until this many empires are playing. Ships at 10. On a small board the top three is most of the board, and the brake becomes a tax on the only people there.',
+    'barbarian_top_ranks'      => 'How far down the standings they will go. Ships at 3, which keeps it a brake on whoever is in front rather than a weather system.',
+    'barbarian_chance_percent' => 'Chance per turn spent that they turn up. Ships at 2, which against a 25-turn day is about one raid every other day for a leader. This is per turn, not per day, so it has to come down if you lengthen the day and up if you shorten it.',
+    'barbarian_gold_percent'   => 'Share of the treasury they carry off. Ships at 10.',
+    'barbarian_grain_percent'  => 'Share of the granaries they carry off. Ships at 10.',
     'auto_start_next_round'  => '1 opens the next round automatically when one ends, 0 waits for you.',
     'allow_new_kingdoms'       => '1 lets players claim empires, 0 closes the rolls.',
     'use_wp_cron'            => 'Leave at 1 unless a real cron calls the plugin scripts directly. A cron that fetches wp-cron.php by URL still needs this on, because it runs the events that are scheduled, and 0 schedules none.',

@@ -184,14 +184,21 @@ class IDO_Settings {
             'barbarians_enabled'       => 1,
             'barbarian_min_players'    => 10,
             'barbarian_top_ranks'      => 3,
-            'barbarian_chance_percent' => 5,
+            // 2% against 25 turns a day is one raid every other day for a
+            // leader. It was 5% when a day was 10 turns, and leaving it there
+            // while the day grew would have raised the rate two and a half
+            // times without anybody deciding to.
+            'barbarian_chance_percent' => 2,
             'barbarian_gold_percent'   => 10,
             'barbarian_grain_percent'  => 10,
             // Disasters: these fall on anybody, where barbarians only visit the
             // top of the table. One in 60 turns is a little under one a week at
             // ten turns a day, and never during any kind of grace period.
             'disasters_enabled'      => 1,
-            'disaster_one_in'        => 60,
+            // One in 150 turns against 25 turns a day is one disaster every six
+            // days, which is the rate this was designed at. The figure moved
+            // with the length of the day rather than the rate changing.
+            'disaster_one_in'        => 150,
             'disaster_percent'       => 7,
             // Masterless empires: provinces no living ruler holds, for boards
             // with too few players to make war out of. Off by default, like

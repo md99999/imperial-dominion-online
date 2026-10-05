@@ -199,5 +199,30 @@ foreach (['mint_gold_yield', 'farmstead_grain_yield', 'foundry_iron_yield',
 }
 
 say('');
+say('=== the settings screen does not lie about its own defaults ===');
+// Help text that quotes a figure is a promise. Left unchecked it drifts the
+// moment a default moves, and a screen that misreports the game is worse than
+// one that says nothing.
+$help_src = file_get_contents(IDO_PATH . 'admin/views/settings.php');
+$help_src = substr($help_src, strpos($help_src, '$help = ['));
+
+$checked = 0;
+$wrong = [];
+foreach (IDO_Settings::defaults() as $key => $value) {
+    if (!preg_match("/'" . preg_quote($key, '/') . "'\s*=> (.*?)(?=,
+    '[a-z_]+'\s*=>|,
+\];)/s",
+        $help_src, $m)) continue;
+    if (!preg_match('/Ships at ([\d,]+)/', $m[1], $q)) continue;
+
+    $checked++;
+    if ((int) str_replace(',', '', $q[1]) !== (int) $value) {
+        $wrong[] = sprintf('%s says %s, ships %s', $key, $q[1], $value);
+    }
+}
+check('some entries quote a shipped figure at all', $checked >= 10, (string) $checked . ' quoted');
+check('and every one of them is true', $wrong === [], implode('; ', $wrong));
+
+say('');
 say($fails === 0 ? 'ALL CHECKS PASSED' : "$fails CHECK(S) FAILED");
 exit($fails === 0 ? 0 : 1);
