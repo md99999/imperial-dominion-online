@@ -112,8 +112,14 @@ say('');
 say('=== it cannot grow without bound ===');
 delete_option(IDO_Maintenance::LOG_OPTION);
 $log = [];
+$day_zero = strtotime($today);
 for ($i = 0; $i < 25; $i++) {
-    $log['daily'][gmdate('Y-m-d', time() - $i * DAY_IN_SECONDS)] = [
+    // Keyed off the game's own day, not UTC. The log is written with
+    // IDO_Game::today(), which follows the site's timezone, and between UTC
+    // midnight and local midnight those are different dates -- so a fixture
+    // built with gmdate() injects a day that sorts above the real one and the
+    // run looks out of order. Latent for months; the clock found it.
+    $log['daily'][gmdate('Y-m-d', $day_zero - $i * DAY_IN_SECONDS)] = [
         'starts' => 1, 'worked' => 1, 'ran_at' => IDO_Game::now(),
         'source' => 'WP-Cron', 'summary' => 'old', 'note' => '',
     ];
@@ -126,7 +132,7 @@ check('ten days kept, not twenty-six', count($days) === IDO_Maintenance::LOG_DAY
     count($days) . ' of ' . IDO_Maintenance::LOG_DAYS);
 check('newest first', array_key_first($days) === $today, (string) array_key_first($days));
 check('and the oldest were the ones dropped',
-    !array_key_exists(gmdate('Y-m-d', time() - 24 * DAY_IN_SECONDS), $days));
+    !array_key_exists(gmdate('Y-m-d', $day_zero - 24 * DAY_IN_SECONDS), $days));
 
 say('');
 say('=== the reader survives a corrupt option ===');

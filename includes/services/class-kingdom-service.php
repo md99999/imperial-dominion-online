@@ -297,8 +297,19 @@ class IDO_Kingdom {
      *
      * @return array human-readable lines describing what the turns produced
      */
+    /**
+     * Spends turns on an order, and pays the income those turns earn.
+     *
+     * A cost of zero means the order is free, and free has to mean free: no turn
+     * leaves the pool and no income arrives either. Turns are the only clock in
+     * this game, so an action that advanced the economy without costing one
+     * would be a way of printing gold out of nothing. Forcing a minimum of one,
+     * which this did until the costs became settings, meant a game master could
+     * not make an order free at all.
+     */
     public static function spend_turns(object $kingdom, int $turns): array {
-        $turns = max(1, $turns);
+        $turns = max(0, $turns);
+        if ($turns === 0) return [];
         if ((int) $kingdom->turns < $turns) {
             throw new IDO_Game_Exception(sprintf(
                 'That needs %d turns and you have %d. Turns are granted each day.', $turns, (int) $kingdom->turns

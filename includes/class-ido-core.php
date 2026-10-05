@@ -86,6 +86,14 @@ class IDO_Settings {
             'attack_turn_cost'       => 2,
             'op_turn_cost'           => 1,
             // Starting empire
+            // What an order costs in turns. Build and train are what they have
+            // always been; pulling down and standing down have always been free,
+            // and stay free by default, because they undo a decision rather than
+            // making one and the loss already falls on the refund.
+            'build_turn_cost'        => 1,
+            'demolish_turn_cost'     => 0,
+            'train_turn_cost'        => 1,
+            'disband_turn_cost'      => 0,
             'starting_land'          => 250,
             'starting_gold'          => 75000,
             'starting_grain'         => 40000,

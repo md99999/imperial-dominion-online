@@ -5,7 +5,8 @@ $round    = IDO_Rounds::current();
 
 /** Grouped for readability; every key still comes from IDO_Settings::defaults(). */
 $groups = [
-    'Turns' => ['turns_per_day', 'turn_cap', 'starting_turns', 'attack_turn_cost', 'op_turn_cost'],
+    'Turns' => ['turns_per_day', 'turn_cap', 'starting_turns', 'attack_turn_cost', 'op_turn_cost',
+        'build_turn_cost', 'demolish_turn_cost', 'train_turn_cost', 'disband_turn_cost'],
     'A new empire' => ['starting_land', 'starting_gold', 'starting_grain', 'starting_iron',
         'starting_peasants', 'starting_pawns', 'starting_legionnaires', 'protection_hours'],
     'Land and building' => ['explore_base_acres', 'build_gold_per_acre', 'build_iron_per_acre', 'build_days', 'demolish_refund_percent'],
@@ -24,6 +25,13 @@ $help = [
     'turn_cap'               => 'The most turns an empire can have stored at once.',
     'attack_turn_cost'       => 'Turns spent on one march.',
     'op_turn_cost'           => 'Turns spent on one covert mission.',
+    'build_turn_cost'        => 'Turns spent on one building order, and on one order of siege weapons. '
+        . 'An order of any size costs the same, so this is the price of the decision, not of the bricks.',
+    'demolish_turn_cost'     => 'Turns spent pulling buildings down or breaking up siege weapons. '
+        . '0 makes it free, which is the default: it undoes a decision rather than making one, and the '
+        . 'loss already falls on the salvage.',
+    'train_turn_cost'        => 'Turns spent on one order of troops.',
+    'disband_turn_cost'      => 'Turns spent standing troops down. 0 makes it free, which is the default.',
     'protection_hours'       => 'Hours of crown truce a new empire gets. Marching on someone ends it early.',
     'explore_base_acres'     => 'Acres a small empire finds per exploration; the yield falls as the empire grows.',
     'build_days'             => 'Days before ordered buildings stand. Zero means they finish on the next daily tick.',

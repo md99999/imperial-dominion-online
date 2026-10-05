@@ -74,7 +74,8 @@ $highest_title = end($titles);
         </tbody>
     </table>
     <p class="ido-dim">
-        Because an order of any size costs one turn, ordering 200 buildings at once costs exactly what ordering one
+        Because an order of any size costs the same <?php echo esc_html((string) $s['build_turn_cost']); ?>
+        <?php echo esc_html($s['build_turn_cost'] === 1 ? 'turn' : 'turns'); ?>, ordering 200 buildings at once costs exactly what ordering one
         does. Place large orders.
     </p>
 </div>
@@ -133,7 +134,7 @@ $highest_title = end($titles);
     <p>
         Siege weapons are the third thing an empire can own, and they behave like neither of the other two.
         They are built rather than trained, so no peasant leaves the fields for one, and they stand on no acre,
-        so they cost you nothing in land. An order costs one turn and finishes on the daily tick, the same as
+        so they cost you nothing in land. An order costs the same turns a building order does and finishes on the daily tick, the same as
         a building does.
     </p>
     <p>

@@ -80,7 +80,7 @@ class IDO_Construction {
             ));
         }
 
-        $messages = IDO_Kingdom::spend_turns($kingdom, 1);
+        $messages = IDO_Kingdom::spend_turns($kingdom, IDO_Settings::int('build_turn_cost'));
         $kingdom = IDO_Kingdom::reload($kingdom);
         IDO_Kingdom::pay($kingdom, [
             'gold' => -$gold,
@@ -111,7 +111,7 @@ class IDO_Construction {
     }
 
     /** Tears down standing buildings, returning the acres to wilderness. */
-    public static function demolish(object $kingdom, string $building, int $qty): string {
+    public static function demolish(object $kingdom, string $building, int $qty): array {
         if (!IDO_Buildings::exists($building)) {
             throw new IDO_Game_Exception('No such building.');
         }
@@ -122,14 +122,18 @@ class IDO_Construction {
             throw new IDO_Game_Exception('You have none of those standing.');
         }
 
+        $messages = IDO_Kingdom::spend_turns($kingdom, IDO_Settings::int('demolish_turn_cost'));
+        $kingdom = IDO_Kingdom::reload($kingdom);
+
         $refund = (int) round($qty * IDO_Settings::int('build_gold_per_acre') * IDO_Settings::int('demolish_refund_percent') / 100);
         IDO_Kingdom::pay($kingdom, [$column => -$qty, 'gold' => $refund], 'Those buildings are no longer standing.');
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
-        return sprintf(
+        $messages[] = sprintf(
             '%s %s are pulled down. The salvage fetches %s gold and the acres return to wilderness.',
             IDO_Game::fmt($qty), strtolower(IDO_Buildings::plural($building)), IDO_Game::fmt($refund)
         );
+        return $messages;
     }
 
     /**
@@ -155,7 +159,7 @@ class IDO_Construction {
             ));
         }
 
-        $messages = IDO_Kingdom::spend_turns($kingdom, 1);
+        $messages = IDO_Kingdom::spend_turns($kingdom, IDO_Settings::int('build_turn_cost'));
         $kingdom = IDO_Kingdom::reload($kingdom);
         IDO_Kingdom::pay($kingdom, [
             'gold' => -$cost['gold'],
@@ -186,7 +190,7 @@ class IDO_Construction {
     }
 
     /** Breaks up standing siege weapons for salvage. */
-    public static function scrap_weapon(object $kingdom, string $weapon, int $qty): string {
+    public static function scrap_weapon(object $kingdom, string $weapon, int $qty): array {
         IDO_Weapons::get($weapon);
         $column = IDO_Weapons::column($weapon);
         $standing = (int) $kingdom->{$column};
@@ -195,16 +199,20 @@ class IDO_Construction {
             throw new IDO_Game_Exception('You have none of those standing.');
         }
 
+        $messages = IDO_Kingdom::spend_turns($kingdom, IDO_Settings::int('demolish_turn_cost'));
+        $kingdom = IDO_Kingdom::reload($kingdom);
+
         $refund = (int) round(
             IDO_Weapons::cost($weapon, $qty)['gold'] * IDO_Settings::int('demolish_refund_percent') / 100
         );
         IDO_Kingdom::pay($kingdom, [$column => -$qty, 'gold' => $refund], 'Those weapons are no longer standing.');
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
-        return sprintf(
+        $messages[] = sprintf(
             '%s %s are broken up. The timber and iron fetch %s gold.',
             IDO_Game::fmt($qty), strtolower(IDO_Weapons::plural($weapon)), IDO_Game::fmt($refund)
         );
+        return $messages;
     }
 
     /** Outstanding orders for an empire, soonest first. */

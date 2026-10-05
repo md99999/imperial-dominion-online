@@ -130,19 +130,19 @@ class IDO_Actions {
             case 'build':
                 return [IDO_Construction::order($kingdom, self::key('building'), self::int('qty')), null];
             case 'demolish':
-                return [[IDO_Construction::demolish($kingdom, self::key('building'), self::int('qty'))], null];
+                return [IDO_Construction::demolish($kingdom, self::key('building'), self::int('qty')), null];
 
             // Siege weapons
             case 'build_weapon':
                 return [IDO_Construction::order_weapon($kingdom, self::key('weapon'), self::int('qty')), null];
             case 'scrap_weapon':
-                return [[IDO_Construction::scrap_weapon($kingdom, self::key('weapon'), self::int('qty'))], null];
+                return [IDO_Construction::scrap_weapon($kingdom, self::key('weapon'), self::int('qty')), null];
 
             // The army
             case 'train':
                 return [IDO_Military::train($kingdom, self::key('unit'), self::int('qty')), null];
             case 'disband':
-                return [[IDO_Military::disband($kingdom, self::key('unit'), self::int('qty'))], null];
+                return [IDO_Military::disband($kingdom, self::key('unit'), self::int('qty')), null];
 
             // War
             case 'attack':

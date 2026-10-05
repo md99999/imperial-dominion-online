@@ -70,7 +70,7 @@ class IDO_Military {
             ));
         }
 
-        $messages = IDO_Kingdom::spend_turns($kingdom, 1);
+        $messages = IDO_Kingdom::spend_turns($kingdom, IDO_Settings::int('train_turn_cost'));
         $kingdom = IDO_Kingdom::reload($kingdom);
         IDO_Kingdom::pay($kingdom, [
             'gold'     => -$cost['gold'],
@@ -89,7 +89,7 @@ class IDO_Military {
     }
 
     /** Disbands troops. They return to the fields as peasants. */
-    public static function disband(object $kingdom, string $key, int $qty): string {
+    public static function disband(object $kingdom, string $key, int $qty): array {
         if (!IDO_Units::exists($key)) {
             throw new IDO_Game_Exception('No such troop type.');
         }
@@ -100,16 +100,20 @@ class IDO_Military {
             throw new IDO_Game_Exception('You have none of those under arms.');
         }
 
+        $messages = IDO_Kingdom::spend_turns($kingdom, IDO_Settings::int('disband_turn_cost'));
+        $kingdom = IDO_Kingdom::reload($kingdom);
+
         IDO_Kingdom::pay($kingdom, [
             $column => -$qty,
             'peasants' => $qty * (int) $unit['peasants'],
         ], 'Those troops are no longer under your banner.');
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
-        return sprintf(
+        $messages[] = sprintf(
             '%s %s hand back their arms and return to the fields.',
             IDO_Game::fmt($qty), strtolower(IDO_Units::plural($key))
         );
+        return $messages;
     }
 
     /** Empires this ruler is allowed to march on, by net worth band. */
