@@ -43,6 +43,15 @@ class IDO_UI {
                 $page = get_page_by_path(self::PAGES[$key][1]);
                 $url = $page ? (string) get_permalink($page) : home_url('/' . self::PAGES[$key][1] . '/');
             }
+            /*
+             * Never nothing. A key that names a page which no longer exists --
+             * one of the screens folded into another, say, whose page an
+             * administrator has since deleted -- would otherwise return an empty
+             * string, and an empty string handed to wp_safe_redirect() sends a
+             * player nowhere at all. The front page is always a better answer
+             * than a broken one.
+             */
+            if ($url === '') $url = home_url('/');
             $cache[$key] = $url;
         }
         return $args ? add_query_arg($args, $cache[$key]) : $cache[$key];

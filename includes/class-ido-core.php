@@ -129,8 +129,13 @@ class IDO_Settings {
             'catapult_capture_percent' => 30,
             'catapult_destroy_percent' => 10,
             // Covert
-            'agent_gold_cost'        => 500000,
+            // Two tiers of spy. An informer is cheap and can only look; an
+            // agent costs real money and can act. See IDO_Agents for why the
+            // price came down rather than the risk going up.
+            'agent_gold_cost'        => 200000,
             'max_agents'             => 1,
+            'informer_gold_cost'     => 50000,
+            'max_informers'          => 1,
             // Barbarians: a brake on a runaway leader, not a tax on everybody.
             'barbarians_enabled'       => 1,
             'barbarian_min_players'    => 10,

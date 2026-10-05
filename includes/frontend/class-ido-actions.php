@@ -164,9 +164,12 @@ class IDO_Actions {
 
             // The spy court
             case 'hire_agent':
-                return [IDO_Covert::hire($kingdom), null];
+                return [IDO_Covert::hire($kingdom, self::key('tier')), null];
             case 'run_op':
-                return [IDO_Covert::run($kingdom, self::int('target_id'), self::key('op')), 'covert'];
+                // 'war' rather than 'covert': the spy court lives on the War Dept
+                // page now, and the page it used to name no longer exists.
+                return [IDO_Covert::run($kingdom, self::int('target_id'), self::key('op'),
+                    self::key('tier')), 'war'];
 
             // Market
             case 'market_post':

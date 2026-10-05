@@ -4,47 +4,75 @@ if (!defined('ABSPATH')) exit;
 /** @var object $kingdom */
 IDO_UI::mark_reports_seen($kingdom);
 
-$cost      = IDO_Covert::agent_cost();
-$max       = max(1, IDO_Settings::int('max_agents'));
-$ops       = IDO_Covert::ops();
-$history   = IDO_Covert::history($kingdom, 20);
-$targets   = IDO_Military::targets($kingdom, 200);
-$has_agent = (int) $kingdom->agents > 0;
+$ops     = IDO_Covert::ops();
+$history = IDO_Covert::history($kingdom, 20);
+$targets = IDO_Military::targets($kingdom, 200);
+$tiers   = IDO_Agents::all();
+
+// Any spy at all, of either kind: the mission form opens on that, and then
+// narrows itself per mission to the ones that could actually run it.
+$has_spy = false;
+foreach (IDO_Agents::keys() as $ido_tier) {
+    if (IDO_Agents::held($kingdom, $ido_tier) > 0) { $has_spy = true; break; }
+}
 ?>
 <div class="ido-panel">
     <h3 class="ido-panel-title">The spy court</h3>
     <p>
-        An agent is the most expensive servant a crown can keep, and no ruler may keep more than
-        <strong><?php echo esc_html((string) $max); ?></strong>. Hiring one costs
-        <strong><?php echo esc_html(IDO_Game::fmt($cost['gold'])); ?></strong> gold, which is a
-        fortune no young empire can raise: the trade in secrets belongs to those who have already
-        built something worth protecting.
-    </p>
-    <p class="ido-dim">
-        Missions can fail, and a failed mission often ends with your agent on a rope. Replacing them costs the full
-        price again, which is why the wise send an agent only when the answer is worth a fortune.
+        Two kinds of servant keep the crown informed. An <strong>informer</strong> is cheap and can
+        only bring back what they have seen; an <strong>agent</strong> costs a great deal more and
+        will do rather more than watch. Missions can fail, and a failed mission often ends with your
+        spy on a rope &mdash; an informer far more often than an agent. Replacing either costs the
+        full price again.
     </p>
 
-    <table class="ido-table">
+    <table class="ido-table ido-table-wide">
+        <thead>
+            <tr><th>Spy</th><th>In service</th><th class="ido-right">To hire</th><th>Can do</th><th></th></tr>
+        </thead>
         <tbody>
-            <tr><th>Agents in your service</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->agents)); ?> of <?php echo esc_html((string) $max); ?></td></tr>
-            <tr><th>Your gold</th><td><?php echo esc_html(IDO_Game::fmt($kingdom->gold)); ?></td></tr>
+            <?php foreach ($tiers as $key => $tier) : ?>
+                <?php
+                $held  = IDO_Agents::held($kingdom, $key);
+                $limit = IDO_Agents::limit($key);
+                $price = IDO_Agents::cost($key);
+                $can   = $tier['ops'] === null
+                    ? 'Every mission'
+                    : implode(', ', array_map(
+                        static fn($op) => $ops[$op]['label'] ?? $op, (array) $tier['ops']));
+                ?>
+                <tr>
+                    <td>
+                        <strong><?php echo esc_html($tier['label']); ?></strong>
+                        <div class="ido-dim"><?php echo esc_html($tier['note']); ?></div>
+                    </td>
+                    <td><?php echo esc_html(IDO_Game::fmt($held) . ' of ' . $limit); ?></td>
+                    <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($price)); ?> gold</td>
+                    <td class="ido-dim"><?php echo esc_html($can); ?></td>
+                    <td>
+                        <?php if ($held < $limit) : ?>
+                            <?php echo IDO_UI::form_open('hire_agent', 'ido-form-inline'); ?>
+                                <input type="hidden" name="tier" value="<?php echo esc_attr($key); ?>">
+                                <button type="submit" class="ido-btn ido-btn-small">Hire</button>
+                            </form>
+                        <?php else : ?>
+                            <span class="ido-dim">As many as allowed</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
-
-    <?php if ((int) $kingdom->agents < $max) : ?>
-        <?php echo IDO_UI::form_open('hire_agent'); ?>
-            <button type="submit" class="ido-btn">Hire an agent</button> <?php echo IDO_UI::turn_cost(1); ?>
-        </form>
-    <?php else : ?>
-        <p class="ido-dim">You keep as many agents as the crown allows.</p>
-    <?php endif; ?>
+    <p class="ido-dim">
+        Your gold: <strong><?php echo esc_html(IDO_Game::fmt($kingdom->gold)); ?></strong>.
+        Hiring costs one turn.
+    </p>
 </div>
 
 <div class="ido-panel">
     <h3 class="ido-panel-title">Send a mission</h3>
-    <?php if (!$has_agent) : ?>
-        <p class="ido-warning">You keep no agent. Nothing can be sent until one is hired.</p>
+    <?php if (!$has_spy) : ?>
+        <p class="ido-warning">You keep no spy of either kind. Nothing can be sent until one is hired.</p>
     <?php elseif (!$targets) : ?>
         <p class="ido-dim">There is no one within reach worth watching.</p>
     <?php else : ?>
@@ -67,9 +95,32 @@ $has_agent = (int) $kingdom->agents > 0;
                     <?php foreach ($ops as $key => $op) : ?>
                         <option value="<?php echo esc_attr($key); ?>">
                             <?php echo esc_html(sprintf(
-                                '%s - %s gold, about %d%% likely, %d%% risk to the agent',
-                                $op['label'], IDO_Game::fmt($op['gold']), (int) $op['chance'], (int) $op['risk']
+                                '%s - %s gold, about %d%% likely',
+                                $op['label'], IDO_Game::fmt($op['gold']), (int) $op['chance']
                             )); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="ido-field">
+                <span>Send</span>
+                <select name="tier" class="ido-select">
+                    <?php foreach ($tiers as $key => $tier) : ?>
+                        <?php if (IDO_Agents::held($kingdom, $key) < 1) continue; ?>
+                        <option value="<?php echo esc_attr($key); ?>">
+                            <?php
+                            // The odds are quoted per spy, because they are the
+                            // whole difference between them: the same mission
+                            // run by somebody less able, and far likelier to be
+                            // taken when it goes wrong.
+                            echo esc_html(sprintf(
+                                '%s - %s',
+                                $tier['label'],
+                                $tier['ops'] === null
+                                    ? 'any mission, ordinary risk'
+                                    : 'reconnaissance only, and caught far more often'
+                            ));
+                            ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

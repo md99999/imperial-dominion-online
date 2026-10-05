@@ -54,34 +54,39 @@ class IDO_Covert {
         return ['gold' => IDO_Settings::int('agent_gold_cost')];
     }
 
-    /** Hires an agent. Costs a fortune in gold, and one turn. */
-    public static function hire(object $kingdom): array {
-        $max = max(1, IDO_Settings::int('max_agents'));
-        if ((int) $kingdom->agents >= $max) {
+    /** Hires a spy of the given tier. Costs gold, and one turn. */
+    public static function hire(object $kingdom, string $tier = 'agent'): array {
+        $spy    = IDO_Agents::get($tier);
+        $max    = IDO_Agents::limit($tier);
+        $column = IDO_Agents::column($tier);
+
+        if (IDO_Agents::held($kingdom, $tier) >= $max) {
             throw new IDO_Game_Exception(sprintf(
                 'No ruler may keep more than %d %s in their service.',
-                $max, $max === 1 ? 'agent' : 'agents'
+                $max, strtolower($max === 1 ? $spy['label'] : $spy['plural'])
             ));
         }
-        $cost = self::agent_cost();
-        if ((int) $kingdom->gold < $cost['gold']) {
+
+        $cost = IDO_Agents::cost($tier);
+        if ((int) $kingdom->gold < $cost) {
             throw new IDO_Game_Exception(sprintf(
-                'An agent asks %s gold and you have %s.',
-                IDO_Game::fmt($cost['gold']), IDO_Game::fmt($kingdom->gold)
+                'A%s %s asks %s gold and you have %s.',
+                in_array(strtolower(substr($spy['label'], 0, 1)), ['a','e','i','o','u'], true) ? 'n' : '',
+                strtolower($spy['label']), IDO_Game::fmt($cost), IDO_Game::fmt($kingdom->gold)
             ));
         }
 
         $messages = IDO_Kingdom::spend_turns($kingdom, 1);
         $kingdom = IDO_Kingdom::reload($kingdom);
         IDO_Kingdom::pay($kingdom, [
-            'gold'       => -$cost['gold'],
-            'agents'     => 1,
+            'gold'  => -$cost,
+            $column => 1,
         ], 'Your treasury cannot meet the price.');
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
         $messages[] = sprintf(
-            'A nameless agent enters your service for %s gold. Spend them carefully: you may keep only %d.',
-            IDO_Game::fmt($cost['gold']), $max
+            'A nameless %s enters your service for %s gold. You may keep only %d.',
+            strtolower($spy['label']), IDO_Game::fmt($cost), $max
         );
         return $messages;
     }
@@ -122,7 +127,7 @@ class IDO_Covert {
         return ['success' => $success, 'lost' => !$success && wp_rand(1, 100) <= $risk];
     }
 
-    public static function run(object $kingdom, int $target_id, string $op_key): array {
+    public static function run(object $kingdom, int $target_id, string $op_key, string $tier = 'agent'): array {
         global $wpdb;
 
         // Burning an ally's granaries makes no sense when the site is one team,
@@ -135,9 +140,20 @@ class IDO_Covert {
             );
         }
 
-        $op = self::op($op_key);
-        if ((int) $kingdom->agents < 1) {
-            throw new IDO_Game_Exception('You keep no agent. Hire one before ordering a mission.');
+        $op  = self::op($op_key);
+        $spy = IDO_Agents::get($tier);
+
+        if (IDO_Agents::held($kingdom, $tier) < 1) {
+            throw new IDO_Game_Exception(sprintf(
+                'You keep no %s. Hire one before ordering a mission.',
+                strtolower($spy['label'])
+            ));
+        }
+        if (!IDO_Agents::can_run($tier, $op_key)) {
+            throw new IDO_Game_Exception(sprintf(
+                'An %s can only bring back what they have seen. %s needs an agent.',
+                strtolower($spy['label']), $op['label']
+            ));
         }
         if ($target_id === (int) $kingdom->id) {
             throw new IDO_Game_Exception('Your agent will not spy on your own court.');
@@ -165,9 +181,14 @@ class IDO_Covert {
 
         // Larger empires are harder to move against, smaller ones easier.
         $size_ratio = self::ratio((int) $kingdom->networth, (int) $target->networth);
-        $chance = self::odds((int) $op['chance'], $size_ratio);
 
-        $attempt = self::attempt($chance, (int) $op['risk']);
+        // And then the spy bends it again. An informer is worse at the job and
+        // very much worse at not being caught, which is what the lower price
+        // buys: the same mission, run by somebody less able.
+        $chance = self::odds((int) $op['chance'] + (int) $spy['chance_shift'], $size_ratio);
+        $risk   = (int) min(95, round((int) $op['risk'] * (float) $spy['risk_factor']));
+
+        $attempt = self::attempt($chance, $risk);
         $success = $attempt['success'];
 
         $agent_lost = false;
@@ -213,7 +234,10 @@ class IDO_Covert {
         }
 
         if ($agent_lost) {
-            IDO_Kingdom::pay($kingdom, ['agents' => -1], 'Your agent is already gone.');
+            // The tier that went is the tier that is lost. Taking it off the
+            // wrong column would hand a ruler a spy they never paid for.
+            IDO_Kingdom::pay($kingdom, [IDO_Agents::column($tier) => -1],
+                'That one is already gone.');
         }
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($target));
@@ -239,8 +263,9 @@ class IDO_Covert {
             // every failed mission into a declaration of war the ruler never made.
             // A body on the gates is public; whose body it is stays a rumour.
             IDO_Log::news('covert', sprintf(
-                'An agent was taken in %s and hanged before the gates. Whose he was, nobody is saying.',
-                $target->kingdom_name
+                'A%s %s was taken in %s and hanged before the gates. Whose he was, nobody is saying.',
+                in_array(strtolower(substr($spy['label'], 0, 1)), ['a','e','i','o','u'], true) ? 'n' : '',
+                strtolower($spy['label']), $target->kingdom_name
             ));
         }
 

@@ -264,11 +264,30 @@ $highest_title = end($titles);
 <div class="ido-panel">
     <h3 class="ido-panel-title">The spy court</h3>
     <p>
-        An agent costs <strong><?php echo esc_html(IDO_Game::fmt($agent['gold'])); ?> gold</strong>, and no ruler may
-        keep more than <strong><?php echo esc_html((string) max(1, (int) $s['max_agents'])); ?></strong>. That price is
-        deliberate: knowing what a rival actually holds before you commit an army should be a serious investment, not
-        a habit. Missions can fail, and a failed mission often ends with your agent hanged, which means paying the
-        full price again.
+        Two kinds of servant keep a crown informed, and the difference between them is what they may
+        do as much as what they cost.
+    </p>
+    <ul class="ido-list">
+        <li>
+            An <strong>informer</strong> costs
+            <strong><?php echo esc_html(IDO_Game::fmt(IDO_Agents::cost('informer'))); ?> gold</strong>
+            and can only run reconnaissance. Cheap enough for a young empire, and caught far more
+            often than an agent is.
+        </li>
+        <li>
+            An <strong>agent</strong> costs
+            <strong><?php echo esc_html(IDO_Game::fmt(IDO_Agents::cost('agent'))); ?> gold</strong>
+            and will run any mission on this list. Only an agent may ride ahead of an army in league
+            play; an informer can look, and that is all.
+        </li>
+    </ul>
+    <p>
+        No ruler may keep more than
+        <strong><?php echo esc_html((string) IDO_Agents::limit('informer')); ?></strong> informer and
+        <strong><?php echo esc_html((string) IDO_Agents::limit('agent')); ?></strong> agent at once.
+        Missions can fail, and a failed mission often ends with your spy hanged, which means paying
+        the price again. The odds below are an agent's; an informer is less likely to succeed and
+        far likelier to be taken when it goes wrong.
     </p>
     <table class="ido-table ido-table-wide">
         <thead><tr><th>Mission</th><th class="ido-right">Gold</th><th class="ido-right">Success</th><th class="ido-right">Risk</th><th>What it does</th></tr></thead>

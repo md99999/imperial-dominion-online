@@ -280,8 +280,13 @@ class IDO_Kingdom {
     /** Columns pay() is allowed to touch. */
     public static function numeric_columns(): array {
         $columns = ['turns', 'turns_spent', 'land', 'land_in_progress', 'gold', 'grain', 'iron',
-            'peasants', 'agents', 'attacks_made', 'attacks_won', 'attacks_suffered',
+            'peasants', 'attacks_made', 'attacks_won', 'attacks_suffered',
             'land_taken', 'land_lost'];
+        // Asked of the data rather than listed here. 'agents' was written out by
+        // hand, so the day a second kind of spy arrived every payment touching
+        // it threw -- which is the allowlist doing exactly its job, and a good
+        // argument for deriving every one of these from the thing that defines it.
+        foreach (IDO_Agents::keys() as $key)    $columns[] = IDO_Agents::column($key);
         foreach (IDO_Buildings::keys() as $key) $columns[] = IDO_Buildings::column($key);
         foreach (IDO_Units::keys() as $key)     $columns[] = IDO_Units::column($key);
         foreach (IDO_Weapons::keys() as $key) {
@@ -364,7 +369,7 @@ class IDO_Kingdom {
         $worth += (float) $kingdom->gold / 50;
         $worth += (float) $kingdom->grain / 200;
         $worth += (float) $kingdom->iron / 20;
-        $worth += (float) $kingdom->agents * 50000;
+        $worth += (float) IDO_Agents::networth($kingdom);
 
         $worth = IDO_Game::clamp($worth);
         $before = (int) $kingdom->networth;

@@ -61,6 +61,7 @@ CREATE TABLE {prefix}ido_kingdoms (
   catapults bigint(20) NOT NULL DEFAULT 0,
   catapults_in_progress bigint(20) NOT NULL DEFAULT 0,
   agents bigint(20) NOT NULL DEFAULT 0,
+  informers bigint(20) NOT NULL DEFAULT 0,
   networth bigint(20) NOT NULL DEFAULT 0,
   protection_until datetime DEFAULT NULL,
   is_defeated tinyint(1) NOT NULL DEFAULT 0,

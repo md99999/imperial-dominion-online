@@ -37,11 +37,18 @@ $round = IDO_Rounds::current();
 if (!$round) { say('No round is running.'); exit(1); }
 
 // Played as a real ruler, because the sections render nothing without one.
-$ruler = $wpdb->get_row($wpdb->prepare(
+// A ruler whose WordPress account actually exists. An empire row left behind by
+// some other test belongs to a user id that was never real, and signing in as
+// one renders the page that invites a visitor to claim an empire -- which is a
+// perfectly good page, and not the one under test.
+$ruler = null;
+foreach ((array) $wpdb->get_col($wpdb->prepare(
     'SELECT user_id FROM ' . IDO_DB::t('kingdoms')
-    . ' WHERE round_id = %d AND is_defeated = 0 AND user_id > 0 LIMIT 1', (int) $round->id));
-if (!$ruler) { say('No empire on this board to render as.'); exit(2); }
-wp_set_current_user((int) $ruler->user_id);
+    . ' WHERE round_id = %d AND is_defeated = 0 AND user_id > 0 ORDER BY id', (int) $round->id)) as $uid) {
+    if (get_userdata((int) $uid)) { $ruler = (int) $uid; break; }
+}
+if (!$ruler) { say('No empire with a real account on this board to render as.'); exit(2); }
+wp_set_current_user($ruler);
 register_shutdown_function(static fn() => wp_set_current_user(0));
 
 say('=== the page map ===');

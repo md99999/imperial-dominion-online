@@ -12,7 +12,7 @@ $groups = [
     'Land and building' => ['explore_base_acres', 'build_gold_per_acre', 'build_iron_per_acre', 'build_days', 'demolish_refund_percent'],
     'Siege weapons' => ['catapult_gold_cost', 'catapult_iron_cost', 'catapult_crew', 'catapult_capture_percent', 'catapult_destroy_percent'],
     'War' => ['target_min_percent', 'target_max_percent', 'max_hits_per_target', 'conquest_land_percent'],
-    'Covert work' => ['agent_gold_cost', 'max_agents'],
+    'Covert work' => ['agent_gold_cost', 'max_agents', 'informer_gold_cost', 'max_informers'],
     'Barbarians' => ['barbarians_enabled', 'barbarian_min_players', 'barbarian_top_ranks',
         'barbarian_chance_percent', 'barbarian_gold_percent', 'barbarian_grain_percent'],
     'Disasters' => ['disasters_enabled', 'disaster_one_in', 'disaster_percent'],
@@ -44,6 +44,9 @@ $help = [
     'catapult_crew'          => 'Legionnaires needed to work one catapult. They must be in the force you send, and at home only the catapults you have crews for count towards defence. Never below one.',
     'catapult_capture_percent' => 'Share of the losing side catapults at stake that the winner drags home.',
     'catapult_destroy_percent' => 'Share of the losing side catapults at stake that is smashed outright. Added to the captured share, this is what a defeat costs in weapons.',
+    'informer_gold_cost'     => 'What an informer asks. An informer can only run reconnaissance, '
+        . 'is caught far more often than an agent, and is meant to be affordable early.',
+    'max_informers'          => 'How many informers a ruler may keep at once.',
     'agent_gold_cost'        => 'Gold to hire an agent. Deliberately steep.',
     'max_agents'             => 'Agents one empire may keep. One is the intended limit.',
     'disasters_enabled'      => 'Whether drought, insects and floods can strike at all.',

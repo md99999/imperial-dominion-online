@@ -592,11 +592,13 @@ between 40% and 250% of your own net worth, at most three times each a day. New 
 
 Whatever kind of attack it is, the catapults at stake change hands on the result.
 
-**The spy court.** An agent is the most expensive thing an empire can own, costing 500,000 gold,
-and no ruler may keep more than one. Missions can fail, and a failed mission
-often ends with the agent on a rope: replacing them means paying the full price again.
-Reconnaissance tells you what a rival is actually holding; the other missions burn granaries,
-wreck forges or set peasants against their lord.
+**The spy court.** Two kinds of spy, differing in what they may do as much as in what they cost.
+An **informer** is cheap, can only run reconnaissance, and is caught far more often. An **agent**
+costs a good deal more, will run any mission, and is the only one who may ride ahead of an army in
+league play. No ruler may keep more than one of each. Missions can fail, and a failed mission often
+ends with the spy on a rope: replacing them means paying the price again. Reconnaissance tells you
+what a rival is actually holding; the other missions burn granaries, wreck forges or set peasants
+against their lord.
 
 **The market.** Rulers post grain, iron and troops at their own prices. Goods leave
 your stores the moment you post them and return if the lot expires or you withdraw it. The crown

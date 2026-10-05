@@ -268,7 +268,7 @@ class IDO_League {
             'catapult_gold_cost', 'catapult_iron_cost', 'catapult_crew',
             'target_min_percent', 'target_max_percent', 'max_hits_per_target',
             'conquest_land_percent', 'catapult_capture_percent', 'catapult_destroy_percent',
-            'agent_gold_cost', 'max_agents',
+            'agent_gold_cost', 'max_agents', 'informer_gold_cost', 'max_informers',
             'barbarians_enabled', 'barbarian_min_players', 'barbarian_top_ranks',
             'barbarian_chance_percent', 'barbarian_gold_percent', 'barbarian_grain_percent',
             'disasters_enabled', 'disaster_one_in', 'disaster_percent',
