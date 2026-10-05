@@ -34,10 +34,23 @@ class IDO_Health {
     /** Directories that exist in a checkout and in no release. */
     const DEV_DIRS = ['tests', 'tools', 'docs'];
 
+    /**
+     * The only dotted name a release carries.
+     *
+     * Everything else beginning with a dot is tooling that came along by
+     * accident: .gitattributes, .gitignore, .github, an editor's .vscode, a
+     * Mac's .DS_Store. None of them belong on a web server, and listing the ones
+     * known today would miss whatever the next tool invents -- so the check
+     * reads the directory and treats this as the exception rather than
+     * enumerating the rule.
+     */
+    const KEEP_DOTTED = ['.htaccess'];
+
     /** @return array<int, array{level:string,title:string,body:string}> */
     public static function issues(): array {
         $out = [];
-        foreach ([self::check_duplicates(), self::check_git(), self::check_folder(), self::check_dev_dirs()] as $issue) {
+        foreach ([self::check_duplicates(), self::check_git(), self::check_folder(),
+                  self::check_dev_dirs(), self::check_dotted()] as $issue) {
             if ($issue) $out[] = $issue;
         }
         return $out;
@@ -145,6 +158,47 @@ class IDO_Health {
                 . '</code> are in your site and nothing needs them. None of them will run &mdash; every file'
                 . ' in them refuses to execute outside a command line &mdash; but they are readable and they'
                 . ' are dead weight. Delete them where they sit, or replace this with a release.</p>',
+        ];
+    }
+
+    /**
+     * Anything dotted that a release does not carry.
+     *
+     * Found by reading the directory rather than by checking names, which is the
+     * point: .git has its own finding above because it is a different order of
+     * problem, and everything else dotted is clutter that arrived with a source
+     * copy. A list of known names would have missed .gitattributes, which is
+     * what prompted this, and would miss the next one too.
+     *
+     * Files as well as directories. The original check asked is_dir(), so every
+     * dotted *file* -- .gitattributes and .gitignore among them -- went
+     * unnoticed however carefully it was looking.
+     */
+    private static function check_dotted(): ?array {
+        $entries = @scandir(untrailingslashit(IDO_PATH));
+        if (!$entries) return null;
+
+        $strays = [];
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') continue;
+            if (strpos($entry, '.') !== 0) continue;
+            if (in_array($entry, self::KEEP_DOTTED, true)) continue;
+            if ($entry === '.git') continue;            // reported in full above
+            $strays[] = $entry;
+        }
+        if (!$strays) return null;
+
+        sort($strays);
+        return [
+            'level' => 'warning',
+            'title' => 'This copy carries tooling files a release does not',
+            'body'  => '<p>These are in <code>' . esc_html(IDO_PATH) . '</code> and belong to the '
+                . 'project rather than to your site: <code>'
+                . implode('</code>, <code>', array_map('esc_html', $strays))
+                . '</code>.</p>'
+                . '<p>None of them does anything on a web server, and the plugin ships an '
+                . '<code>.htaccess</code> that refuses dotted paths where the server reads it '
+                . '&mdash; which nginx does not. They are safe to delete.</p>',
         ];
     }
 

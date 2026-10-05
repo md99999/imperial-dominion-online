@@ -153,6 +153,54 @@ if ($made_git) {
 }
 
 say('');
+say('=== dotted tooling is found, not just .git ===');
+// The first version of this asked is_dir(), so every dotted *file* went
+// unnoticed however carefully it looked -- .gitattributes and .gitignore among
+// them. It reads the directory now and keeps a list of what belongs instead of
+// a list of what does not.
+$planted = [];
+foreach (['.gitattributes', '.gitignore'] as $file) {
+    $path = IDO_PATH . $file;
+    if (!file_exists($path) && @file_put_contents($path, "x
+") !== false) $planted[] = $path;
+}
+$plantdir = IDO_PATH . '.github';
+$made_dir = !is_dir($plantdir) && @mkdir($plantdir);
+register_shutdown_function(static function () use (&$planted, $plantdir, &$made_dir) {
+    foreach ((array) $planted as $f) @unlink($f);
+    if ($made_dir) @rmdir($plantdir);
+});
+
+if ($planted || $made_dir) {
+    $dotted = issue('tooling files');
+    check('they are reported', $dotted !== null);
+    foreach (array_merge(array_map('basename', $planted), $made_dir ? ['.github'] : []) as $name) {
+        check("  $name is named", $dotted && strpos($dotted['body'], $name) !== false);
+    }
+    check('a dotted file counts, not only a dotted folder',
+        $dotted && strpos($dotted['body'], '.gitattributes') !== false);
+    check('but .htaccess is left out, because it belongs',
+        $dotted && strpos($dotted['body'], '<code>.htaccess</code>,') === false
+        && strpos($dotted['body'], '>.htaccess</code>.') === false);
+    check('and .git is not repeated here, having its own finding',
+        $dotted && !preg_match('/<code>\.git<\/code>/', $dotted['body']));
+} else {
+    say('  (could not plant tooling files here; skipped)');
+}
+check('the list of what belongs is the exception, not the rule',
+    strpos($health_src, 'KEEP_DOTTED') !== false
+    && strpos($health_src, 'scandir') !== false);
+
+// Cleared here rather than left to the shutdown handler. A planted
+// .gitattributes containing nothing but "x" outlived this section and was read
+// by the archive check further down, which then reported a file with no
+// export-ignore rule in it -- a failure invented entirely by the fixture.
+foreach ($planted as $f) @unlink($f);
+if ($made_dir) @rmdir($plantdir);
+$planted = [];
+$made_dir = false;
+
+say('');
 say('=== where the notice appears ===');
 check('only for someone who could act on it',
     strpos($health_src, "current_user_can('manage_options')") !== false);
@@ -168,8 +216,14 @@ check('tests, tools and docs are excluded from a build',
     strpos($builder, "['tests', 'tools', 'docs']") !== false);
 check('and .htaccess is let through the dot rule',
     strpos($builder, "\$keep = ['.htaccess']") !== false);
+// Either this copy has no .gitattributes at all, which is what a clean
+// install looks like, or it has one and that one keeps the development
+// directories out of GitHub's archive. Both are correct; only a
+// .gitattributes without the rule would be wrong.
+$attrs = IDO_PATH . '.gitattributes';
 check('and all three are out of GitHub\'s archive too',
-    strpos(file_get_contents(IDO_PATH . '.gitattributes'), 'export-ignore') !== false);
+    !file_exists($attrs) || strpos((string) file_get_contents($attrs), 'export-ignore') !== false,
+    file_exists($attrs) ? 'present, carries the rule' : 'absent, as a release should be');
 
 say('');
 say($fails === 0 ? 'ALL CHECKS PASSED' : "$fails CHECK(S) FAILED");
