@@ -58,7 +58,10 @@ check('the front page loses the prefix entirely', $GLOBALS['ido_posts'][11]->pos
     $GLOBALS['ido_posts'][11]->post_title);
 check('a game page is spelled out', $GLOBALS['ido_posts'][12]->post_title === 'Imperial Dominion - Lands',
     $GLOBALS['ido_posts'][12]->post_title);
-check('a two-word screen keeps its name', $GLOBALS['ido_posts'][13]->post_title === 'Imperial Dominion - War Room',
+// The War Room became the War Dept when the muster and the spy court were
+// folded into it, and the rename migration is what carries an existing site's
+// page across rather than leaving it under a name the navigation no longer uses.
+check('a renamed screen is carried to its new name', $GLOBALS['ido_posts'][13]->post_title === 'Imperial Dominion - War Dept',
     $GLOBALS['ido_posts'][13]->post_title);
 check("a title chosen by hand is left alone", $GLOBALS['ido_posts'][14]->post_title === 'Our Own Marketplace');
 check('a correct title is not rewritten', !in_array(15, $GLOBALS['ido_writes'], true));
@@ -66,7 +69,7 @@ check('something that is not a page is skipped', $GLOBALS['ido_posts'][16]->post
 check('a recorded id with no post behind it does not fatal', true);
 
 echo "\n=== it only runs once ===\n";
-check('the run is recorded', get_option('ido_page_titles') === '2');
+check('the run is recorded', get_option('ido_page_titles') === IDO_Installer::PAGE_TITLES_VERSION);
 $GLOBALS['ido_writes'] = [];
 $GLOBALS['ido_posts'][12]->post_title = 'ID - Lands';
 IDO_Installer::maybe_rename_pages();
@@ -78,7 +81,7 @@ $GLOBALS['ido_options'] = ['ido_db_version' => IDO_DB_VERSION];
 $GLOBALS['ido_writes']  = [];
 IDO_Installer::maybe_rename_pages();
 check('nothing is written and the run is recorded', $GLOBALS['ido_writes'] === []
-    && get_option('ido_page_titles') === '2');
+    && get_option('ido_page_titles') === IDO_Installer::PAGE_TITLES_VERSION);
 
 echo "\n=== the menu label ===\n";
 require __DIR__ . '/../includes/class-ido-menu.php';

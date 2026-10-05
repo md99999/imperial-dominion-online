@@ -75,6 +75,6 @@ foreach (IDO_Weapons::keys() as $key) {
     <p class="ido-dim">Another ruler has already sent their agent ahead. Only one goes with the army.</p>
 <?php elseif ((int) $kingdom->agents < 1) : ?>
     <p class="ido-dim">
-        You keep no agent. One can be hired at the <a href="<?php echo esc_url(IDO_UI::url('covert')); ?>">Spy Court</a>.
+        You keep no agent. One can be hired at the <a href="<?php echo esc_url(IDO_UI::url('war')); ?>#ido-spies">spy court</a>.
     </p>
 <?php endif; ?>

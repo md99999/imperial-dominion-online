@@ -17,9 +17,11 @@ class IDO_UI {
         'guide'    => ['Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
         'empire'   => ['Imperial Dominion - Empire', 'imperial-dominion-online', 'ido_empire', 'Empire'],
         'lands'    => ['Imperial Dominion - Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
-        'military' => ['Imperial Dominion - Army', 'imperial-dominion-online-muster', 'ido_military', 'Army'],
-        'war'      => ['Imperial Dominion - War Room', 'imperial-dominion-online-war', 'ido_war', 'War'],
-        'covert'   => ['Imperial Dominion - Spy Court', 'imperial-dominion-online-spies', 'ido_covert', 'Spies'],
+        // The muster, the war room and the spy court were three pages until
+        // 2.22.0. They are one evening's decision, so they are one page: see the
+        // note at the top of views/war.php. ido_military and ido_covert still
+        // answer, as legacy tags, so a page already carrying one keeps working.
+        'war'      => ['Imperial Dominion - War Dept', 'imperial-dominion-online-war', 'ido_war', 'War Dept'],
         'market'   => ['Imperial Dominion - Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
         'gazette'  => ['Imperial Dominion - Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
         'rankings' => ['Imperial Dominion - Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],

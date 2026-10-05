@@ -63,6 +63,39 @@ $pages_made = is_array($page_ids) ? count($page_ids) : 0;
         <p><button type="submit" class="button button-primary">Create any missing game pages</button></p>
     </form>
 
+    <?php
+    /*
+     * The Army and Spy Court pages were folded into the War Dept. Their pages
+     * are left where they are rather than deleted: a page an administrator may
+     * have linked to from a menu is theirs, and a plugin that quietly removes
+     * one has overstepped. Both still work -- their shortcodes render the War
+     * Dept in full -- so this is about tidiness, which is their decision.
+     */
+    $ido_folded = [];
+    foreach (['military' => 'Army', 'covert' => 'Spy Court'] as $ido_key => $ido_label) {
+        if (empty($page_ids[$ido_key])) continue;
+        $ido_page = get_post((int) $page_ids[$ido_key]);
+        if ($ido_page && $ido_page->post_type === 'page') $ido_folded[(int) $ido_page->ID] = $ido_page->post_title;
+    }
+    ?>
+    <?php if ($ido_folded) : ?>
+        <div class="notice notice-info inline" style="max-width:760px">
+            <p><strong>The Army and Spies screens are now part of the War Dept.</strong></p>
+            <p>
+                These pages are still on the site and still work &mdash; each one now shows the whole
+                War Dept &mdash; but nothing links to them any more and the game's own navigation does
+                not list them:
+                <?php foreach ($ido_folded as $ido_id => $ido_title) : ?>
+                    <a href="<?php echo esc_url(get_edit_post_link($ido_id)); ?>"><?php echo esc_html($ido_title); ?></a><?php echo $ido_id === array_key_last($ido_folded) ? '' : ', '; ?>
+                <?php endforeach; ?>.
+            </p>
+            <p class="description">
+                You can delete them, or keep them if you have linked to one from a menu of your own.
+                Nothing in the game depends on them either way.
+            </p>
+        </div>
+    <?php endif; ?>
+
     <table class="widefat striped" style="max-width:760px">
         <thead><tr><th>Page</th><th>Shortcode</th><th>Status</th></tr></thead>
         <tbody>

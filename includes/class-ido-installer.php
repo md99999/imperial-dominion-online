@@ -5,7 +5,7 @@ class IDO_Installer {
 
     /** Bumped when the game changes what it calls its own pages. */
     const PAGE_TITLES_OPTION  = 'ido_page_titles';
-    const PAGE_TITLES_VERSION = '2';
+    const PAGE_TITLES_VERSION = '3';   // 3: the War Room became the War Dept
 
     public static function activate(): void {
         self::install_schema();
@@ -68,16 +68,19 @@ class IDO_Installer {
     private static function rename_legacy_pages(): void {
         if (get_option(self::PAGE_TITLES_OPTION) === self::PAGE_TITLES_VERSION) return;
 
+        // Every title the game has written for a screen, oldest first. A list
+        // rather than one name, because a screen can be renamed twice: the war
+        // page has been "ID - War Room", then "Imperial Dominion - War Room",
+        // and is now the War Dept. A site that skipped a version in between has
+        // to be carried across from whichever of them it is actually holding.
         $legacy = [
-            'guide'    => 'ID - Imperial Dominion',
-            'empire'   => 'ID - Empire',
-            'lands'    => 'ID - Lands',
-            'military' => 'ID - Army',
-            'war'      => 'ID - War Room',
-            'covert'   => 'ID - Spy Court',
-            'market'   => 'ID - Market',
-            'gazette'  => 'ID - Gazette',
-            'rankings' => 'ID - Rankings',
+            'guide'    => ['ID - Imperial Dominion'],
+            'empire'   => ['ID - Empire'],
+            'lands'    => ['ID - Lands'],
+            'war'      => ['ID - War Room', 'Imperial Dominion - War Room'],
+            'market'   => ['ID - Market'],
+            'gazette'  => ['ID - Gazette'],
+            'rankings' => ['ID - Rankings'],
         ];
 
         $ids = get_option('ido_page_ids');
@@ -85,7 +88,8 @@ class IDO_Installer {
             foreach ($legacy as $key => $was) {
                 if (empty($ids[$key]) || empty(IDO_UI::PAGES[$key][0])) continue;
                 $page = get_post((int) $ids[$key]);
-                if (!$page || $page->post_type !== 'page' || $page->post_title !== $was) continue;
+                if (!$page || $page->post_type !== 'page') continue;
+                if (!in_array($page->post_title, (array) $was, true)) continue;
                 wp_update_post([
                     'ID'         => (int) $page->ID,
                     'post_title' => IDO_UI::PAGES[$key][0],

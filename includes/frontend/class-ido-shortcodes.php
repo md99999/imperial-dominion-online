@@ -16,6 +16,13 @@ class IDO_Shortcodes {
      */
     const LEGACY = [
         'ido_throne' => 'empire',
+        // The Army and Spies pages were folded into the War Dept. A site that
+        // has been running since before that still has those two pages, with
+        // these tags sitting in them, and a page that stops rendering is worse
+        // than one showing more than it used to: both now render the War Dept
+        // in full, so nothing an administrator linked to has gone missing.
+        'ido_military' => 'war',
+        'ido_covert'   => 'war',
     ];
 
     public static function register(): void {

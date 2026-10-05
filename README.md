@@ -173,9 +173,7 @@ it.
 | Imperial Dominion | `[ido_guide]` | The front page: the game's name, the rules and the standings |
 | Imperial Dominion - Empire | `[ido_empire]` | The state of the empire, and what one turn currently yields |
 | Imperial Dominion - Lands | `[ido_lands]` | Settle wilderness, raise buildings, build siege weapons |
-| Imperial Dominion - Army | `[ido_military]` | Train and disband troops |
-| Imperial Dominion - War Room | `[ido_war]` | Pick a target, commit a force, read the dispatches |
-| Imperial Dominion - Spy Court | `[ido_covert]` | Hire an agent and send them out |
+| Imperial Dominion - War Dept | `[ido_war]` | The muster, the war room and the spy court, on one page |
 | Imperial Dominion - Market | `[ido_market]` | Post lots, buy what other rulers have posted |
 | Imperial Dominion - Gazette | `[ido_gazette]` | Public news of the round |
 | Imperial Dominion - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
@@ -477,7 +475,7 @@ Both are refused in the service rather than hidden from the screen. A page that 
 order is not the same as a game that will not carry one out, because the order is a POST and a POST
 can be sent by anybody who has seen the form once.
 
-The War Room says so and points at the League page, where armies are actually raised. Leaving a
+The War Dept says so and points at the League page, where armies are actually raised. Leaving a
 league gives local war back.
 
 ### Relief for a ruined empire
