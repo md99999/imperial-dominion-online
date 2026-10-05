@@ -16,13 +16,14 @@ class IDO_UI {
     const PAGES = [
         'guide'    => ['Imperial Dominion', 'imperial-dominion', 'ido_guide', 'Home'],
         'empire'   => ['Imperial Dominion - Empire', 'imperial-dominion-online', 'ido_empire', 'Empire'],
+        // Lands carries the market too, since 2.23.0: buying grain and growing it
+        // are halves of one thought. ido_market still answers, as a legacy tag.
         'lands'    => ['Imperial Dominion - Lands', 'imperial-dominion-online-lands', 'ido_lands', 'Lands'],
         // The muster, the war room and the spy court were three pages until
         // 2.22.0. They are one evening's decision, so they are one page: see the
         // note at the top of views/war.php. ido_military and ido_covert still
         // answer, as legacy tags, so a page already carrying one keeps working.
         'war'      => ['Imperial Dominion - War Dept', 'imperial-dominion-online-war', 'ido_war', 'War Dept'],
-        'market'   => ['Imperial Dominion - Market', 'imperial-dominion-online-market', 'ido_market', 'Market'],
         'gazette'  => ['Imperial Dominion - Gazette', 'imperial-dominion-online-gazette', 'ido_gazette', 'Gazette'],
         'rankings' => ['Imperial Dominion - Rankings', 'imperial-dominion-online-rankings', 'ido_rankings', 'Rankings'],
         // Only created and only shown while this site is in a league: see

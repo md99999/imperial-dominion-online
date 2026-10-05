@@ -172,9 +172,8 @@ it.
 | --- | --- | --- |
 | Imperial Dominion | `[ido_guide]` | The front page: the game's name, the rules and the standings |
 | Imperial Dominion - Empire | `[ido_empire]` | The state of the empire, and what one turn currently yields |
-| Imperial Dominion - Lands | `[ido_lands]` | Settle wilderness, raise buildings, build siege weapons |
+| Imperial Dominion - Lands | `[ido_lands]` | Settle wilderness, raise buildings and siege weapons, and trade |
 | Imperial Dominion - War Dept | `[ido_war]` | The muster, the war room and the spy court, on one page |
-| Imperial Dominion - Market | `[ido_market]` | Post lots, buy what other rulers have posted |
 | Imperial Dominion - Gazette | `[ido_gazette]` | Public news of the round |
 | Imperial Dominion - Rankings | `[ido_rankings]` | Standings and the Hall of Fame |
 | Imperial Dominion - League | `[ido_league]` | The league table, the open muster, and what you have given (league play only) |

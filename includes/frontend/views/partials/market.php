@@ -73,10 +73,10 @@ $tax      = IDO_Settings::int('market_tax_percent');
 <div class="ido-panel">
     <h3 class="ido-panel-title">Open lots</h3>
     <p class="ido-filters">
-        <a class="ido-btn ido-btn-small <?php echo $filter === '' ? 'ido-btn-alt' : ''; ?>" href="<?php echo esc_url(IDO_UI::url('market')); ?>">All</a>
+        <a class="ido-btn ido-btn-small <?php echo $filter === '' ? 'ido-btn-alt' : ''; ?>" href="<?php echo esc_url(IDO_UI::url('lands')); ?>#ido-market">All</a>
         <?php foreach ($items as $key => $item) : ?>
             <a class="ido-btn ido-btn-small <?php echo $filter === $key ? 'ido-btn-alt' : ''; ?>"
-               href="<?php echo esc_url(IDO_UI::url('market', ['item' => $key])); ?>"><?php echo esc_html($item['label']); ?></a>
+               href="<?php echo esc_url(IDO_UI::url('lands', ['item' => $key])); ?>#ido-market"><?php echo esc_html($item['label']); ?></a>
         <?php endforeach; ?>
     </p>
 

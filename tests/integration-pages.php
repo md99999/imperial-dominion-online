@@ -1,21 +1,23 @@
 <?php
 /**
- * Integration test: the War Dept, where the muster, the war room and the spy
- * court became one page.
+ * Integration test: the pages that were folded into other pages.
+ *
+ * The War Dept took the muster, the war room and the spy court. Lands took the
+ * market.
  *
  * The risk in folding three pages into one is not that the new page fails to
  * render. It is everything that pointed at the old ones: a shortcode sitting in
  * a page an administrator created a year ago, a link in a menu, a recorded page
  * id. None of that can be allowed to go dark.
  *
- *   php tests/integration-wardept.php /path/to/wordpress [db-host]
+ *   php tests/integration-pages.php /path/to/wordpress [db-host]
  */
 if (PHP_SAPI !== 'cli') exit("CLI only.\n");
 
 function say(string $line = ''): void { fwrite(STDERR, $line . PHP_EOL); }
 
 $wp_path = $argv[1] ?? getenv('IDO_WP_PATH');
-if (!$wp_path) { say('Usage: php tests/integration-wardept.php /path/to/wordpress [db-host]'); exit(2); }
+if (!$wp_path) { say('Usage: php tests/integration-pages.php /path/to/wordpress [db-host]'); exit(2); }
 $wp_load = rtrim(str_replace('\\', '/', $wp_path), '/') . '/wp-load.php';
 if (!is_readable($wp_load)) { say('Cannot read ' . $wp_load); exit(2); }
 $db_host = $argv[2] ?? getenv('IDO_DB_HOST');
@@ -84,6 +86,24 @@ foreach (['ido_military', 'ido_covert'] as $tag) {
 check('and the war tag itself still answers', shortcode_exists('ido_war'));
 
 say('');
+say('=== Lands took the market ===');
+check('the market page is gone from the map', !isset(IDO_UI::PAGES['market']));
+check('Lands kept its slug', IDO_UI::PAGES['lands'][1] === 'imperial-dominion-online-lands');
+
+$lands = IDO_Shortcodes::render('lands');
+check('the holdings are there', strpos($lands, 'id="ido-holdings"') !== false);
+check('and so is the market', strpos($lands, 'id="ido-market"') !== false);
+check('with jump links', substr_count($lands, 'ido-subnav-item') === 2,
+    (string) substr_count($lands, 'ido-subnav-item'));
+check('no Market tab remains', strpos($lands, '>Market<') === false);
+check('[ido_market] still answers', shortcode_exists('ido_market'));
+check('and renders Lands in full',
+    strpos(do_shortcode('[ido_market]'), 'id="ido-holdings"') !== false);
+check('the market filters point back at Lands, not a page that is gone',
+    strpos(file_get_contents(IDO_PATH . 'includes/frontend/views/partials/market.php'),
+        "IDO_UI::url('market')") === false);
+
+say('');
 say('=== an existing site is carried across ===');
 $src = file_get_contents(IDO_PATH . 'includes/class-ido-installer.php');
 check('the rename knows the title it is replacing',
@@ -113,7 +133,10 @@ foreach (['military', 'covert'] as $key) {
 say('  ' . $left . ' leftover page(s) on this site');
 check('the dashboard offers to explain them',
     strpos(file_get_contents(IDO_PATH . 'admin/views/dashboard.php'),
-        'now part of the War Dept') !== false);
+        'folded into') !== false);
+check('and looks for all three of them',
+    strpos(file_get_contents(IDO_PATH . 'admin/views/dashboard.php'),
+        "'market' => 'Market'") !== false);
 
 say('');
 say($fails === 0 ? 'ALL CHECKS PASSED' : "$fails CHECK(S) FAILED");

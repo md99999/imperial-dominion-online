@@ -78,7 +78,6 @@ class IDO_Installer {
             'empire'   => ['ID - Empire'],
             'lands'    => ['ID - Lands'],
             'war'      => ['ID - War Room', 'Imperial Dominion - War Room'],
-            'market'   => ['ID - Market'],
             'gazette'  => ['ID - Gazette'],
             'rankings' => ['ID - Rankings'],
         ];

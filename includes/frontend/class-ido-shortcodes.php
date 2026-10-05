@@ -23,6 +23,7 @@ class IDO_Shortcodes {
         // in full, so nothing an administrator linked to has gone missing.
         'ido_military' => 'war',
         'ido_covert'   => 'war',
+        'ido_market'   => 'lands',
     ];
 
     public static function register(): void {
