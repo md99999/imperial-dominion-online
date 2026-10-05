@@ -16,7 +16,8 @@ $groups = [
     'Barbarians' => ['barbarians_enabled', 'barbarian_min_players', 'barbarian_top_ranks',
         'barbarian_chance_percent', 'barbarian_gold_percent', 'barbarian_grain_percent'],
     'Disasters' => ['disasters_enabled', 'disaster_one_in', 'disaster_percent'],
-    'Masterless empires' => ['rivals_enabled', 'rival_count', 'rival_regen_percent'],
+    'Masterless empires' => ['rivals_enabled', 'rival_count', 'rival_regen_percent',
+        'rival_retaliation', 'rival_memory_days', 'rival_attack_chance'],
     'Market' => ['market_tax_percent', 'listing_days', 'max_listings_per_kingdom'],
     'Rounds and housekeeping' => ['round_days', 'auto_start_next_round', 'news_retention_days', 'allow_new_kingdoms', 'use_wp_cron'],
 ];
@@ -64,6 +65,13 @@ $help = [
     'rival_regen_percent'    => 'How much of the gap back to full strength one closes each day. '
         . '10 means a stripped province is most of the way back inside a fortnight. Lower it to make '
         . 'a conquest last; raise it to keep them worth attacking more often.',
+    'rival_retaliation'      => 'Whether a masterless empire may march back at a ruler who has '
+        . 'attacked it. They never strike first: only somebody who attacked them, and only within '
+        . 'the memory below. Resolved on the daily tick, so a ruler reads the report in the morning.',
+    'rival_memory_days'      => 'How long one remembers being attacked. Leave it alone for this '
+        . 'many days and it forgets, so a feud ends when a ruler stops picking at it.',
+    'rival_attack_chance'    => 'The chance each day that a provoked empire marches. No ruler is '
+        . 'struck more than once a night however many of them hold a grudge.',
     'market_tax_percent'     => 'Cut the crown takes from every sale.',
     'barbarians_enabled'       => '1 lets barbarians raid the leading empires, 0 turns them off entirely.',
     'barbarian_min_players'    => 'Barbarians stay away until this many empires are playing. On a small board the top three is most of the board.',

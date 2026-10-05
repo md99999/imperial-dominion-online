@@ -212,6 +212,10 @@ class IDO_Maintenance {
             // towards what they were, before the leader is worked out.
             $rivals_made = IDO_Rivals::populate((int) $round->id);
             $rivals_back = IDO_Rivals::regenerate((int) $round->id);
+            // After they have recovered, not before: a province strikes back
+            // with the army it has this morning, which is the one a player left
+            // it with plus a night's repair.
+            $rivals_war  = IDO_Rivals::retaliate((int) $round->id);
 
             self::announce_leader((int) $round->id);
 
@@ -224,6 +228,9 @@ class IDO_Maintenance {
             }
             if ($rivals_back > 0) {
                 $league_note = trim($league_note . sprintf(' %d recovering.', $rivals_back));
+            }
+            if (!empty($rivals_war['marched'])) {
+                $league_note = trim($league_note . sprintf(' %d struck back.', (int) $rivals_war['marched']));
             }
 
             $skipped = max(0, $eligible - $granted);

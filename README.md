@@ -604,6 +604,32 @@ against their lord.
 your stores the moment you post them and return if the lot expires or you withdraw it. The crown
 takes 5% of every sale.
 
+**Masterless empires** (optional, off by default). A board with three players has nothing to
+march on, and this game is about marching. Switched on, the round carries provinces of the old
+empire that no living ruler holds: real empires with land, granaries, walls and an army, attacked
+through exactly the same combat, spoils and reports as a person. They are spread across a ladder of
+strengths rather than all made mature, because a march is only allowed against an empire worth
+40%-250% of your own and a field of uniformly powerful provinces would be invisible to everybody
+who was not already powerful.
+
+They are never counted as players: not in the rankings, the hall of fame, the player count the
+barbarians wait on, or the measure of whether a board has been beaten flat. Barbarians and
+disasters leave them alone. They never appear during league play, where there is no war within a
+site at all. The War Dept marks them, so you always know whether there is a person on the other end.
+
+Each one remembers the empire it was built to be and closes a share of the gap back to it every
+day, so a province you strip is worth marching on again in a week rather than never. Farming one
+pays less each time without any rule saying so, because spoils are a share of what is there.
+
+**They strike back, if you let them** (a second switch, also off). They never march first. A
+province marches only on a ruler who has attacked *it*, only within its memory, and only through
+the ordinary rules: your crown truce, the net worth band, the daily limit on hitting one target.
+No ruler is set upon more than once a night however many hold a grudge, and a grudge expires, so a
+feud ends when you stop picking at it. It resolves on the daily tick, so you read what happened
+over breakfast:
+
+> Conquest of Tarquica was thrown back from your walls. Your losses: 120 pawns, 118 legionnaires.
+
 **Weather and raiders.** Two things happen to an empire that nobody aimed at it. **Barbarians**
 raid the leading empires for a share of gold and grain, as a brake on a runaway lead; see
 [docs/BARBARIANS.md](docs/BARBARIANS.md). **Disasters** fall on anybody: a drought burns

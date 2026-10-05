@@ -262,6 +262,27 @@ $highest_title = end($titles);
 </div>
 
 <div class="ido-panel">
+    <?php if (IDO_Rivals::enabled()) : ?>
+        <h3 class="ido-panel-title">Masterless empires</h3>
+        <p>
+            Not every empire on the board has a ruler. Provinces of the old empire still stand with
+            land, granaries, walls and an army, and you may march on one exactly as you would march
+            on anybody: the same combat, the same spoils, the same report. The War Dept tells you
+            which is which.
+        </p>
+        <p class="ido-dim">
+            They hold no turns and start no wars. One you have stripped mends itself a little each
+            day, so it is worth marching on again in time &mdash; and worth less each time you do,
+            since spoils are a share of what is there.
+            <?php if (IDO_Rivals::retaliation_enabled()) : ?>
+                <strong>They do remember.</strong> A province you have attacked may march back at
+                you, and you will read about it the next morning. Leave one alone for
+                <?php echo esc_html((string) max(1, (int) $s['rival_memory_days'])); ?> days and it
+                forgets.
+            <?php endif; ?>
+        </p>
+    <?php endif; ?>
+
     <h3 class="ido-panel-title">The spy court</h3>
     <p>
         Two kinds of servant keep a crown informed, and the difference between them is what they may

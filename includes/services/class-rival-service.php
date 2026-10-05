@@ -306,6 +306,127 @@ class IDO_Rivals {
         return $moved;
     }
 
+    // -- Striking back ------------------------------------------------------
+
+    public static function retaliation_enabled(): bool {
+        return self::enabled() && IDO_Settings::int('rival_retaliation') === 1;
+    }
+
+    /**
+     * Players a masterless empire has reason to march on.
+     *
+     * Read out of the battle record rather than kept in a flag of its own: that
+     * record already says who marched on whom and when, it is the thing a player
+     * can see and argue with, and a second copy of the same fact is a second
+     * thing to keep in step.
+     *
+     * The grudge expires. A province that has been left alone for the memory
+     * window forgets, which means a player can stop a feud by stopping, and a
+     * board does not accumulate permanent enemies from one curious march in week
+     * one.
+     */
+    public static function grudges(object $rival): array {
+        global $wpdb;
+
+        $days   = max(1, IDO_Settings::int('rival_memory_days'));
+        $cutoff = date('Y-m-d H:i:s', current_time('timestamp') - $days * DAY_IN_SECONDS);
+
+        return (array) $wpdb->get_col($wpdb->prepare(
+            'SELECT DISTINCT attacker_kingdom_id FROM ' . IDO_DB::t('battles')
+            . ' WHERE defender_kingdom_id = %d AND created_at >= %s',
+            (int) $rival->id, $cutoff
+        ));
+    }
+
+    /**
+     * The army a province sends when it marches, as a share of what it holds.
+     *
+     * Never everything. A province that emptied its walls to strike back would
+     * be free to anybody passing the next morning, and the point of these is to
+     * be worth attacking more than once.
+     */
+    private static function marching_force(object $rival): array {
+        $force = [];
+        foreach (IDO_Units::keys() as $key) {
+            $held = (int) ($rival->{IDO_Units::column($key)} ?? 0);
+            if ($held < 1) continue;
+            $send = (int) floor($held * (wp_rand(55, 75) / 100));
+            if ($send > 0) $force[$key] = $send;
+        }
+        return $force;
+    }
+
+    /**
+     * Lets provoked provinces march, on the daily tick.
+     *
+     * Deliberately routed through IDO_Military::attack() with nothing special
+     * about it. Every rule a player is held to is a rule these are held to: the
+     * crown truce, the net worth band, the limit on how often one target may be
+     * hit, the lock that stops two battles at once. The only thing handed over
+     * is the turns, because a province does not spend its days the way a ruler
+     * does -- and handing those over is what keeps everything else honest,
+     * rather than teaching the war code about a second kind of attacker.
+     *
+     * A refusal is not an error here. Out of band, under truce, already hit
+     * today: all ordinary answers, and the province simply does not march.
+     *
+     * @return array{marched:int,refused:int}
+     */
+    public static function retaliate(int $round_id): array {
+        if (!self::retaliation_enabled()) return ['marched' => 0, 'refused' => 0];
+
+        $chance    = max(0, min(100, IDO_Settings::int('rival_attack_chance')));
+        $turn_cost = max(1, IDO_Settings::int('attack_turn_cost'));
+        $types     = array_keys(IDO_Military::attack_types());
+
+        $marched = 0;
+        $refused = 0;
+        $hit_today = [];   // one province per player per night, whatever the dice say
+
+        foreach (self::all($round_id) as $rival) {
+            if ($chance < 1 || wp_rand(1, 100) > $chance) continue;
+
+            $targets = self::grudges($rival);
+            shuffle($targets);
+
+            foreach ($targets as $target_id) {
+                $target_id = (int) $target_id;
+                if (isset($hit_today[$target_id])) continue;
+
+                $target = IDO_Kingdom::find($target_id);
+                if (!$target || (int) $target->round_id !== $round_id) continue;
+                if ((int) $target->is_defeated === 1) continue;
+                if (self::is_rival($target)) continue;          // they do not fight each other
+                if (IDO_Kingdom::is_protected($target)) continue;
+
+                $force = self::marching_force($rival);
+                if (!$force) break;
+
+                // The turns a province does not otherwise have. Granted rather
+                // than waived so that attack() charges them, the economy ticks
+                // once as it does for anybody, and no rule needs an exception.
+                global $wpdb;
+                $wpdb->update(IDO_DB::t('kingdoms'), ['turns' => $turn_cost], ['id' => (int) $rival->id]);
+                $marching = IDO_Kingdom::find((int) $rival->id);
+
+                try {
+                    IDO_Military::attack($marching, $target_id,
+                        $types[wp_rand(0, count($types) - 1)], $force, []);
+                    $hit_today[$target_id] = true;
+                    $marched++;
+                } catch (IDO_Game_Exception $e) {
+                    $refused++;
+                } finally {
+                    // Whatever happened, it keeps none of them.
+                    $wpdb->update(IDO_DB::t('kingdoms'), ['turns' => 0], ['id' => (int) $rival->id]);
+                }
+                break;   // one march a night each
+            }
+        }
+
+        return ['marched' => $marched, 'refused' => $refused];
+    }
+
     /**
      * Removes every masterless empire from a round.
      *
