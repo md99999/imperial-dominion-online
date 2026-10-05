@@ -124,7 +124,7 @@ class IDO_Military {
         if ($max < $min) $max = PHP_INT_MAX;
 
         return $wpdb->get_results($wpdb->prepare(
-            'SELECT id, kingdom_name, ruler_name, land, networth, protection_until, attacks_suffered'
+            'SELECT id, kingdom_name, ruler_name, land, networth, protection_until, attacks_suffered, is_rival'
             . ' FROM ' . IDO_DB::t('kingdoms')
             . ' WHERE round_id = %d AND id <> %d AND is_defeated = 0 AND networth BETWEEN %d AND %d'
             . ' ORDER BY networth DESC LIMIT %d',

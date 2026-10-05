@@ -16,6 +16,7 @@ $groups = [
     'Barbarians' => ['barbarians_enabled', 'barbarian_min_players', 'barbarian_top_ranks',
         'barbarian_chance_percent', 'barbarian_gold_percent', 'barbarian_grain_percent'],
     'Disasters' => ['disasters_enabled', 'disaster_one_in', 'disaster_percent'],
+    'Masterless empires' => ['rivals_enabled', 'rival_count', 'rival_regen_percent'],
     'Market' => ['market_tax_percent', 'listing_days', 'max_listings_per_kingdom'],
     'Rounds and housekeeping' => ['round_days', 'auto_start_next_round', 'news_retention_days', 'allow_new_kingdoms', 'use_wp_cron'],
 ];
@@ -54,6 +55,15 @@ $help = [
         . 'Never during a crown truce, relief or a board grace period, and never two at once.',
     'disaster_percent'       => 'The share a disaster destroys: farmsteads for a drought, '
         . 'stored grain for insects, homesteads for a flood.',
+    'rivals_enabled'         => 'Whether the board carries empires that no living ruler holds. '
+        . 'They never attack and never trade; they exist so that a board with few players still has '
+        . 'somewhere to march. Always off during league play.',
+    'rival_count'            => 'How many to keep, up to 50. They are spread across a range of '
+        . 'strengths so that every ruler has somebody within the usual attack band, not only the '
+        . 'strong ones. Lowering this stops new ones appearing and leaves the standing ones be.',
+    'rival_regen_percent'    => 'How much of the gap back to full strength one closes each day. '
+        . '10 means a stripped province is most of the way back inside a fortnight. Lower it to make '
+        . 'a conquest last; raise it to keep them worth attacking more often.',
     'market_tax_percent'     => 'Cut the crown takes from every sale.',
     'barbarians_enabled'       => '1 lets barbarians raid the leading empires, 0 turns them off entirely.',
     'barbarian_min_players'    => 'Barbarians stay away until this many empires are playing. On a small board the top three is most of the board.',

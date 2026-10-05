@@ -44,7 +44,8 @@ class IDO_Board {
         $marches = self::stand_down_league($round_id);
 
         $empires = (array) $wpdb->get_results($wpdb->prepare(
-            'SELECT id FROM ' . IDO_DB::t('kingdoms') . ' WHERE round_id = %d', $round_id
+            'SELECT id FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_rival = 0', $round_id
         ));
 
         $package = IDO_Kingdom::starting_package();
@@ -182,7 +183,8 @@ class IDO_Board {
     public static function board_worth(int $round_id): int {
         global $wpdb;
         return IDO_Game::clamp((float) $wpdb->get_var($wpdb->prepare(
-            'SELECT COALESCE(SUM(networth), 0) FROM ' . IDO_DB::t('kingdoms') . ' WHERE round_id = %d',
+            'SELECT COALESCE(SUM(networth), 0) FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_rival = 0',
             $round_id
         )));
     }
@@ -190,7 +192,8 @@ class IDO_Board {
     public static function empire_count(int $round_id): int {
         global $wpdb;
         return (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms') . ' WHERE round_id = %d', $round_id
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_rival = 0', $round_id
         ));
     }
 
@@ -251,7 +254,8 @@ class IDO_Board {
 
         $candidates = (array) $wpdb->get_results($wpdb->prepare(
             'SELECT * FROM ' . IDO_DB::t('kingdoms')
-            . ' WHERE round_id = %d AND is_defeated = 0 AND reliefs_used = 0 AND networth < %d',
+            . ' WHERE round_id = %d AND is_rival = 0 AND is_defeated = 0 AND reliefs_used = 0'
+            . ' AND networth < %d',
             $round_id, $threshold
         ));
 
@@ -294,7 +298,7 @@ class IDO_Board {
 
         $waiting = (array) $wpdb->get_results($wpdb->prepare(
             'SELECT * FROM ' . IDO_DB::t('kingdoms')
-            . ' WHERE round_id = %d AND is_defeated = 1 AND reliefs_used = 0'
+            . ' WHERE round_id = %d AND is_rival = 0 AND is_defeated = 1 AND reliefs_used = 0'
             . ' AND defeated_at IS NOT NULL AND defeated_at <= %s',
             $round_id, $cutoff
         ));

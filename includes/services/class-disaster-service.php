@@ -81,6 +81,9 @@ class IDO_Disasters {
     public static function eligible(object $kingdom): bool {
         if (!IDO_Settings::int('disasters_enabled')) return false;
         if ((int) $kingdom->is_defeated === 1) return false;
+        // Nobody is playing a masterless province, so a flood there is a story
+        // with no reader and a number nobody chose to risk.
+        if (IDO_Rivals::is_rival($kingdom)) return false;
 
         // Every kind of grace there is. See the note at the top: a grace period
         // is a promise, and this would break it.

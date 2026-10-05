@@ -36,7 +36,11 @@ CREATE TABLE {prefix}ido_rounds (
 CREATE TABLE {prefix}ido_kingdoms (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   round_id bigint(20) unsigned NOT NULL DEFAULT 0,
-  user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  -- Signed, deliberately. Masterless empires are rows in this table with no
+  -- WordPress account behind them, and they take negative ids: a real user id is
+  -- always positive, so a negative one can never collide with a person, and the
+  -- unique index below goes on protecting one empire per ruler per round.
+  user_id bigint(20) NOT NULL DEFAULT 0,
   kingdom_name varchar(60) NOT NULL DEFAULT '',
   ruler_name varchar(60) NOT NULL DEFAULT '',
   turns bigint(20) NOT NULL DEFAULT 0,
@@ -62,6 +66,8 @@ CREATE TABLE {prefix}ido_kingdoms (
   catapults_in_progress bigint(20) NOT NULL DEFAULT 0,
   agents bigint(20) NOT NULL DEFAULT 0,
   informers bigint(20) NOT NULL DEFAULT 0,
+  is_rival tinyint(1) NOT NULL DEFAULT 0,
+  rival_template longtext DEFAULT NULL,
   networth bigint(20) NOT NULL DEFAULT 0,
   protection_until datetime DEFAULT NULL,
   is_defeated tinyint(1) NOT NULL DEFAULT 0,

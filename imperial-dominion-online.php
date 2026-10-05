@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.24.0
+Version: 2.25.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -55,8 +55,8 @@ if (defined('IDO_VERSION')) {
     return;
 }
 
-define('IDO_VERSION', '2.24.0');
-define('IDO_DB_VERSION', '15');   // 15: kingdoms.informers, the cheaper spy
+define('IDO_VERSION', '2.25.0');
+define('IDO_DB_VERSION', '17');   // 17: masterless empires, and a signed user_id for them
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
 define('IDO_URL', plugin_dir_url(__FILE__));
@@ -72,6 +72,7 @@ require_once IDO_PATH . 'includes/data/class-ido-weapons.php';
 require_once IDO_PATH . 'includes/services/class-round-service.php';
 require_once IDO_PATH . 'includes/services/class-kingdom-service.php';
 require_once IDO_PATH . 'includes/services/class-barbarian-service.php';
+require_once IDO_PATH . 'includes/services/class-rival-service.php';
 require_once IDO_PATH . 'includes/services/class-disaster-service.php';
 require_once IDO_PATH . 'includes/services/class-economy-service.php';
 require_once IDO_PATH . 'includes/services/class-construction-service.php';

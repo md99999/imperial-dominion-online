@@ -57,6 +57,68 @@ $pages_made = is_array($page_ids) ? count($page_ids) : 0;
         </tbody>
     </table>
 
+    <h2>Masterless empires</h2>
+    <?php
+    $ido_round  = IDO_Rounds::current();
+    $ido_rivals = $ido_round ? IDO_Rivals::all((int) $ido_round->id) : [];
+    ?>
+    <p>
+        Provinces of the old empire that no living ruler holds. They never attack and never trade:
+        they are there so that a board with few players still has somewhere to march. They are kept
+        out of the rankings, the hall of fame and every count the game makes of its players, and
+        they do not exist during league play.
+    </p>
+    <?php if (!IDO_Rivals::enabled()) : ?>
+        <p class="description">
+            <strong>Switched off.</strong>
+            <?php if (class_exists('IDO_League') && IDO_League::active()) : ?>
+                This site is in a league, where there is no war within a site at all.
+            <?php else : ?>
+                Turn them on under <a href="<?php echo esc_url(admin_url('admin.php?page=ido_settings')); ?>">Settings
+                &rarr; Masterless empires</a>, then found them here.
+            <?php endif; ?>
+        </p>
+    <?php endif; ?>
+
+    <p>
+        Standing: <strong><?php echo esc_html((string) count($ido_rivals)); ?></strong>
+        of <strong><?php echo esc_html((string) IDO_Rivals::wanted()); ?></strong> asked for.
+    </p>
+
+    <?php if ($ido_rivals) : ?>
+        <table class="widefat striped" style="max-width:760px;margin-bottom:12px">
+            <thead><tr><th>Empire</th><th>Holder</th><th>Acres</th><th>Net worth</th></tr></thead>
+            <tbody>
+            <?php foreach ($ido_rivals as $ido_rival) : ?>
+                <tr>
+                    <td><?php echo esc_html($ido_rival->kingdom_name); ?></td>
+                    <td><?php echo esc_html($ido_rival->ruler_name); ?></td>
+                    <td><?php echo esc_html(IDO_Game::fmt($ido_rival->land)); ?></td>
+                    <td><?php echo esc_html(IDO_Game::fmt($ido_rival->networth)); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+
+    <p>
+        <?php echo IDO_Admin::form_open('rivals_populate', 'ido_dashboard'); ?>
+            <button type="submit" class="button button-primary">Found any that are missing</button>
+        </form>
+        <?php if ($ido_rivals) : ?>
+            <?php echo IDO_Admin::form_open('rivals_retire', 'ido_dashboard'); ?>
+                <button type="submit" class="button"
+                        onclick="return confirm('Remove every masterless empire from this round? Battle reports naming them will remain.');">
+                    Remove them all
+                </button>
+            </form>
+        <?php endif; ?>
+    </p>
+    <p class="description">
+        They are also topped up and nursed back towards full strength by the daily tick, so this
+        button is only for founding them now rather than at midnight.
+    </p>
+
     <h2>Game pages</h2>
     <p>Each page below holds a single shortcode. Create them once and the navigation inside the game links them together.</p>
     <?php echo IDO_Admin::form_open('create_pages', 'ido_dashboard'); ?>

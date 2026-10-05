@@ -213,6 +213,25 @@ class IDO_Admin {
                 $notice = IDO_League::clear_resync(false);
                 break;
 
+            case 'rivals_populate': {
+                $round = IDO_Rounds::current();
+                if (!$round) { $notice = 'No round is running.'; break; }
+                $made = IDO_Rivals::populate((int) $round->id);
+                $notice = $made > 0
+                    ? sprintf('%d masterless empire(s) founded.', $made)
+                    : 'Nothing to found: the board already holds as many as the setting allows, '
+                      . 'or they are switched off.';
+                break;
+            }
+
+            case 'rivals_retire': {
+                $round = IDO_Rounds::current();
+                if (!$round) { $notice = 'No round is running.'; break; }
+                $gone = IDO_Rivals::retire((int) $round->id);
+                $notice = sprintf('%d masterless empire(s) removed. Battle reports naming them remain.', $gone);
+                break;
+            }
+
             case 'league_pause':
                 $notice = IDO_League_Setup::set_paused(!empty($_POST['paused']));
                 break;

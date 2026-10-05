@@ -208,12 +208,24 @@ class IDO_Maintenance {
             $reset_note = IDO_Board::reset_if_ruined((int) $round->id);
             if ($reset_note !== '') $league_note = trim($league_note . ' ' . $reset_note);
 
+            // The masterless provinces are brought up to number and nursed back
+            // towards what they were, before the leader is worked out.
+            $rivals_made = IDO_Rivals::populate((int) $round->id);
+            $rivals_back = IDO_Rivals::regenerate((int) $round->id);
+
             self::announce_leader((int) $round->id);
 
             self::record('daily', $source);
             // Saying how many were skipped matters: pressing Run now after the
             // tick has already run reports "0 granted", which reads as a fault
             // when the truth is that everyone already holds today's turns.
+            if ($rivals_made > 0) {
+                $league_note = trim($league_note . sprintf(' %d masterless empire(s) founded.', $rivals_made));
+            }
+            if ($rivals_back > 0) {
+                $league_note = trim($league_note . sprintf(' %d recovering.', $rivals_back));
+            }
+
             $skipped = max(0, $eligible - $granted);
             return self::log_tick('daily', $source, trim(sprintf(
                 'Daily upkeep: turns granted to %d %s%s, %d buildings finished.%s %s',

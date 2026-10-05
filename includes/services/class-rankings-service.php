@@ -12,7 +12,8 @@ class IDO_Rankings {
         return $wpdb->get_results($wpdb->prepare(
             'SELECT id, user_id, kingdom_name, ruler_name, land, networth, attacks_won, attacks_suffered, is_defeated'
             . ' FROM ' . IDO_DB::t('kingdoms')
-            . ' WHERE round_id = %d ORDER BY networth DESC, land DESC, id ASC LIMIT %d',
+            . ' WHERE round_id = %d AND is_rival = 0'
+            . ' ORDER BY networth DESC, land DESC, id ASC LIMIT %d',
             $round_id, $limit
         ));
     }
@@ -21,7 +22,8 @@ class IDO_Rankings {
     public static function position(object $kingdom): int {
         global $wpdb;
         $above = (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms') . ' WHERE round_id = %d AND networth > %d',
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_rival = 0 AND networth > %d',
             (int) $kingdom->round_id, (int) $kingdom->networth
         ));
         return $above + 1;
@@ -30,7 +32,10 @@ class IDO_Rankings {
     public static function kingdom_count(int $round_id): int {
         global $wpdb;
         return (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms') . ' WHERE round_id = %d', $round_id
+            // Living rulers only. Ten masterless provinces on a two-player
+            // board must not switch on a mechanic that waits for ten players.
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('kingdoms')
+            . ' WHERE round_id = %d AND is_rival = 0', $round_id
         ));
     }
 

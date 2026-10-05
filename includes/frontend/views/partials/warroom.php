@@ -63,8 +63,9 @@ $league_mode = class_exists('IDO_League') && IDO_League::active();
                             <?php selected($selected, (int) $target->id); ?>
                             <?php disabled($is_protected); ?>>
                             <?php echo esc_html(sprintf(
-                                '%s (%s) - %s acres, net worth %s%s',
+                                '%s (%s)%s - %s acres, net worth %s%s',
                                 $target->kingdom_name, $target->ruler_name,
+                                IDO_Rivals::is_rival($target) ? ' [masterless]' : '',
                                 IDO_Game::fmt($target->land), IDO_Game::fmt($target->networth),
                                 $is_protected ? ' - under truce' : ''
                             )); ?>
@@ -131,7 +132,15 @@ $league_mode = class_exists('IDO_League') && IDO_League::active();
         <?php foreach ($targets as $target) : ?>
             <tr>
                 <td><?php echo esc_html($target->kingdom_name); ?></td>
-                <td><?php echo esc_html($target->ruler_name); ?></td>
+                <td>
+                    <?php echo esc_html($target->ruler_name); ?>
+                    <?php if (IDO_Rivals::is_rival($target)) : ?>
+                        <?php /* Said plainly. A player deciding whether to march
+                                 deserves to know whether there is somebody on the
+                                 other end of it. */ ?>
+                        <div class="ido-dim">Masterless &mdash; no living ruler holds it</div>
+                    <?php endif; ?>
+                </td>
                 <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($target->land)); ?></td>
                 <td class="ido-right"><?php echo esc_html(IDO_Game::fmt($target->networth)); ?></td>
                 <td>

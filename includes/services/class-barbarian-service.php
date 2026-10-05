@@ -28,6 +28,9 @@ class IDO_Barbarians {
     public static function eligible(object $kingdom): bool {
         if (!IDO_Settings::int('barbarians_enabled')) return false;
         if ((int) $kingdom->is_defeated === 1) return false;
+        // Barbarians brake a runaway *player*. Left to it they would spend the
+        // round robbing masterless provinces at the top of the table instead.
+        if (IDO_Rivals::is_rival($kingdom)) return false;
 
         $min_players = IDO_Settings::int('barbarian_min_players');
         if (IDO_Rankings::kingdom_count((int) $kingdom->round_id) < $min_players) return false;

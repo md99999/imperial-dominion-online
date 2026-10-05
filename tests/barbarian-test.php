@@ -36,6 +36,9 @@ class IDO_Rankings {
     public static function position(object $k): int { return $GLOBALS['ido_position']; }
 }
 
+// Barbarians ask whether an empire is masterless before deciding it is a
+// leader worth robbing, so the class that answers that has to be here too.
+require __DIR__ . '/../includes/services/class-rival-service.php';
 require __DIR__ . '/../includes/services/class-barbarian-service.php';
 
 $fails = 0;

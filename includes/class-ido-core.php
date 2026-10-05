@@ -149,6 +149,12 @@ class IDO_Settings {
             'disasters_enabled'      => 1,
             'disaster_one_in'        => 60,
             'disaster_percent'       => 7,
+            // Masterless empires: provinces no living ruler holds, for boards
+            // with too few players to make war out of. Off by default, like
+            // every other thing that changes the shape of a game.
+            'rivals_enabled'         => 0,
+            'rival_count'            => 10,
+            'rival_regen_percent'    => 10,
             // Market
             'market_tax_percent'     => 5,
             'listing_days'           => 3,
