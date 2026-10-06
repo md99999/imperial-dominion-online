@@ -98,6 +98,7 @@ Available plugins:
 2. **Imperial Dominion Online**
 3. **WP BBS Slots**
 4. **WP On This Day**
+5. **Imperial Hackers Online**
 
 These plugins:
 
