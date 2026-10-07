@@ -5,7 +5,7 @@ Plugin URI: https://maddogproductions.online/
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Imperial Dominion Online: a turn-based empire building and conquest game for WordPress. Claim land, raise an empire, trade on the open market and make war on rival empires, a few turns at a time each day. Played through ordinary WordPress pages using shortcodes.
-Version: 2.30.2
+Version: 2.31.0
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: imperial-dominion-online
@@ -55,7 +55,7 @@ if (defined('IDO_VERSION')) {
     return;
 }
 
-define('IDO_VERSION', '2.30.2');
+define('IDO_VERSION', '2.31.0');
 define('IDO_DB_VERSION', '17');   // 17: masterless empires, and a signed user_id for them
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));

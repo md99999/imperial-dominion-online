@@ -57,6 +57,39 @@ $pages_made = is_array($page_ids) ? count($page_ids) : 0;
         </tbody>
     </table>
 
+    <h2>Disclaimer</h2>
+    <div class="card" style="max-width:860px;padding:4px 16px 12px;border-left:4px solid #996800">
+        <p>
+            <strong>You run this plugin at your own risk. The author accepts no responsibility or
+            liability for any loss, damage or compromise arising from its use.</strong> Every effort
+            has been made to write it safely, but new vulnerabilities appear in software of every
+            kind every day and no website can be guaranteed secure. It is provided as is, without
+            warranty of any kind, under the
+            <a href="https://www.gnu.org/licenses/gpl-2.0.html" target="_blank" rel="noopener noreferrer">GNU
+            General Public License v2</a>.
+        </p>
+        <p>
+            Test on a staging site first, keep backups of your database and files, keep WordPress,
+            PHP, your theme and plugins up to date, and serve the site over HTTPS.
+            <?php
+            /*
+             * The source text named the Universe Forge, which belongs to Imperial
+             * Barons and does not exist here. A disclaimer that names a tool the
+             * plugin does not have teaches a reader to discount the rest of it,
+             * so this names the two things in *this* game that destroy data and
+             * cannot be undone.
+             */
+            ?>
+            <strong>Refounding the board</strong> and <strong>deleting the plugin with
+            &ldquo;remove all game data&rdquo; switched on</strong> erase game data permanently and
+            cannot be undone. Full details are in the plugin's <code>README.md</code>.
+        </p>
+        <p>
+            Found a security problem? Please report it privately to
+            <a href="mailto:sysop@maddogproductions.online">sysop@maddogproductions.online</a>.
+        </p>
+    </div>
+
     <h2>Masterless empires</h2>
     <?php
     $ido_round  = IDO_Rounds::current();
