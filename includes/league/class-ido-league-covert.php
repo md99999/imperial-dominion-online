@@ -86,7 +86,13 @@ class IDO_League_Covert {
         // IDO_Covert::ratio and ::odds, not a copy of them, so tuning the local
         // court tunes this too and neither can drift into behaving differently
         // from what the other screen promises.
-        $ratio = IDO_Covert::ratio((int) $attack_power, (int) $defence_power);
+        // Clamped rather than cast. These arrive as floats because a host is
+        // summed from weights, and a sum large enough to sit at the edge of
+        // integer range makes a bare (int) undefined -- PHP 8.5 says so out
+        // loud where older versions did it quietly. clamp() saturates into the
+        // range the game stores and sends a NAN to the bottom rather than the
+        // top, which is the same rule net worth is held to.
+        $ratio = IDO_Covert::ratio(IDO_Game::clamp($attack_power), IDO_Game::clamp($defence_power));
 
         // A lower ceiling than a local mission. Deep in another realm there is no
         // such thing as a sure thing, however large the army at the gates.

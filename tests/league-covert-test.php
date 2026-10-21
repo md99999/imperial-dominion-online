@@ -19,8 +19,17 @@ class IDO_Game_Exception extends Exception {}
 class IDO_Settings { public static function int(string $k): int { return 1; } }
 class IDO_DB { public static function t(string $n): string { return 'wp_ido_' . $n; } }
 class IDO_Game {
+    const MAX_VALUE = 9000000000000000;
     public static function now(): string { return gmdate('Y-m-d H:i:s'); }
     public static function fmt($n): string { return number_format((float) $n); }
+    // Mirrors the real clamp, and the section below checks that it still does.
+    public static function clamp($n): int {
+        $n = (float) $n;
+        if (is_nan($n)) return 0;
+        if ($n <= 0) return 0;
+        if ($n >= (float) self::MAX_VALUE) return self::MAX_VALUE;
+        return (int) $n;
+    }
 }
 class IDO_League_Status { const MUSTERING = 'mustering'; }
 require __DIR__ . '/../includes/services/class-covert-service.php';
@@ -41,6 +50,22 @@ check('a token raid leaves him conspicuous', IDO_League_Covert::chance(250, 1000
 check('never a certainty', IDO_League_Covert::chance(PHP_INT_MAX, 1) <= 90);
 check('never hopeless', IDO_League_Covert::chance(1, PHP_INT_MAX) >= 10);
 check('a defence of nothing does not divide by zero', IDO_League_Covert::chance(1000, 0) > 0);
+
+echo "\n=== the stub is not narrower than the class it stands in for ===\n";
+// A stub missing a method the code calls is a test that cannot run, and a stub
+// whose numbers have quietly drifted is worse: it passes while saying something
+// untrue. Both are read out of the real file rather than taken on trust.
+$core = file_get_contents(__DIR__ . '/../includes/class-ido-core.php');
+preg_match('/const MAX_VALUE = (\d+);/', $core, $m);
+check('the ceiling matches the real one',
+    (int) ($m[1] ?? 0) === IDO_Game::MAX_VALUE, (string) ($m[1] ?? 'not found'));
+check('a host beyond integer range saturates rather than casting to nonsense',
+    IDO_Game::clamp((float) PHP_INT_MAX) === IDO_Game::MAX_VALUE);
+check('and arithmetic that has gone wrong lands at the bottom, not the top',
+    IDO_Game::clamp(NAN) === 0 && IDO_Game::clamp(-5) === 0);
+check('the chance is clamped, never cast bare',
+    strpos(file_get_contents(__DIR__ . '/../includes/league/class-ido-league-covert.php'),
+        'IDO_Game::clamp($attack_power)') !== false);
 
 echo "\n=== it is the local court's arithmetic, not a copy of it ===\n";
 check('the odds come from IDO_Covert::odds',
