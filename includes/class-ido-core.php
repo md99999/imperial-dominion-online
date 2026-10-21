@@ -209,8 +209,8 @@ class IDO_Settings {
             // Striking back. Off on top of the empires themselves being off: a
             // board can have somewhere to march without anything marching back.
             'rival_retaliation'      => 0,
-            'rival_memory_days'      => 3,
-            'rival_attack_chance'    => 35,
+            'rival_memory_days'      => 10,
+            'rival_attack_chance'    => 12,
             // Market
             'market_tax_percent'     => 5,
             'listing_days'           => 3,

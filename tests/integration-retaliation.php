@@ -181,5 +181,23 @@ check('and it is off out of the box',
     (int) (IDO_Settings::defaults()['rival_retaliation'] ?? 1) === 0);
 
 say('');
+say('=== the memory and the chance are one dial, not two ===');
+// These two multiply, and tuning either alone moves the game somewhere nobody
+// chose. The pressure a player actually feels is the odds of being marched on
+// at all across one grudge, so that is what is pinned here rather than either
+// number on its own: lengthening the memory has to be paid for by lowering the
+// chance, or a longer fuse quietly becomes a harder game.
+$d = IDO_Settings::defaults();
+$days = (int) $d['rival_memory_days'];
+$pc = (int) $d['rival_attack_chance'];
+$odds = 1 - pow(1 - $pc / 100, $days);
+check('a grudge is likelier than not to be answered', $odds > 0.6,
+    sprintf('%.0f%% over %d days', $odds * 100, $days));
+check('but never a certainty, or retaliation is just a tax', $odds < 0.85,
+    sprintf('%.0f%%', $odds * 100));
+check('and the memory is long enough to outlast a weekend', $days >= 7, (string) $days);
+check('while no single night is frightening on its own', $pc <= 20, (string) $pc);
+
+say('');
 say($fails === 0 ? 'ALL CHECKS PASSED' : "$fails CHECK(S) FAILED");
 exit($fails === 0 ? 0 : 1);

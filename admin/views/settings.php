@@ -98,9 +98,15 @@ $help = [
         . 'attacked it. They never strike first: only somebody who attacked them, and only within '
         . 'the memory below. Resolved on the daily tick, so a ruler reads the report in the morning.',
     'rival_memory_days'      => 'How long one remembers being attacked. Leave it alone for this '
-        . 'many days and it forgets, so a feud ends when a ruler stops picking at it.',
+        . 'many days and it forgets, so a feud ends when a ruler stops picking at it. Ships at 10, '
+        . 'which is long enough that a ruler feels the consequence of a raid rather than outrunning '
+        . 'it, and short enough that the board is not carrying grudges from week one.',
     'rival_attack_chance'    => 'The chance each day that a provoked empire marches. No ruler is '
-        . 'struck more than once a night however many of them hold a grudge.',
+        . 'struck more than once a night however many of them hold a grudge. Ships at 12. Read it '
+        . 'against the memory above rather than on its own: the two multiply, and 12 across ten '
+        . 'days works out at about the same odds of being marched on as the 35 across three days '
+        . 'this replaced -- the same answer, arrived at more slowly. Raise one and you should lower '
+        . 'the other.',
     'market_tax_percent'     => 'The crown\'s cut of every market sale. Ships at 5.',
     'barbarians_enabled'       => '1 lets barbarians raid the leading empires, 0 turns them off entirely.',
     'barbarian_min_players'    => 'Barbarians stay away until this many empires are playing. Ships at 10. On a small board the top three is most of the board, and the brake becomes a tax on the only people there.',
