@@ -191,6 +191,47 @@ check('the caller cannot abandon their own muster',
     refused(static fn() => IDO_League_Muster::withdraw($caller, (int) $march->id)) !== '');
 
 say('');
+say('=== and an army cannot be recalled twice ===');
+// Found in a security review, and it was real: withdraw() returned the force
+// to the stores and then deleted the pledge, so two requests that both read
+// the row -- a double-clicked button is enough -- both returned it. A 500-man
+// pledge came home 1,000 strong. The delete comes first now, so only the
+// request that actually removed the row credits anything.
+//
+// The race is not simulated here, because it does not need to be: the second
+// caller holds a row that no longer exists, which is precisely the state the
+// losing request is in.
+IDO_League_Muster::join($quitter, (int) $march->id, ['pawn' => 400]);
+$quitter = IDO_Kingdom::reload($quitter);
+$held = (int) $quitter->u_pawn;
+$stale = IDO_League_Muster::contribution((int) $march->id, (int) $quitter->id);
+check('a pledge is on the books', $stale !== null);
+
+IDO_League_Muster::withdraw($quitter, (int) $march->id);
+$once = (int) IDO_Kingdom::reload($quitter)->u_pawn;
+check('the first recall brings the force home', $once === $held + 400,
+    $held . ' -> ' . $once);
+
+$again = refused(static fn() => IDO_League_Muster::withdraw($quitter, (int) $march->id));
+check('a second recall is refused', $again !== '', $again);
+check('and the force was not paid twice',
+    (int) IDO_Kingdom::reload($quitter)->u_pawn === $once,
+    $once . ' -> ' . IDO_Kingdom::reload($quitter)->u_pawn);
+
+// The order is the fix, so the order is what is pinned. A future edit that
+// returns the pledge before deleting the row reopens the hole.
+$muster_src = file_get_contents(IDO_PATH . 'includes/league/class-ido-league-muster.php');
+$withdraw = substr($muster_src, strpos($muster_src, 'function withdraw('));
+$withdraw = substr($withdraw, 0, strpos($withdraw, 'private static function return_pledge'));
+check('the delete is the guard, and it comes first',
+    strpos($withdraw, "delete(IDO_DB::t('league_contributions')") <
+    strpos($withdraw, 'self::return_pledge($row)'));
+check('and a delete that removed nothing refuses',
+    strpos($withdraw, 'if (!$deleted)') !== false);
+check('returning a whole march claims each row before paying it',
+    strpos($muster_src, '// another call claimed this one') !== false);
+
+say('');
 say('=== closing the window ===');
 $assembled = IDO_League_Muster::assembled((int) $march->id);
 check('the army is the sum of the pledges',

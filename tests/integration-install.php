@@ -216,6 +216,25 @@ check('tests, tools and docs are excluded from a build',
     strpos($builder, "['tests', 'tools', 'docs']") !== false);
 check('and .htaccess is let through the dot rule',
     strpos($builder, "\$keep = ['.htaccess']") !== false);
+
+// A release is built from whatever is sitting in the working tree, so the
+// builder is the last thing between an odd filesystem entry and a published
+// archive. Both of these were found in a security review: a junction read as
+// neither file nor directory and was handed to addFile(), and addFile() is lazy
+// enough to return true for a file it never opens -- so a build could report
+// "91 files" while writing an empty zip, and did.
+check('a link is refused rather than followed',
+    strpos($builder, 'Refusing to build') !== false);
+check('and it is found by resolving the path, not by asking is_link alone',
+    strpos($builder, 'realpath($file->getPathname())') !== false
+    && strpos($builder, '$root_real') !== false);
+check('the archive is reopened and counted rather than trusted',
+    strpos($builder, '$check = new ZipArchive()') !== false
+    && strpos($builder, '$written = $check->numFiles') !== false);
+check('a close that failed stops the build',
+    strpos($builder, 'if (!$zip->close())') !== false);
+check('and so does an add that was refused',
+    strpos($builder, 'if (!$zip->addFile(') !== false);
 // Either this copy has no .gitattributes at all, which is what a clean
 // install looks like, or it has one and that one keeps the development
 // directories out of GitHub's archive. Both are correct; only a

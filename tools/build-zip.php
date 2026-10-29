@@ -75,18 +75,83 @@ $files = new RecursiveIteratorIterator(
     RecursiveIteratorIterator::SELF_FIRST
 );
 
+// A link is never packaged, and never followed.
+//
+// A symlink or a Windows junction in the tree reads as neither a file nor a
+// directory here: isDir() says false, so the old code handed it to addFile(),
+// which resolves it when the archive is written. At best that silently packages
+// whatever it points at -- a key, a config file, anything outside the plugin --
+// under a plugin path. At worst it points somewhere unreadable, and then see
+// below. Nothing in a release is a link, so the honest answer is to refuse one
+// and say so rather than to resolve it.
+$links = [];
+
+// The plugin's own directory, canonicalised once, to compare every entry against.
+$root_real = rtrim(str_replace('\\', '/', (string) realpath($root)), '/');
+
 $count = 0;
 foreach ($files as $file) {
     $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
     if ($is_furniture($relative)) continue;
 
+    // Resolved and then checked, rather than checked and then resolved.
+    //
+    // is_link() is not enough on its own: a Windows junction answers false to
+    // it and to isLink(), while still redirecting anywhere on the disk. The
+    // reliable question is not "is this a link" but "after the operating system
+    // has finished resolving this name, is the file still inside the plugin" --
+    // which is the same question, asked so that it cannot be answered wrongly.
+    $real = realpath($file->getPathname());
+    $inside = $real !== false
+        && strpos(str_replace('\\', '/', $real), $root_real . '/') === 0;
+    if (!$inside || is_link($file->getPathname()) || $file->isLink()) {
+        $links[] = $relative . ($real === false ? ' (unreadable)' : ' -> ' . $real);
+        continue;
+    }
+
     if ($file->isDir()) {
         $zip->addEmptyDir($name . '/' . $relative);
     } else {
-        $zip->addFile($file->getPathname(), $name . '/' . $relative);
+        // addFile() is lazy: it returns true having only recorded the intent,
+        // and does not open the file until close(). An unreadable entry
+        // therefore fails at close() and not here, which is why the count below
+        // is read back out of the finished archive instead of being tallied in
+        // this loop. A build that reported "91 files" while writing an empty
+        // zip is exactly the failure this guards.
+        if (!$zip->addFile($file->getPathname(), $name . '/' . $relative)) {
+            fwrite(STDERR, "Could not add $relative\n");
+            exit(1);
+        }
         $count++;
     }
 }
 
-$zip->close();
-printf("%s\n%d files, %.1f KB, version %s\n", $dest, $count, filesize($dest) / 1024, $version);
+if ($links) {
+    fwrite(STDERR, "Refusing to build: these are links, and a release contains none.\n  "
+        . implode("\n  ", $links) . "\n");
+    exit(1);
+}
+
+if (!$zip->close()) {
+    fwrite(STDERR, "Could not write $dest: " . $zip->getStatusString() . "\n");
+    exit(1);
+}
+
+// Read back rather than trusted. The count above is what this script meant to
+// write; this is what a site will actually unpack.
+$check = new ZipArchive();
+if ($check->open($dest) !== true) {
+    fwrite(STDERR, "Built $dest but cannot reopen it.\n");
+    exit(1);
+}
+$written = $check->numFiles;
+$check->close();
+
+$dirs = $written - $count;
+if ($written < $count) {
+    fwrite(STDERR, "Built $dest but it holds $written entries, not the $count files added.\n");
+    exit(1);
+}
+
+printf("%s\n%d files (+%d directories), %.1f KB, version %s\n",
+    $dest, $count, $dirs, filesize($dest) / 1024, $version);

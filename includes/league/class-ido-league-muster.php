@@ -397,8 +397,25 @@ class IDO_League_Muster {
             );
         }
 
+        // The delete is the guard, and it has to come first.
+        //
+        // Two requests can both read the same pledge row -- a double-clicked
+        // button is enough -- and the old order returned the force to the
+        // stores before removing the row, so both returned it and the army
+        // came home twice. The second delete reported nothing removed, which
+        // was the evidence, and nothing was looking at it.
+        //
+        // Deleting first inverts that. Only the request that actually removed
+        // the row credits anything, because only one delete can affect a row,
+        // and the loser is told the recall already happened. This is the same
+        // rule the market applies when a lot is withdrawn and sold at once:
+        // return the goods only if this request is the one that closed it.
+        $deleted = $wpdb->delete(IDO_DB::t('league_contributions'), ['id' => (int) $row->id], ['%d']);
+        if (!$deleted) {
+            throw new IDO_Game_Exception('That force has already been recalled.');
+        }
+
         self::return_pledge($row);
-        $wpdb->delete(IDO_DB::t('league_contributions'), ['id' => (int) $row->id], ['%d']);
 
         return 'Your force has been recalled and stands at home again. The turns you spent stay spent.';
     }
@@ -434,12 +451,18 @@ class IDO_League_Muster {
     public static function return_all(int $march_id): int {
         global $wpdb;
 
+        // Row by row, and the delete first, for the reason given in withdraw():
+        // a cancellation racing the nightly close would otherwise return every
+        // pledge on the march twice. Deleting the whole march in one statement
+        // afterwards could not tell which rows this call had actually claimed.
         $returned = 0;
         foreach (self::contributions($march_id) as $row) {
+            if (!$wpdb->delete(IDO_DB::t('league_contributions'), ['id' => (int) $row->id], ['%d'])) {
+                continue;                       // another call claimed this one
+            }
             self::return_pledge($row);
             $returned++;
         }
-        $wpdb->delete(IDO_DB::t('league_contributions'), ['march_id' => $march_id], ['%d']);
         return $returned;
     }
 
