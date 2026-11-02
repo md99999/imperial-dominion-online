@@ -22,6 +22,8 @@ class IDO_Game { const MAX_VALUE = 9000000000000000; }
 
 require __DIR__ . '/../includes/league/class-ido-league-crypto.php';
 require __DIR__ . '/../includes/league/class-ido-league-packet.php';
+require __DIR__ . '/../includes/data/class-ido-units.php';
+require __DIR__ . '/../includes/data/class-ido-weapons.php';
 
 $fails = 0;
 function check(string $label, bool $ok, string $detail = ''): void {
@@ -107,6 +109,81 @@ foreach ([
 echo "\n=== SQL in a text field ===\n";
 foreach (["' OR 1=1--", "Northmarch'; DELETE FROM wp_options WHERE 1=1; --", '" UNION SELECT user_pass FROM wp_users'] as $payload) {
     check('refuses  ' . substr($payload, 0, 34), refusal(good_packet([], ['site_name' => $payload])) !== '');
+}
+
+echo "\n=== SQL in every kind of field, not only the name ===\n";
+// A site that holds a valid secret can sign anything it likes, so the schema
+// is the last word on shape. Each field type gets a payload of its own.
+$sql = [
+    "' OR '1'='1",
+    "1; DROP TABLE wp_users; --",
+    "x' UNION SELECT user_pass FROM wp_users --",
+    "1 AND SLEEP(10)",
+    "0x27206f7220313d31",
+    "%27%20OR%201%3D1",
+    "\\' OR 1=1 #",
+    "/**/OR/**/1=1",
+];
+foreach ($sql as $payload) {
+    $short = substr($payload, 0, 24);
+    check('uuid field refuses  ' . $short,     refusal(good_packet(['uuid' => $payload])) !== '');
+    check('league field refuses  ' . $short,   refusal(good_packet(['league' => $payload])) !== '');
+    check('fingerprint refuses  ' . $short,    refusal(good_packet(['fp' => $payload])) !== '');
+    check('type refuses  ' . $short,           refusal(good_packet(['type' => $payload])) !== '');
+    check('a number field refuses  ' . $short, refusal(good_packet([], ['empire_count' => $payload])) !== '');
+    check('a date field refuses  ' . $short,   refusal(good_packet([], ['as_of' => $payload])) !== '');
+}
+
+echo "\n=== SQL in a unit or weapon name, where a key becomes a column ===\n";
+// The one place a packet string comes near the SQL text itself: a war or
+// result body names units, and a unit name becomes a column name (u_pawn).
+// Column names cannot be bound as parameters, so the guarantee here is that
+// only a name from this game's own list survives the schema at all.
+function war_packet(array $force, array $weapons = []): array {
+    return good_packet(['type' => 'war', 'body' => [
+        'march'   => '55555555-5555-4555-8555-555555555555',
+        'force'   => $force,
+        'weapons' => $weapons,
+        'agent'   => false,
+    ]]);
+}
+function result_packet(array $survivors): array {
+    return good_packet(['type' => 'result', 'body' => [
+        'march' => '55555555-5555-4555-8555-555555555555', 'outcome' => 'won',
+        'survivors' => $survivors, 'weapons_home' => [],
+        'spoils_gold' => 0, 'spoils_grain' => 0, 'spoils_iron' => 0, 'spoils_weapons' => 0,
+        'defender_dead' => 0, 'agent' => 'none', 'resolved_at' => '2026-09-27 11:30:00',
+    ]]);
+}
+check('a legitimate war packet is accepted', refusal(war_packet(['legionnaire' => 500], ['catapult' => 2])) === '',
+    refusal(war_packet(['legionnaire' => 500], ['catapult' => 2])));
+check('a legitimate result packet is accepted', refusal(result_packet(['pawn' => 40])) === '',
+    refusal(result_packet(['pawn' => 40])));
+foreach ([
+    'pawn` = 999999, `gold` = `gold` + 1 --',
+    'pawn = u_pawn + 1000000 WHERE 1=1; --',
+    "legionnaire'; DROP TABLE wp_ido_kingdoms; --",
+    'gold',
+    'u_pawn',
+    'secret',
+    'PAWN',
+    ' pawn',
+    "pawn\x00",
+    'pawn/**/',
+] as $key) {
+    $label = str_replace("\x00", '\0', substr($key, 0, 30));
+    check('war force refuses  ' . $label,      refusal(war_packet([$key => 1])) !== '');
+    check('war weapons refuse  ' . $label,     refusal(war_packet(['pawn' => 1], [$key => 1])) !== '');
+    check('result survivors refuse  ' . $label, refusal(result_packet([$key => 1])) !== '');
+}
+check('a numeric key, which PHP would make an int', refusal(war_packet([0 => 1])) !== '');
+check('a count given as SQL', refusal(war_packet(['pawn' => '1 OR 1=1'])) !== '');
+
+echo "\n=== no keyword filter, on purpose ===\n";
+// Real names contain SQL words. Banning them would refuse these sites and
+// protect nothing: the queries are prepared, so the words are only words.
+foreach (['Union of the North', 'Select Guard', 'Dropwater', 'Delete Bay', "O'Brien's Hold", 'Order of Insertion'] as $name) {
+    check('accepts the name  ' . $name, refusal(good_packet([], ['site_name' => $name])) === '');
 }
 
 echo "\n=== type confusion ===\n";
