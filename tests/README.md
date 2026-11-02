@@ -19,6 +19,7 @@ afterwards.
     php tests/migration-test.php    # the upgrade path drops and renames the right columns
     php tests/smoke-test.php        # plugin loads, activates, and every page renders
     php tests/uninstall-test.php    # deleting the plugin keeps data unless told otherwise
+    php tests/sql-guard-test.php    # no unreviewed variable reaches the text of a query
 
 The rest of the `*-test.php` scripts run the same way. The integration tests
 take the path to a WordPress install, and optionally a database host:
@@ -46,6 +47,7 @@ If PHP is not on your PATH, the binary bundled with Local works:
 | `barbarian-test.php` | Who barbarians visit: only the leaders, and only on a board big enough to have a field to lead |
 | `league-security-test.php` | The packet signature and the URLs this site is willing to call, tested for what they refuse |
 | `league-packet-test.php` | Tries to smuggle hostile values past the packet schema: injection, type confusion, overflow, undeclared fields, misaddressed packets |
+| `sql-guard-test.php` | Reads every `$wpdb` query in the shipped code and fails on any variable spliced into SQL text that has not been reviewed and pinned, so a new one needs a person to look at it |
 | `league-share-test.php` | Splits whole troops and coins by share, so a march never leaks or invents a unit through rounding |
 | `league-outcome-test.php` | Where a league battle becomes a win, a loss or a draw, and what each costs both sides |
 | `league-covert-test.php` | The odds and the payoff for the agent who rides with the army |
