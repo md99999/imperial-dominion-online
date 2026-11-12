@@ -208,6 +208,14 @@ class IDO_Shortcodes {
         echo IDO_UI::nav($key);
         echo IDO_UI::render_flashes();
 
+        // The logo on the two pages people arrive at: Home, where a visitor
+        // lands, and Rankings, which is the page that gets shared. Smaller for a
+        // ruler, who has seen it before and came for the numbers below it.
+        if ($key === 'guide' || $key === 'rankings') {
+            $ido_logo_small = $kingdom !== null;
+            include IDO_PATH . 'includes/frontend/views/partials/logo.php';
+        }
+
         // The rules are public: anyone may read how the game is played, signed
         // in or not, because nobody joins a game they cannot see the shape of.
         // This is also the page a visitor lands on, so anyone who is not yet
