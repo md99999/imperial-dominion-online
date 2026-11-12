@@ -229,7 +229,7 @@ state('signed-in reader is asked to claim, not sign in', strpos($signed_in, $cla
 state('ruler is offered neither button', strpos($ruler, 'Sign in to play') === false
     && strpos($ruler, $claim) === false);
 
-echo "--- the logo, on Home and Rankings only ---\n";
+echo "--- the logo: Home, Rankings and the news embed ---\n";
 $GLOBALS['ido_fake_kingdom'] = $kingdom_row;
 $ranked = IDO_Shortcodes::render('rankings');
 $empire = IDO_Shortcodes::render('empire');
@@ -238,6 +238,13 @@ state('a visitor sees the full-size logo on Home', strpos($visitor, 'ido-logo.sv
 state('a ruler sees the small logo on Home', strpos($ruler, 'ido-logo-small') !== false);
 state('Rankings carries the logo', strpos($ranked, 'ido-logo.svg') !== false);
 state('the Empire page does not', strpos($empire, 'ido-logo') === false);
+$GLOBALS['ido_fake_kingdom'] = null;
+$widget = IDO_Shortcodes::render_news(['limit' => '20', 'compact' => '1']);
+state('the compact news widget carries the small logo', strpos($widget, 'ido-logo-small') !== false);
+state('the page-style news embed carries the full logo', strpos(IDO_Shortcodes::render_news([]), 'ido-logo.svg') !== false
+    && strpos(IDO_Shortcodes::render_news([]), 'ido-logo-small') === false);
+state('logo="no" drops it', strpos(IDO_Shortcodes::render_news(['compact' => '1', 'logo' => 'no']), 'ido-logo') === false);
+$GLOBALS['ido_fake_kingdom'] = $kingdom_row;
 state('the logo image is in the plugin', is_readable(__DIR__ . '/../assets/img/ido-logo.svg'));
 echo $state_fails === 0 ? "HOME PAGE STATES OK\n" : "$state_fails STATE CHECK(S) FAILED\n";
 
