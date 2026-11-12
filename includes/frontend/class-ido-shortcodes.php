@@ -105,6 +105,7 @@ class IDO_Shortcodes {
      *   [ido_news heading="no"]             drop the world and game names
      *   [ido_news compact="1" heading="yes"]  compact, but with them back
      *   [ido_news cta="no"]                 no invitation to claim an empire
+     *   [ido_news logo="no"]                no logo at the top
      *
      * compact is the one to reach for in a sidebar. It means "suitable for a
      * narrow column", which is two things rather than one: a tighter line with a
@@ -129,6 +130,7 @@ class IDO_Shortcodes {
             'title'   => 'The Imperial Dominion Gazette',
             'heading' => 'yes',
             'cta'     => 'yes',
+            'logo'    => 'yes',
         ], $raw, 'ido_news');
 
         $show = static function ($value): bool {
@@ -169,6 +171,12 @@ class IDO_Shortcodes {
 
         ob_start();
         echo '<div class="ido-game ido-embed ido-page-gazette">';
+        // The logo leads, because an embed is usually the first a stranger sees
+        // of the game. Compact takes the small one, which is sidebar width.
+        if ($show($atts['logo'])) {
+            $ido_logo_small = $ido_news_compact;
+            include IDO_PATH . 'includes/frontend/views/partials/logo.php';
+        }
         if ($ido_news_heading) {
             echo '<div class="ido-title">' . esc_html(IDO_Game::dominion()) . '</div>';
             echo '<div class="ido-subtitle">' . esc_html(IDO_Game::NAME) . '</div>';
