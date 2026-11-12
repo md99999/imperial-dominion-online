@@ -228,6 +228,17 @@ state('signed-in reader is asked to claim, not sign in', strpos($signed_in, $cla
     && strpos($signed_in, 'Sign in to play') === false);
 state('ruler is offered neither button', strpos($ruler, 'Sign in to play') === false
     && strpos($ruler, $claim) === false);
+
+echo "--- the logo, on Home and Rankings only ---\n";
+$GLOBALS['ido_fake_kingdom'] = $kingdom_row;
+$ranked = IDO_Shortcodes::render('rankings');
+$empire = IDO_Shortcodes::render('empire');
+state('a visitor sees the full-size logo on Home', strpos($visitor, 'ido-logo.svg') !== false
+    && strpos($visitor, 'ido-logo-small') === false);
+state('a ruler sees the small logo on Home', strpos($ruler, 'ido-logo-small') !== false);
+state('Rankings carries the logo', strpos($ranked, 'ido-logo.svg') !== false);
+state('the Empire page does not', strpos($empire, 'ido-logo') === false);
+state('the logo image is in the plugin', is_readable(__DIR__ . '/../assets/img/ido-logo.svg'));
 echo $state_fails === 0 ? "HOME PAGE STATES OK\n" : "$state_fails STATE CHECK(S) FAILED\n";
 
 echo "--- the standalone how-to-play shortcode ---\n";
@@ -260,6 +271,10 @@ embed('cta="yes" invites the reader in', strpos($full, 'Take an empire') !== fal
     && strpos($full, 'Sign in to claim your empire') !== false);
 embed('cta="no" asks for nothing', strpos($bare, 'Take an empire') === false
     && strpos($bare, 'Sign in to claim your empire') === false);
-embed('still reads live settings', strpos($bare, '10 turns') !== false
-    || strpos($bare, 'gain 10') !== false || strpos($bare, '>10<') !== false);
+// Read the figure rather than hard-coding it: this said 10 until 2.28.0 moved
+// the default to 25, and then failed for a reason that had nothing to do with
+// whether the embed reads settings.
+$per_day = (string) IDO_Settings::int('turns_per_day');
+embed('still reads live settings', strpos($bare, $per_day . ' turns') !== false
+    || strpos($bare, 'gain ' . $per_day) !== false || strpos($bare, '>' . $per_day . '<') !== false);
 echo $embed_fails === 0 ? "EMBED SHORTCODE OK\n" : "$embed_fails EMBED CHECK(S) FAILED\n";
