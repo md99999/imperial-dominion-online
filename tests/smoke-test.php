@@ -271,6 +271,10 @@ embed('cta="yes" invites the reader in', strpos($full, 'Take an empire') !== fal
     && strpos($full, 'Sign in to claim your empire') !== false);
 embed('cta="no" asks for nothing', strpos($bare, 'Take an empire') === false
     && strpos($bare, 'Sign in to claim your empire') === false);
-embed('still reads live settings', strpos($bare, '10 turns') !== false
-    || strpos($bare, 'gain 10') !== false || strpos($bare, '>10<') !== false);
+// Read the figure rather than hard-coding it: this said 10 until 2.28.0 moved
+// the default to 25, and then failed for a reason that had nothing to do with
+// whether the embed reads settings.
+$per_day = (string) IDO_Settings::int('turns_per_day');
+embed('still reads live settings', strpos($bare, $per_day . ' turns') !== false
+    || strpos($bare, 'gain ' . $per_day) !== false || strpos($bare, '>' . $per_day . '<') !== false);
 echo $embed_fails === 0 ? "EMBED SHORTCODE OK\n" : "$embed_fails EMBED CHECK(S) FAILED\n";
