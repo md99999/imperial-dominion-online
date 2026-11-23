@@ -23,6 +23,9 @@ if (!defined('ABSPATH')) exit;
  */
 class IDO_League_March {
 
+    /** Seconds after one inbound march during which the same peer may not start another. */
+    const WAR_WINDOW = 86400;
+
     /**
      * How long an army waits for a result before it is assumed lost and returned.
      *
@@ -115,6 +118,37 @@ class IDO_League_March {
         if (IDO_Board::under_grace()) {
             IDO_League_Queue::enqueue($peer, 'result', self::refusal_result((string) $body['march']));
             return '';
+        }
+
+        // One march is fought once. Packet uuids are unique per peer, but the
+        // march uuid inside is the sender's to choose, so a second packet
+        // naming a march already fought here is refused rather than re-fought.
+        $fought = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('league_marches')
+            . ' WHERE league_id = %d AND peer_id = %d AND direction = %s AND packet_uuid = %s',
+            (int) $league->id, (int) $peer->id, 'in', (string) $body['march']
+        ));
+        if ($fought > 0) {
+            return 'That march has already been fought here.';
+        }
+
+        // The receiver enforces the limit, not the sender: one war packet per
+        // peer per WAR_WINDOW (docs/CROSS-SITE.md, "The rate limit"). A
+        // compromised sender ignores its own courtesy limit; this is the one
+        // that holds. The force goes home with a refusal, so the sender's
+        // players are not punished for their site's misbehaviour.
+        $since = gmdate('Y-m-d H:i:s', time() - self::WAR_WINDOW);
+        $recent = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('league_marches')
+            . ' WHERE league_id = %d AND peer_id = %d AND direction = %s AND created_at > %s',
+            (int) $league->id, (int) $peer->id, 'in', $since
+        ));
+        if ($recent > 0) {
+            IDO_League_Queue::enqueue($peer, 'result', self::refusal_result((string) $body['march']));
+            IDO_Log::admin('league', sprintf(
+                'Refused a second war packet inside 24 hours from %s.', (string) $peer->site_name
+            ));
+            return 'Refused: this peer has already marched on this site in the last 24 hours.';
         }
 
         $force   = self::whole_numbers((array) $body['force']);

@@ -171,6 +171,11 @@ class IDO_League_Endpoint {
 
         $result = IDO_League_Queue::stage($peer, $envelope, $wire);
         if ($result === 'error') return self::refuse(500);
+        if ($result === 'full') {
+            self::log(sprintf('Refused a packet from %s: too many of its packets are already waiting.',
+                (string) $peer->site_name));
+            return self::refuse(429);
+        }
 
         return self::answer(202, ['status' => 'accepted']);
     }

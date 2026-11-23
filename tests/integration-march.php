@@ -289,6 +289,7 @@ check('the defender recorded the battle', (bool) $inbound);
 check('as resolved at once, with no waiting state',
     $inbound && (string) $inbound->status === IDO_League_Status::RESOLVED);
 
+
 IDO_League_Queue::flush();
 $result_wire = end($sent_packets);
 $result_packet = IDO_League_Crypto::open($result_wire, $secret);
@@ -301,6 +302,24 @@ check('with an outcome', $result_packet
 check('and the agent accounted for', $result_packet
     && in_array($result_packet['body']['agent'], ['success', 'failed', 'hanged'], true),
     $result_packet ? (string) $result_packet['body']['agent'] : '');
+
+say('');
+say('=== the receiver holds the war limit ===');
+// The receiver enforces one war packet per peer per day, and a march is fought
+// once. Both run before anything is fought, so neither changes the site's gold.
+$gold_before_repeat = array_sum(array_map(static fn($r) => (int) $r->gold,
+    IDO_League_Battle::defenders((int) $round->id)));
+$replayed = IDO_League_March::receive_war($peer, $war['body']);
+check('the same march sent again is not fought twice', $replayed !== '', $replayed);
+$second = $war['body'];
+$second['march'] = IDO_League_Crypto::uuid();
+$repeat = IDO_League_March::receive_war($peer, $second);
+check('a second march inside 24 hours is refused', $repeat !== '', $repeat);
+check('and neither touched the defenders\' gold', array_sum(array_map(static fn($r) => (int) $r->gold,
+    IDO_League_Battle::defenders((int) $round->id))) === $gold_before_repeat);
+$refusals = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . IDO_DB::t('packets_out')
+    . " WHERE peer_id = %d AND packet_type = 'result' AND status = 'queued'", (int) $peer->id));
+check('the refused force is sent home with a result', $refusals >= 1, (string) $refusals);
 
 say('');
 say('=== the dispatches come home ===');
