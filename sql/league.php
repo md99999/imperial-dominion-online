@@ -60,6 +60,7 @@ CREATE TABLE {prefix}ido_sites (
   site_uuid varchar(36) NOT NULL DEFAULT '',
   site_name varchar(100) NOT NULL DEFAULT '',
   site_url varchar(255) NOT NULL DEFAULT '',
+  invite_id bigint(20) unsigned NOT NULL DEFAULT 0,
   secret varchar(128) NOT NULL DEFAULT '',
   secret_issued_at datetime DEFAULT NULL,
   is_hub tinyint(1) NOT NULL DEFAULT 0,

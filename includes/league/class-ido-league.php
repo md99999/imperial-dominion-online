@@ -343,11 +343,14 @@ class IDO_League {
         $decoded = json_decode((string) $json, true);
         if (!is_array($decoded)) return self::$in_force;
 
-        $governed = self::governed_keys();
+        // Checked again here, not only on arrival, because this is the value
+        // the game actually runs on and the row may have been written by an
+        // older version that did not check. A ruleset that fails is ignored as
+        // a whole: half of a hostile ruleset is still hostile.
+        if (self::ruleset_problem($decoded) !== null) return self::$in_force;
+
         foreach ($decoded as $key => $value) {
-            if (in_array($key, $governed, true) && is_numeric($value)) {
-                self::$in_force[$key] = (int) $value;
-            }
+            self::$in_force[$key] = (int) $value;
         }
         return self::$in_force;
     }
@@ -373,6 +376,12 @@ class IDO_League {
         $published = json_decode((string) $league->ruleset, true);
         if (!is_array($published) || !$published) return '';
 
+        $problem = self::ruleset_problem($published);
+        if ($problem !== null) {
+            IDO_Log::admin('league', 'Refused to bring the league ruleset into force: ' . $problem);
+            return 'The league ruleset was refused: ' . $problem;
+        }
+
         $wpdb->update(IDO_DB::t('leagues'),
             ['ruleset_in_force' => wp_json_encode($published)], ['id' => (int) $league->id]);
 
@@ -383,6 +392,37 @@ class IDO_League {
         ));
 
         return sprintf('The league ruleset now governs %d settings.', count($published));
+    }
+
+    /**
+     * Why a ruleset cannot be applied, or null when it can.
+     *
+     * Every key must be one the league governs, every value a whole number
+     * inside IDO_Settings::bounds(), and the pairs that IDO_Settings::update()
+     * keeps consistent must be consistent. The message names the failing key,
+     * filtered to characters a setting name can hold, so it is safe to log.
+     */
+    public static function ruleset_problem(array $ruleset): ?string {
+        $governed = self::governed_keys();
+        foreach ($ruleset as $key => $value) {
+            if (!is_string($key) || !in_array($key, $governed, true)) {
+                $name = substr((string) preg_replace('/[^a-z0-9_]/', '', strtolower((string) $key)), 0, 40);
+                return sprintf('"%s" is not a setting a league governs.', $name !== '' ? $name : '(unprintable)');
+            }
+            if (!IDO_Settings::in_bounds($key, $value)) {
+                [$min, $max] = IDO_Settings::bounds_for($key);
+                return sprintf('%s must be a whole number from %d to %d.', $key, $min, $max);
+            }
+        }
+        if (isset($ruleset['turns_per_day'], $ruleset['turn_cap'])
+            && (int) $ruleset['turn_cap'] < (int) $ruleset['turns_per_day']) {
+            return 'turn_cap is lower than turns_per_day.';
+        }
+        if (isset($ruleset['target_min_percent'], $ruleset['target_max_percent'])
+            && (int) $ruleset['target_max_percent'] < (int) $ruleset['target_min_percent']) {
+            return 'target_max_percent is lower than target_min_percent.';
+        }
+        return null;
     }
 
     /** @return string[] the settings that differ, for telling a member why they are being ignored */

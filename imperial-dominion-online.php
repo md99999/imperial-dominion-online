@@ -56,7 +56,7 @@ if (defined('IDO_VERSION')) {
 }
 
 define('IDO_VERSION', '2.32.1');
-define('IDO_DB_VERSION', '17');   // 17: masterless empires, and a signed user_id for them
+define('IDO_DB_VERSION', '18');   // 18: league sites remember the invitation they enrolled under
 define('IDO_FILE', __FILE__);
 define('IDO_PATH', plugin_dir_path(__FILE__));
 define('IDO_URL', plugin_dir_url(__FILE__));

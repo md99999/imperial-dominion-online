@@ -283,6 +283,48 @@ check('declining marks it declined', (string) $after->status === 'declined');
 check('and destroys its secret', (string) $after->secret === '');
 
 say('');
+say('=== an invitation only ever speaks for the site it enrolled ===');
+// The attack this closes: any unspent token -- a declined applicant's, or one
+// issued and never used -- presented alongside an active member's uuid used to
+// have a fresh secret minted for that member and handed to the caller.
+clear_rate_limits();
+$secret_before = (string) $wpdb->get_var($wpdb->prepare(
+    'SELECT secret FROM ' . IDO_DB::t('sites') . ' WHERE league_id = %d AND site_uuid = %s',
+    (int) $league->id, $member_uuid));
+
+$blob3  = IDO_League_Setup::invite('Never presented');
+$token3 = json_decode((string) IDO_League_Crypto::b64_decode($blob3), true)['token'];
+check('an unused token cannot collect for an active member',
+    status(IDO_League_Endpoint::enrol_status(request(['token' => $token3, 'site' => $member_uuid]))) === 403);
+
+$third_uuid = IDO_League_Crypto::uuid();
+$blob4  = IDO_League_Setup::invite('To be declined');
+$token4 = json_decode((string) IDO_League_Crypto::b64_decode($blob4), true)['token'];
+$peer['token'] = $token4;
+IDO_League_Endpoint::join(request(['token' => $token4, 'site' => $third_uuid,
+    'url' => 'https://third.example.com', 'name' => 'Eastgate']));
+$third = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . IDO_DB::t('sites')
+    . ' WHERE league_id = %d AND site_uuid = %s', (int) $league->id, $third_uuid));
+check('the third site enrolled, bound to its invitation',
+    $third && (int) $third->invite_id > 0);
+IDO_League_Enrol::decline((int) $third->id);
+check('declining before collection spends the invitation', (int) $wpdb->get_var($wpdb->prepare(
+    'SELECT COUNT(*) FROM ' . IDO_DB::t('invites') . ' WHERE id = %d AND used_at IS NOT NULL',
+    (int) $third->invite_id)) === 1);
+check('the declined applicant\'s token cannot collect for an active member',
+    status(IDO_League_Endpoint::enrol_status(request(['token' => $token4, 'site' => $member_uuid]))) === 403);
+
+$peer['token'] = $token3;
+check('an unused token cannot re-enrol an active member\'s identifier',
+    status(IDO_League_Endpoint::join(request(['token' => $token3, 'site' => $member_uuid,
+        'url' => 'https://evil.example.com', 'name' => 'Evil']))) >= 400);
+$peer['token'] = $token;
+
+check('the active member\'s secret never changed', (string) $wpdb->get_var($wpdb->prepare(
+    'SELECT secret FROM ' . IDO_DB::t('sites') . ' WHERE league_id = %d AND site_uuid = %s',
+    (int) $league->id, $member_uuid)) === $secret_before);
+
+say('');
 say('=== the rate limit is real ===');
 clear_rate_limits();
 $refused_at = 0;

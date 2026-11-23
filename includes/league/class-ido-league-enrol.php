@@ -123,6 +123,16 @@ class IDO_League_Enrol {
 
         $calendar    = is_array($call['data']['calendar'] ?? null) ? $call['data']['calendar'] : [];
         $ruleset     = is_array($call['data']['ruleset'] ?? null) ? $call['data']['ruleset'] : [];
+        // The secret is kept even when the ruleset is refused: the invitation
+        // is spent at the hub by now, and discarding the pairing would leave
+        // this site unable ever to finish joining. With no ruleset stored the
+        // fingerprints differ and the hub's war packets are refused, which is
+        // the safe failure. The administrator is told why.
+        $ruleset_problem = IDO_League::ruleset_problem($ruleset);
+        if ($ruleset_problem !== null) {
+            IDO_Log::admin('league', 'The hub sent a ruleset this site refused: ' . $ruleset_problem);
+            $ruleset = [];
+        }
         $fingerprint = $call['data']['fingerprint'] ?? '';
         $fingerprint = is_string($fingerprint) && preg_match('/^[0-9a-f]{64}$/', $fingerprint) ? $fingerprint : '';
 
@@ -159,6 +169,11 @@ class IDO_League_Enrol {
         IDO_League::forget();
         IDO_Log::admin('league', 'Enrolment complete; the shared secret has been stored.');
 
+        if ($ruleset_problem !== null) {
+            return 'This site has joined the league and stored the shared secret, but refused the '
+                 . 'league\'s ruleset: ' . $ruleset_problem . ' War with the league stays closed '
+                 . 'until the originator corrects it.';
+        }
         return 'This site has joined the league. The shared secret is stored and the league\'s '
              . 'ruleset will take effect at the next round boundary.';
     }
@@ -203,6 +218,20 @@ class IDO_League_Enrol {
             ['status' => 'declined', 'secret' => '', 'secret_issued_at' => null],
             ['id' => (int) $member->id]
         );
+        // Spend the invitation it came in on, so a declined applicant is not
+        // left holding a live token. Rows from before invitations were bound
+        // are matched on the address that claimed the invitation instead.
+        if ((int) ($member->invite_id ?? 0) > 0) {
+            $wpdb->query($wpdb->prepare(
+                'UPDATE ' . IDO_DB::t('invites') . ' SET used_at = %s WHERE id = %d AND league_id = %d AND used_at IS NULL',
+                IDO_League::now(), (int) $member->invite_id, (int) $league->id
+            ));
+        } elseif ((string) $member->site_url !== '') {
+            $wpdb->query($wpdb->prepare(
+                'UPDATE ' . IDO_DB::t('invites') . ' SET used_at = %s WHERE league_id = %d AND used_by = %s AND used_at IS NULL',
+                IDO_League::now(), (int) $league->id, (string) $member->site_url
+            ));
+        }
         IDO_Log::admin('league', sprintf('Declined the enrolment from %s.', (string) $member->site_name));
 
         return sprintf('%s has been declined and its secret destroyed.', (string) $member->site_name);

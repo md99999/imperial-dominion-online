@@ -274,6 +274,13 @@ class IDO_League_Endpoint {
             self::log('An enrolment presented a token that is unknown, spent or expired.');
             return self::refuse(403);
         }
+        // An invitation belongs to the first site that presents it. The same
+        // site may present it again (a retry after a timeout); a second site may
+        // not, or one token would enrol any number of identities.
+        if ((string) $invite->used_by !== '' && !hash_equals((string) $invite->used_by, $site_url)) {
+            self::log('An enrolment presented an invitation already claimed by another address.');
+            return self::refuse(403);
+        }
 
         if (IDO_League_Setup::member_count($league) >= (int) $league->max_sites) {
             self::log('An enrolment arrived for a league that is full.');
@@ -318,20 +325,34 @@ class IDO_League_Endpoint {
 
         // Only now is anything stored, and the row is pending: two administrators
         // agreeing is the point, and an invitation alone is not enough.
-        $existing = $wpdb->get_var($wpdb->prepare(
-            'SELECT id FROM ' . IDO_DB::t('sites') . ' WHERE league_id = %d AND site_uuid = %s',
+        //
+        // The row records which invitation it was enrolled under, and
+        // enrol-status will only ever issue a secret for that pairing. Without
+        // the binding, any unspent token -- a declined applicant's, an expired
+        // one -- could be presented alongside another member's uuid to have a
+        // fresh secret minted for that member and handed to the caller.
+        $existing = $wpdb->get_row($wpdb->prepare(
+            'SELECT id, invite_id FROM ' . IDO_DB::t('sites') . ' WHERE league_id = %d AND site_uuid = %s',
             (int) $league->id, $site_uuid
         ));
+        if ($existing && (int) $existing->invite_id !== (int) $invite->id) {
+            // A uuid already enrolled under a different invitation (or before
+            // invitations were bound) cannot be re-enrolled with this one.
+            self::log('An enrolment named a site identifier already enrolled under another invitation.');
+            return self::refuse(409);
+        }
         if (!$existing) {
-            $wpdb->insert(IDO_DB::t('sites'), [
+            $inserted = $wpdb->insert(IDO_DB::t('sites'), [
                 'league_id'  => (int) $league->id,
                 'site_uuid'  => $site_uuid,
                 'site_name'  => $site_name,
                 'site_url'   => $site_url,
+                'invite_id'  => (int) $invite->id,
                 'status'     => 'pending',
                 'claimed_at' => IDO_League::now(),
                 'created_at' => IDO_League::now(),
             ]);
+            if (!$inserted) return self::refuse(500);
         }
         $wpdb->update(IDO_DB::t('invites'),
             ['used_by' => $site_url], ['id' => (int) $invite->id], ['%s'], ['%d']);
@@ -381,6 +402,14 @@ class IDO_League_Endpoint {
         ));
         if (!$invite || !$member) return self::refuse(403);
 
+        // The token must be the one this member enrolled under. Checked before
+        // any status is revealed, so a stranger's token cannot even learn
+        // whether another site is pending, approved or declined.
+        if (!self::invite_belongs_to($invite, $member)) {
+            self::log('An enrol-status request paired an invitation with a site it was not issued to.');
+            return self::refuse(403);
+        }
+
         if ((string) $member->status === 'declined') {
             return self::answer(200, ['status' => 'declined']);
         }
@@ -391,6 +420,11 @@ class IDO_League_Endpoint {
             // Approved, but this secret has already been collected. Saying so
             // plainly is right: the joining site needs to know the difference
             // between "wait" and "you have had it".
+            return self::answer(200, ['status' => 'spent']);
+        }
+        if ((string) $member->secret !== '') {
+            // A secret is issued once per enrolment. Re-issuing would silently
+            // replace the pairing the member is already using.
             return self::answer(200, ['status' => 'spent']);
         }
 
@@ -433,6 +467,21 @@ class IDO_League_Endpoint {
     }
 
     // -- shared ------------------------------------------------------------
+
+    /**
+     * Whether an invitation is the one a member site enrolled under.
+     *
+     * Rows written since invitations were bound carry invite_id. A row from an
+     * older version has none, and falls back to the address the invitation was
+     * claimed from, which join() has always recorded. A row with neither is
+     * never bound to anything.
+     */
+    private static function invite_belongs_to(object $invite, object $member): bool {
+        $bound = (int) ($member->invite_id ?? 0);
+        if ($bound > 0) return $bound === (int) $invite->id;
+        $claimed = (string) $invite->used_by;
+        return $claimed !== '' && hash_equals($claimed, (string) $member->site_url);
+    }
 
     /**
      * The request body, or null.
