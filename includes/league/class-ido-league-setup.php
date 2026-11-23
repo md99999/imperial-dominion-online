@@ -300,11 +300,27 @@ class IDO_League_Setup {
         $league = IDO_League::league();
         if (!$league) return 'This site is not in a league.';
 
-        $wpdb->update(IDO_DB::t('leagues'), ['status' => 'left', 'paused' => 1], ['id' => (int) $league->id]);
-        IDO_League::forget();
-        IDO_Log::admin('league', sprintf('Left the league "%s".', $league->league_name));
+        // Armies first, while nothing else has changed: once the league stops
+        // loading, the escrow timeout that would have brought them home never
+        // runs again.
+        $recalled = IDO_League_March::recall_all((int) $league->id);
 
-        return 'This site has left the league. Local war returns at the next round boundary.';
+        $wpdb->update(IDO_DB::t('leagues'),
+            ['status' => 'left', 'paused' => 1, 'enrol_token' => ''], ['id' => (int) $league->id]);
+        // The shared secrets go with the membership. A league that has been
+        // left is never loaded again (IDO_League::league() reads active and
+        // pending only), so nothing here can use them, and a secret left in
+        // the database would stay valid at every peer for as long as the row
+        // survived: in backups, to other plugins, to anything with SQL access.
+        // Every march was recalled above, so no result is left waiting on one.
+        $wpdb->update(IDO_DB::t('sites'),
+            ['secret' => '', 'secret_issued_at' => null], ['league_id' => (int) $league->id]);
+        IDO_League::forget();
+        IDO_Log::admin('league', sprintf('Left the league "%s", recalled %d march(es) and destroyed its shared secrets.',
+            $league->league_name, $recalled));
+
+        return 'This site has left the league. Local war returns at the next round boundary.'
+            . ($recalled > 0 ? sprintf(' %d army(ies) in the field came home with everything pledged.', $recalled) : '');
     }
 
     /** The kill switch: stops sending and accepting without deactivating anything. */

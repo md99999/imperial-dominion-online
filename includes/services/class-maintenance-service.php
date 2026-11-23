@@ -192,6 +192,11 @@ class IDO_Maintenance {
 
             $cutoff = date('Y-m-d H:i:s', current_time('timestamp') - IDO_Settings::int('news_retention_days') * DAY_IN_SECONDS);
             $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('news') . ' WHERE created_at < %s', $cutoff));
+            // The admin log was never pruned. A year is long enough to look back
+            // on anything an administrator would investigate, and a bound means
+            // a flood of refusals cannot grow the table for ever.
+            $log_cutoff = date('Y-m-d H:i:s', current_time('timestamp') - IDO_Log::ADMIN_RETENTION_DAYS * DAY_IN_SECONDS);
+            $wpdb->query($wpdb->prepare('DELETE FROM ' . IDO_DB::t('admin_log') . ' WHERE created_at < %s', $log_cutoff));
 
             $rollover = IDO_Rounds::maybe_roll_over();
             // After the league traffic, so an army that came home tonight counts

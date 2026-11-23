@@ -79,8 +79,10 @@ to older versions, so the honest answer for an old install is to update.
   size; the signature proves origin, not truth. The league table is built on corroborated results
   for exactly this reason.
 - **A shared secret in the database is readable by anything with database access**, including every
-  other plugin on the site. WordPress has no secret store. Per-pairing secrets and rotation limit
-  the blast radius; they do not eliminate it.
+  other plugin on the site. WordPress has no secret store. Per-pairing secrets limit the blast
+  radius; they do not eliminate it. Secrets are destroyed when a site leaves a league or a member
+  is declined. Scheduled rotation is designed (`docs/CROSS-SITE.md`) but not yet built: until it
+  is, the remedy for a leaked secret is to decline the member and enrol it again.
 - Anything requiring an administrator account to already be compromised, unless the plugin makes the
   consequences meaningfully worse than WordPress already does. `IDO_LEAGUE_DISABLE_ENDPOINT` exists
   precisely so one thing survives that case.

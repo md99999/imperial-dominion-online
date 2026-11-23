@@ -218,14 +218,33 @@ class IDO_Market {
             }
 
             // Take the buyer gold and hand over the goods.
-            IDO_Kingdom::pay($kingdom, ['gold' => -$total, $item['column'] => $qty], 'Your treasury cannot cover that.');
-
+            // Take the goods off the lot first, and only if the lot is still
+            // exactly as it was read. The buyer is paid only once this has
+            // changed one row: a lot withdrawn or expired in the meantime used
+            // to be paid out to the seller *and* delivered to the buyer.
             $remaining = (int) $listing->qty - $qty;
-            $wpdb->update(IDO_DB::t('listings'),
+            $reserved = $wpdb->update(IDO_DB::t('listings'),
                 ['qty' => $remaining, 'status' => $remaining > 0 ? 'open' : 'sold'],
-                ['id' => (int) $listing->id, 'status' => 'open'],
-                ['%d', '%s'], ['%d', '%s']
+                ['id' => (int) $listing->id, 'status' => 'open', 'qty' => (int) $listing->qty],
+                ['%d', '%s'], ['%d', '%s', '%d']
             );
+            if ($reserved !== 1) {
+                throw new IDO_Game_Exception('That lot changed hands a moment ago. Look again before buying.');
+            }
+
+            try {
+                IDO_Kingdom::pay($kingdom, ['gold' => -$total, $item['column'] => $qty], 'Your treasury cannot cover that.');
+            } catch (IDO_Game_Exception $e) {
+                // The treasury fell short after all (another order spent it).
+                // Put the goods back on the lot; the lock is still held, so
+                // nothing else can have touched it since the reservation.
+                $wpdb->update(IDO_DB::t('listings'),
+                    ['qty' => (int) $listing->qty, 'status' => 'open'],
+                    ['id' => (int) $listing->id],
+                    ['%d', '%s'], ['%d']
+                );
+                throw $e;
+            }
 
             $tax = (int) round($total * IDO_Settings::int('market_tax_percent') / 100);
             $seller = IDO_Kingdom::find((int) $listing->seller_kingdom_id);
@@ -259,26 +278,36 @@ class IDO_Market {
     public static function withdraw(object $kingdom, int $listing_id): string {
         global $wpdb;
 
-        $listing = $wpdb->get_row($wpdb->prepare(
-            'SELECT * FROM ' . IDO_DB::t('listings') . ' WHERE id = %d AND seller_kingdom_id = %d',
-            $listing_id, (int) $kingdom->id
-        ));
-        if (!$listing || $listing->status !== 'open') {
-            throw new IDO_Game_Exception('That lot is not yours to withdraw.');
+        // The same lock a purchase holds, so a withdrawal and a sale of the
+        // same lot cannot interleave, and the quantity returned is the quantity
+        // still on the lot rather than what it held a moment earlier.
+        if (!IDO_Lock::acquire('listing_' . $listing_id, 8)) {
+            throw new IDO_Game_Exception('A buyer is at that stall. Try again in a moment.');
         }
+        try {
+            $listing = $wpdb->get_row($wpdb->prepare(
+                'SELECT * FROM ' . IDO_DB::t('listings') . ' WHERE id = %d AND seller_kingdom_id = %d',
+                $listing_id, (int) $kingdom->id
+            ));
+            if (!$listing || $listing->status !== 'open') {
+                throw new IDO_Game_Exception('That lot is not yours to withdraw.');
+            }
 
-        // Only return the goods if this request is the one that closed the lot.
-        $closed = $wpdb->update(IDO_DB::t('listings'),
-            ['status' => 'withdrawn'],
-            ['id' => (int) $listing->id, 'status' => 'open'],
-            ['%s'], ['%d', '%s']
-        );
-        if (!$closed) {
-            throw new IDO_Game_Exception('That lot has just been sold.');
+            // Only return the goods if this request is the one that closed the lot.
+            $closed = $wpdb->update(IDO_DB::t('listings'),
+                ['status' => 'withdrawn'],
+                ['id' => (int) $listing->id, 'status' => 'open', 'qty' => (int) $listing->qty],
+                ['%s'], ['%d', '%s', '%d']
+            );
+            if ($closed !== 1) {
+                throw new IDO_Game_Exception('That lot has just been sold.');
+            }
+
+            $item = self::item($listing->item_key);
+            IDO_Kingdom::pay($kingdom, [$item['column'] => (int) $listing->qty]);
+        } finally {
+            IDO_Lock::release('listing_' . $listing_id);
         }
-
-        $item = self::item($listing->item_key);
-        IDO_Kingdom::pay($kingdom, [$item['column'] => (int) $listing->qty]);
         IDO_Kingdom::recalc_networth(IDO_Kingdom::reload($kingdom));
 
         return sprintf('%s %s returned to your stores.', IDO_Game::fmt($listing->qty), strtolower($item['label']));
@@ -296,19 +325,34 @@ class IDO_Market {
             $round_id, 'open', IDO_Game::now()
         ));
         $count = 0;
-        foreach ($due as $listing) {
-            $closed = $wpdb->update(IDO_DB::t('listings'),
-                ['status' => 'expired'],
-                ['id' => (int) $listing->id, 'status' => 'open'],
-                ['%s'], ['%d', '%s']
-            );
-            if (!$closed) continue;
-            $seller = IDO_Kingdom::find((int) $listing->seller_kingdom_id);
-            if ($seller && isset(self::tradeable()[$listing->item_key])) {
-                $item = self::item($listing->item_key);
-                IDO_Kingdom::pay($seller, [$item['column'] => (int) $listing->qty]);
+        foreach ($due as $row) {
+            // A lot someone is buying right now is left for the next tick
+            // rather than waited on: the hourly job should not stall on a stall.
+            $lock = 'listing_' . (int) $row->id;
+            if (!IDO_Lock::acquire($lock, 0)) continue;
+            try {
+                // Read again under the lock: a sale may have reduced it since
+                // the list above was taken, and returning the old quantity
+                // would hand the seller goods that were already sold.
+                $listing = $wpdb->get_row($wpdb->prepare(
+                    'SELECT * FROM ' . IDO_DB::t('listings') . ' WHERE id = %d', (int) $row->id
+                ));
+                if (!$listing || $listing->status !== 'open') continue;
+                $closed = $wpdb->update(IDO_DB::t('listings'),
+                    ['status' => 'expired'],
+                    ['id' => (int) $listing->id, 'status' => 'open', 'qty' => (int) $listing->qty],
+                    ['%s'], ['%d', '%s', '%d']
+                );
+                if ($closed !== 1) continue;
+                $seller = IDO_Kingdom::find((int) $listing->seller_kingdom_id);
+                if ($seller && isset(self::tradeable()[$listing->item_key])) {
+                    $item = self::item($listing->item_key);
+                    IDO_Kingdom::pay($seller, [$item['column'] => (int) $listing->qty]);
+                }
+                $count++;
+            } finally {
+                IDO_Lock::release($lock);
             }
-            $count++;
         }
         return $count;
     }

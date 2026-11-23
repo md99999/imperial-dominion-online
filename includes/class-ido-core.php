@@ -250,6 +250,130 @@ class IDO_Settings {
     }
 
     /** Settings that are free text rather than integers. */
+    /**
+     * The range every whole-number setting must sit in, inclusive.
+     *
+     * One table, used for two jobs: clamping what a game master types on the
+     * Settings screen, and refusing a league ruleset that a hub sends. Before
+     * this existed the hub's values were cast to int and applied as they came,
+     * so a hostile hub could set a negative market tax and have gold appear
+     * from nothing on every member site.
+     *
+     * The ceilings are deliberately generous. They are not a balance opinion;
+     * they are the point past which a value is not a game setting but an
+     * attack or a typo. Anything not listed falls back to DEFAULT_BOUNDS.
+     */
+    const DEFAULT_BOUNDS = [0, 1000000000];
+
+    public static function bounds(): array {
+        $pct   = [0, 100];
+        $flag  = [0, 1];
+        $turns = [0, 1000];
+        $big   = [0, 1000000000];
+        return [
+            'turns_per_day'          => [1, 1000],
+            'turn_cap'               => [1, 100000],
+            'starting_turns'         => [0, 100000],
+            'attack_turn_cost'       => $turns,
+            'op_turn_cost'           => $turns,
+            'build_turn_cost'        => $turns,
+            'demolish_turn_cost'     => $turns,
+            'train_turn_cost'        => $turns,
+            'disband_turn_cost'      => $turns,
+            'mint_gold_yield'        => [0, 10000000],
+            'farmstead_grain_yield'  => [0, 10000000],
+            'foundry_iron_yield'     => [0, 10000000],
+            'homestead_capacity'     => [0, 10000000],
+            'tax_per_100_peasants'   => [0, 100000],
+            'grain_per_100_peasants' => [0, 100000],
+            'daily_yield_turns'      => $turns,
+            'starting_land'          => $big,
+            'starting_gold'          => $big,
+            'starting_grain'         => $big,
+            'starting_iron'          => $big,
+            'starting_peasants'      => $big,
+            'starting_pawns'         => $big,
+            'starting_legionnaires'  => $big,
+            'protection_hours'       => [0, 8760],
+            'explore_base_acres'     => [0, 10000000],
+            'build_gold_per_acre'    => $big,
+            'build_iron_per_acre'    => $big,
+            'build_days'             => [0, 365],
+            'demolish_refund_percent' => $pct,
+            'catapult_gold_cost'     => $big,
+            'catapult_iron_cost'     => $big,
+            'catapult_crew'          => [0, 100000],
+            'target_min_percent'     => [0, 100],
+            'target_max_percent'     => [0, 10000],
+            'max_hits_per_target'    => [0, 1000],
+            'conquest_land_percent'  => [0, 50],
+            'catapult_capture_percent' => $pct,
+            'catapult_destroy_percent' => $pct,
+            'agent_gold_cost'        => $big,
+            'max_agents'             => [1, 1000],
+            'informer_gold_cost'     => $big,
+            'max_informers'          => [0, 1000],
+            'barbarians_enabled'     => $flag,
+            'barbarian_min_players'  => [0, 1000000],
+            'barbarian_top_ranks'    => [0, 1000000],
+            'barbarian_chance_percent' => $pct,
+            'barbarian_gold_percent'   => $pct,
+            'barbarian_grain_percent'  => $pct,
+            'disasters_enabled'      => $flag,
+            'disaster_one_in'        => [1, 1000000],
+            'disaster_percent'       => $pct,
+            'rivals_enabled'         => $flag,
+            'rival_count'            => [0, 10000],
+            'rival_regen_percent'    => $pct,
+            'rival_retaliation'      => $flag,
+            'rival_memory_days'      => [0, 3650],
+            'rival_attack_chance'    => $pct,
+            'market_tax_percent'     => [0, 50],
+            'listing_days'           => [1, 365],
+            'max_listings_per_kingdom' => [0, 100000],
+            'round_days'             => [1, 365],
+            'auto_start_next_round'  => $flag,
+            'news_retention_days'    => [1, 3650],
+            'use_wp_cron'            => $flag,
+            'allow_new_kingdoms'     => $flag,
+            'delete_data_on_uninstall' => $flag,
+            'defeat_threshold_percent' => [0, 90],
+            'defeat_grace_hours'     => [0, 8760],
+            'board_ruin_percent'     => [0, 90],
+            'league_enabled'         => $flag,
+            'league_endpoint'        => $flag,
+        ];
+    }
+
+    /** [min, max] for one whole-number setting. */
+    public static function bounds_for(string $key): array {
+        return self::bounds()[$key] ?? self::DEFAULT_BOUNDS;
+    }
+
+    /** Pulls a value into its range. For the game master's own screen. */
+    public static function clamp(string $key, $value): int {
+        [$min, $max] = self::bounds_for($key);
+        return max($min, min($max, (int) $value));
+    }
+
+    /**
+     * Whether a value is a whole number already inside its range. For data
+     * from elsewhere, which is refused rather than quietly corrected: a hub
+     * sending out-of-range values is either broken or hostile, and either way
+     * its ruleset should not be applied in part.
+     */
+    public static function in_bounds(string $key, $value): bool {
+        if (is_int($value)) {
+            $n = $value;
+        } elseif (is_string($value) && preg_match('/^-?\d{1,19}$/', $value)) {
+            $n = (int) $value;
+        } else {
+            return false;
+        }
+        [$min, $max] = self::bounds_for($key);
+        return $n >= $min && $n <= $max;
+    }
+
     public static function text_keys(): array {
         return ['dominion_name', 'menu_location'];
     }
@@ -308,7 +432,7 @@ class IDO_Settings {
             if (in_array($key, self::text_keys(), true)) {
                 $current[$key] = sanitize_text_field((string) $values[$key]);
             } else {
-                $current[$key] = max(0, (int) $values[$key]);
+                $current[$key] = self::clamp($key, $values[$key]);
             }
         }
         $current['turns_per_day']      = max(1, (int) $current['turns_per_day']);
@@ -328,6 +452,9 @@ class IDO_Settings {
 }
 
 class IDO_Log {
+    /** Days the admin log is kept before the daily tick prunes it. */
+    const ADMIN_RETENTION_DAYS = 365;
+
     /** Public Imperial Gazette item, shown to every ruler. */
     public static function news(string $type, string $message, int $round_id = 0): void {
         global $wpdb;

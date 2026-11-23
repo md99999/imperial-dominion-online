@@ -145,7 +145,7 @@ class IDO_Admin {
                     // Held for one page load and shown once. Not put in the URL:
                     // a redirect lands in server logs and browser history, and an
                     // invitation does not belong in either.
-                    set_transient('ido_league_invitation', $blob, MINUTE_IN_SECONDS * 5);
+                    set_transient(self::invitation_key(), $blob, MINUTE_IN_SECONDS * 5);
                     $notice = 'Invitation created. Send it to the other administrator.';
                 } catch (IDO_Game_Exception $e) {
                     $notice = $e->getMessage();
@@ -270,10 +270,15 @@ class IDO_Admin {
                 break;
         }
 
-        $url = add_query_arg(
-            ['page' => $page, 'ido_notice' => rawurlencode($notice)],
-            admin_url('admin.php')
-        );
+        // The notice travels in a per-user transient, not in the URL. Text in
+        // the URL could be written by anyone who sends an administrator a link,
+        // and would then be shown inside wp-admin as though the game said it.
+        $args = ['page' => $page];
+        if ($notice !== '') {
+            set_transient(self::notice_key(), $notice, 5 * MINUTE_IN_SECONDS);
+            $args['ido_notice'] = 1;
+        }
+        $url = add_query_arg($args, admin_url('admin.php'));
         wp_safe_redirect($url);
         exit;
     }
@@ -356,9 +361,35 @@ class IDO_Admin {
 
     /** Prints the notice passed back through the redirect. */
     public static function notice(): void {
-        if (empty($_GET['ido_notice'])) return;
-        $notice = sanitize_text_field(rawurldecode(wp_unslash($_GET['ido_notice'])));
+        $notice = self::take_notice();
         if ($notice === '') return;
         echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($notice) . '</p></div>';
+    }
+
+    /**
+     * The notice the last action left for this administrator, once, or ''.
+     *
+     * Read only when the redirect asked for it, so a notice is shown on the
+     * page the action returned to and not on whatever page is opened next.
+     */
+    public static function take_notice(): string {
+        if (empty($_GET['ido_notice'])) return '';
+        $key = self::notice_key();
+        $notice = get_transient($key);
+        delete_transient($key);
+        return is_string($notice) ? sanitize_text_field($notice) : '';
+    }
+
+    /**
+     * Where a freshly made invitation waits to be shown, per administrator.
+     * One site-wide key showed it to whichever administrator opened League
+     * Play next, and consumed it so the one who made it never saw it.
+     */
+    public static function invitation_key(): string {
+        return 'ido_league_invitation_' . get_current_user_id();
+    }
+
+    private static function notice_key(): string {
+        return 'ido_admin_notice_' . get_current_user_id();
     }
 }

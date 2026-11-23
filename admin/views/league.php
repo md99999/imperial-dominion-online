@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) exit;
 
 $enabled = IDO_League::enabled();
 $league  = IDO_League::league();
-$notice  = isset($_GET['ido_notice']) ? sanitize_text_field(wp_unslash($_GET['ido_notice'])) : '';
-$invite  = get_transient('ido_league_invitation');
-if ($invite) delete_transient('ido_league_invitation');
+$notice  = IDO_Admin::take_notice();
+$invite  = get_transient(IDO_Admin::invitation_key());
+if ($invite) delete_transient(IDO_Admin::invitation_key());
 ?>
 <div class="wrap">
     <h1>League Play</h1>

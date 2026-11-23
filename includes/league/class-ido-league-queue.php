@@ -30,6 +30,9 @@ class IDO_League_Queue {
     /** How many packets one cron tick will move, so a backlog cannot hog a request. */
     const BATCH = 20;
 
+    /** Packets from one peer that may wait unprocessed at once. */
+    const MAX_STAGED_PER_PEER = 200;
+
     // -- Outbound ----------------------------------------------------------
 
     /**
@@ -166,13 +169,22 @@ class IDO_League_Queue {
      * its own packet resolves, and therefore cannot choose what the defender will
      * have standing when it lands.
      *
-     * @return string 'staged', 'duplicate' or 'error'
+     * @return string 'staged', 'duplicate', 'full' (this peer's waiting packets are at the cap) or 'error'
      */
     public static function stage(object $peer, array $envelope, string $wire): string {
         global $wpdb;
 
         $league = IDO_League::league();
         if (!$league) return 'error';
+
+        // A per-peer ceiling on what waits here unprocessed. Every packet is
+        // signed, so only a member can fill it, but a compromised member could
+        // otherwise grow packets_in without limit between daily ticks.
+        $waiting = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . IDO_DB::t('packets_in') . ' WHERE peer_id = %d AND status = %s',
+            (int) $peer->id, 'staged'
+        ));
+        if ($waiting >= self::MAX_STAGED_PER_PEER) return 'full';
 
         $delay = self::delay_days_for((string) $envelope['type']);
 

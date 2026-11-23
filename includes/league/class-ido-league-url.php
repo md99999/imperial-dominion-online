@@ -140,25 +140,57 @@ class IDO_League_URL {
      * wrong way round for a check like this one.
      */
     public static function is_callable_url(string $url): bool {
-        $normal = self::normalize($url);
-        if ($normal === null) return false;
+        if (self::dev_mode()) return self::normalize($url) !== null;
+        return self::callable_addresses($url) !== null;
+    }
 
-        $host = (string) (wp_parse_url($normal, PHP_URL_HOST) ?? '');
-        $host = trim($host, '[]');
+    /**
+     * Ports a league peer may be reached on outside development mode.
+     *
+     * A peer is a WordPress site, which is on 443, or occasionally 8443 behind
+     * a panel. Allowing any port made the enrolment callback a way to aim this
+     * site at an arbitrary port on an arbitrary public host.
+     */
+    const PORTS = [443, 8443];
+
+    /**
+     * The addresses a URL may be connected to, every one checked, or null when
+     * it may not be called at all.
+     *
+     * The caller connects to one of exactly these addresses (see
+     * IDO_League_HTTP::send, which pins it). Checking a name and then letting
+     * the HTTP library resolve it again is a DNS rebinding window: a record
+     * with no TTL can answer a public address to the check and a private one
+     * to the connection.
+     *
+     * In development mode nothing is checked and null pinning is signalled by
+     * an empty array: the caller lets the library resolve as normal.
+     *
+     * @return string[]|null
+     */
+    public static function callable_addresses(string $url): ?array {
+        $normal = self::normalize($url);
+        if ($normal === null) return null;
 
         // A development install pairing with another site on the same machine is
         // the one case where a private address is the right answer. The host
         // still has to parse, and the URL still had to survive normalize(),
         // which means HTTPS and no credentials: only the address rule is lifted.
-        if (self::dev_mode()) return true;
+        if (self::dev_mode()) return [];
+
+        $port = (int) (wp_parse_url($normal, PHP_URL_PORT) ?: 443);
+        if (!in_array($port, self::PORTS, true)) return null;
+
+        $host = (string) (wp_parse_url($normal, PHP_URL_HOST) ?? '');
+        $host = trim($host, '[]');
 
         $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : self::resolve($host);
-        if ($addresses === []) return false;
+        if ($addresses === []) return null;
 
         foreach ($addresses as $address) {
-            if (!self::is_public_ip($address)) return false;
+            if (!self::is_public_ip($address)) return null;
         }
-        return true;
+        return array_values($addresses);
     }
 
     /** @return string[] */

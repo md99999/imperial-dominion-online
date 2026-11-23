@@ -178,6 +178,12 @@ class IDO_Installer {
         );
         dbDelta($sql);
         self::drop_legacy_indexes();
+        // League tables are created on opt in, not at activation, so they are
+        // upgraded here only when they already exist. dbDelta adds the columns
+        // a newer schema introduces (18: sites.invite_id) and leaves data alone.
+        if (class_exists('IDO_League') && IDO_League::tables_exist()) {
+            IDO_League::install_tables();
+        }
         update_option('ido_db_version', IDO_DB_VERSION);
     }
 
