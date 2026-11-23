@@ -121,7 +121,16 @@ class IDO_League_Endpoint {
             return self::refuse(401);
         }
 
-        if (!IDO_League_Crypto::verify($wire, (string) $peer->secret)) return self::refuse(401);
+        if (!IDO_League_Crypto::verify($wire, (string) $peer->secret)) {
+            // The one event that says someone knows a member's identifier but
+            // not its secret, or that the two sides' secrets have drifted.
+            // Either way an administrator should see it.
+            self::log_throttled('badsig-' . (int) $peer->id, sprintf(
+                'Refused a packet claiming to be from %s: its signature did not verify.',
+                (string) $peer->site_name
+            ));
+            return self::refuse(401);
+        }
 
         // Verified. Only now does a parser see these bytes.
         $opened = IDO_League_Crypto::open($wire, (string) $peer->secret);
@@ -172,7 +181,8 @@ class IDO_League_Endpoint {
         $result = IDO_League_Queue::stage($peer, $envelope, $wire);
         if ($result === 'error') return self::refuse(500);
         if ($result === 'full') {
-            self::log(sprintf('Refused a packet from %s: too many of its packets are already waiting.',
+            self::log_throttled('full-' . (int) $peer->id, sprintf(
+                'Refused a packet from %s: too many of its packets are already waiting.',
                 (string) $peer->site_name));
             return self::refuse(429);
         }
@@ -276,14 +286,14 @@ class IDO_League_Endpoint {
             (int) $league->id, IDO_League_Crypto::token_hash($token), IDO_League::now()
         ));
         if (!$invite) {
-            self::log('An enrolment presented a token that is unknown, spent or expired.');
+            self::log_throttled('join-token', 'An enrolment presented a token that is unknown, spent or expired.');
             return self::refuse(403);
         }
         // An invitation belongs to the first site that presents it. The same
         // site may present it again (a retry after a timeout); a second site may
         // not, or one token would enrol any number of identities.
         if ((string) $invite->used_by !== '' && !hash_equals((string) $invite->used_by, $site_url)) {
-            self::log('An enrolment presented an invitation already claimed by another address.');
+            self::log_throttled('join-claimed', 'An enrolment presented an invitation already claimed by another address.');
             return self::refuse(403);
         }
 
@@ -343,7 +353,7 @@ class IDO_League_Endpoint {
         if ($existing && (int) $existing->invite_id !== (int) $invite->id) {
             // A uuid already enrolled under a different invitation (or before
             // invitations were bound) cannot be re-enrolled with this one.
-            self::log('An enrolment named a site identifier already enrolled under another invitation.');
+            self::log_throttled('join-uuid', 'An enrolment named a site identifier already enrolled under another invitation.');
             return self::refuse(409);
         }
         if (!$existing) {
@@ -411,7 +421,7 @@ class IDO_League_Endpoint {
         // any status is revealed, so a stranger's token cannot even learn
         // whether another site is pending, approved or declined.
         if (!self::invite_belongs_to($invite, $member)) {
-            self::log('An enrol-status request paired an invitation with a site it was not issued to.');
+            self::log_throttled('status-unbound', 'An enrol-status request paired an invitation with a site it was not issued to.');
             return self::refuse(403);
         }
 
@@ -560,5 +570,21 @@ class IDO_League_Endpoint {
     /** Detail goes here, where only this site's administrator sees it. */
     private static function log(string $message): void {
         IDO_Log::admin('league', $message);
+    }
+
+    /**
+     * Logs a refusal at most once an hour per kind.
+     *
+     * For events anyone on the internet can cause. Logging each one let an
+     * unauthenticated caller fill the admin log and push the entries that
+     * matter off the bottom of the Maintenance screen. The key is always one
+     * of ours, never a value from the request, so the number of distinct keys
+     * is fixed (per peer, at most, for signature failures).
+     */
+    private static function log_throttled(string $kind, string $message): void {
+        $key = 'ido_lg_' . substr(md5($kind), 0, 24);
+        if (get_transient($key)) return;
+        set_transient($key, 1, HOUR_IN_SECONDS);
+        self::log($message . ' Further refusals of this kind are not logged for an hour.');
     }
 }

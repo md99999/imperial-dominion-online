@@ -300,9 +300,19 @@ class IDO_League_Setup {
         $league = IDO_League::league();
         if (!$league) return 'This site is not in a league.';
 
-        $wpdb->update(IDO_DB::t('leagues'), ['status' => 'left', 'paused' => 1], ['id' => (int) $league->id]);
+        $wpdb->update(IDO_DB::t('leagues'),
+            ['status' => 'left', 'paused' => 1, 'enrol_token' => ''], ['id' => (int) $league->id]);
+        // The shared secrets go with the membership. A league that has been
+        // left is never loaded again (IDO_League::league() reads active and
+        // pending only), so nothing here can use them, and a secret left in
+        // the database would stay valid at every peer for as long as the row
+        // survived: in backups, to other plugins, to anything with SQL access.
+        // An escrowed army's result could not be verified without its secret,
+        // but it could not be processed anyway once the league stops loading.
+        $wpdb->update(IDO_DB::t('sites'),
+            ['secret' => '', 'secret_issued_at' => null], ['league_id' => (int) $league->id]);
         IDO_League::forget();
-        IDO_Log::admin('league', sprintf('Left the league "%s".', $league->league_name));
+        IDO_Log::admin('league', sprintf('Left the league "%s" and destroyed its shared secrets.', $league->league_name));
 
         return 'This site has left the league. Local war returns at the next round boundary.';
     }

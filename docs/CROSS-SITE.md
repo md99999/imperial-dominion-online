@@ -387,7 +387,8 @@ The secret is per pairing, so a compromised member exposes its own link and noth
 
 - **Rotation** is a new secret issued through the same approved channel, with a short overlap where
   both verify, because packets take days to arrive and in-flight ones signed with the old secret
-  must still land.
+  must still land. *Not yet implemented*: today a leaked secret is replaced by declining the member
+  and enrolling it again. Leaving a league destroys every secret this site holds for it.
 - **Removal** stops new packets being accepted but must not strip an empire of an army sitting in
   escrow: in-flight results are honoured, or the escrow times out and the troops come home.
 - A member that leaves returns to local settings at the next round boundary.

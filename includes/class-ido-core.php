@@ -452,6 +452,9 @@ class IDO_Settings {
 }
 
 class IDO_Log {
+    /** Days the admin log is kept before the daily tick prunes it. */
+    const ADMIN_RETENTION_DAYS = 365;
+
     /** Public Imperial Gazette item, shown to every ruler. */
     public static function news(string $type, string $message, int $round_id = 0): void {
         global $wpdb;
