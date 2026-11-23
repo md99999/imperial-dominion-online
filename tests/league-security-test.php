@@ -15,6 +15,7 @@ class IDO_Game_Exception extends Exception {}
 
 require __DIR__ . '/../includes/league/class-ido-league-crypto.php';
 require __DIR__ . '/../includes/league/class-ido-league-url.php';
+require __DIR__ . '/../includes/league/class-ido-league-endpoint.php';
 
 $fails = 0;
 function check(string $label, bool $ok, string $detail = ''): void {
@@ -186,6 +187,17 @@ check('8443 is callable', IDO_League_URL::is_callable_url('https://good.example.
 check('22 is not', !IDO_League_URL::is_callable_url('https://good.example.com:22'));
 check('6379 is not', !IDO_League_URL::is_callable_url('https://good.example.com:6379'));
 check('a public literal on an odd port is not', !IDO_League_URL::is_callable_url('https://93.184.216.34:9200'));
+
+echo "\n=== the unit a caller is rate-limited in ===\n";
+$b = [IDO_League_Endpoint::class, 'address_bucket'];
+check('an IPv4 address is its own bucket', $b('203.0.113.7') === '203.0.113.7');
+check('two IPv4 neighbours are different callers', $b('203.0.113.7') !== $b('203.0.113.8'));
+check('every address in one IPv6 /64 shares a bucket',
+    $b('2001:db8:1:2::1') === $b('2001:db8:1:2:ffff:ffff:ffff:ffff'));
+check('a different /64 is a different caller', $b('2001:db8:1:2::1') !== $b('2001:db8:1:3::1'));
+check('IPv4-mapped IPv6 counts as the IPv4 caller', $b('::ffff:203.0.113.7') === '203.0.113.7');
+check('garbage shares one bucket rather than getting its own',
+    $b('not an address') === $b('also not one'));
 
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");
 exit($fails === 0 ? 0 : 1);

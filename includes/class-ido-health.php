@@ -282,7 +282,7 @@ class IDO_Health {
         foreach (self::issues() as $issue) {
             printf('<div class="notice notice-%s"><p><strong>%s &mdash; %s</strong></p>%s</div>',
                 $issue['level'] === 'error' ? 'error' : 'warning',
-                esc_html(IDO_Game::NAME), esc_html($issue['title']), $issue['body']);
+                esc_html(IDO_Game::NAME), esc_html($issue['title']), wp_kses_post($issue['body']));
         }
     }
 }

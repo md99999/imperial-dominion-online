@@ -34,8 +34,10 @@ $pages_made = is_array($page_ids) ? count($page_ids) : 0;
                 </h3>
                 <?php
                 // Built in IDO_Health, which escapes every value it interpolates;
-                // the tags around them are the point of it being HTML.
-                echo $issue['body'];
+                // the tags around them are the point of it being HTML. Filtered
+                // through wp_kses_post as well, so a future check that forgets
+                // to escape one value cannot become a script on this screen.
+                echo wp_kses_post($issue['body']);
                 ?>
             <?php endforeach; ?>
         <?php endif; ?>

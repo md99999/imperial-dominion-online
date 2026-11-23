@@ -34,6 +34,9 @@ class IDO_League_Endpoint {
     /** How many calls one address may make to an enrolment route in an hour. */
     const RATE_LIMIT = 30;
 
+    /** Verified packets one peer may deliver in an hour, from any number of addresses. */
+    const PEER_RATE_LIMIT = 60;
+
     /** Enrolment bodies are tiny. */
     const MAX_BODY = 8192;
 
@@ -130,6 +133,14 @@ class IDO_League_Endpoint {
                 (string) $peer->site_name
             ));
             return self::refuse(401);
+        }
+
+        // A second budget per peer, counted only once the signature has
+        // verified, so nobody but the peer itself can spend it. The per-address
+        // budget above cannot hold a compromised member that sends from many
+        // addresses; this does.
+        if (!self::within_budget('peer|' . (int) $peer->id, self::PEER_RATE_LIMIT, 'packet')) {
+            return self::refuse(429);
         }
 
         // Verified. Only now does a parser see these bytes.
@@ -549,10 +560,52 @@ class IDO_League_Endpoint {
      */
     private static function within_rate_limit(string $route): bool {
         $address = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : 'unknown';
-        $key = 'ido_rl_' . substr(md5($route . '|' . $address), 0, 24);
+        return self::within_budget($route . '|' . self::address_bucket($address), self::RATE_LIMIT, $route);
+    }
+
+    /**
+     * The unit a caller is counted in.
+     *
+     * An IPv4 address is one caller. An IPv6 caller is given a whole /64 by
+     * any ISP or host, so counting single addresses let one machine take 2^64
+     * fresh budgets; the /64 is counted instead. Anything unparseable shares
+     * one bucket, which fails towards refusing rather than towards letting in.
+     *
+     * Behind a reverse proxy or CDN every caller arrives from the proxy's
+     * address and shares one budget. X-Forwarded-For is deliberately not read:
+     * any caller can set it, and trusting it would hand each request a budget
+     * of its choosing. A site behind a proxy should restore the real address
+     * in the web server (e.g. nginx real_ip, Apache mod_remoteip) instead.
+     */
+    public static function address_bucket(string $address): string {
+        $binary = @inet_pton($address);
+        if ($binary === false) return 'unparseable';
+        if (strlen($binary) === 16) {
+            // IPv4-mapped IPv6 is an IPv4 caller.
+            if (strncmp($binary, str_repeat("\x00", 10) . "\xff\xff", 12) === 0) {
+                return (string) inet_ntop(substr($binary, 12));
+            }
+            return bin2hex(substr($binary, 0, 8)) . '::/64';
+        }
+        return (string) inet_ntop($binary);
+    }
+
+    /**
+     * One counter, one limit, one hour. Read-then-write on a transient is not
+     * atomic, so under concurrency a few requests over the limit may pass; it
+     * is a cost on grinding, not a precise meter, and does not need to be.
+     */
+    private static function within_budget(string $subject, int $limit, string $kind): bool {
+        $key = 'ido_rl_' . substr(md5($subject), 0, 24);
 
         $count = (int) get_transient($key);
-        if ($count >= self::RATE_LIMIT) return false;
+        if ($count >= $limit) {
+            self::log_throttled('ratelimit-' . $kind, sprintf(
+                'Rate limit reached on the %s route; further requests from that caller are refused for up to an hour.',
+                $kind
+            ));
+            return false;
+        }
 
         set_transient($key, $count + 1, HOUR_IN_SECONDS);
         return true;

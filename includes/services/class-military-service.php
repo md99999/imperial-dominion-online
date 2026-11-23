@@ -150,6 +150,25 @@ class IDO_Military {
      * @return string[] report lines for the attacker
      */
     public static function attack(object $kingdom, int $target_id, string $type, array $force, array $train = []): array {
+        // One march at a time per attacker. The battle lock below is per pair,
+        // so without this two orders against two different targets ran side by
+        // side, each checked the army against the same stale row, and one army
+        // fought twice. The row is read again inside the lock for the same
+        // reason: what was standing when the page loaded is not the question.
+        $lock = 'attacker_' . (int) $kingdom->id;
+        if (!IDO_Lock::acquire($lock, 8)) {
+            throw new IDO_Game_Exception('Your last order to march is still being carried out. Try again in a moment.');
+        }
+        try {
+            $fresh = IDO_Kingdom::reload($kingdom);
+            return self::attack_locked($fresh, $target_id, $type, $force, $train);
+        } finally {
+            IDO_Lock::release($lock);
+        }
+    }
+
+    /** The body of attack(), run while this attacker's lock is held. */
+    private static function attack_locked(object $kingdom, int $target_id, string $type, array $force, array $train): array {
         global $wpdb;
 
         // In league mode the site is one team and there is no local war at all.
