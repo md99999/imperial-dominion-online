@@ -176,9 +176,9 @@ class IDO_League_Table {
             // battles and do not belong in a record of them.
             // Not battles: musters that never marched, armies lost to silence,
             // marches turned away by a grace period, and everything forfeited by
-            // a board that started over.
+            // a board that started over, and armies recalled when the site left.
             if (in_array($outcome, ['failed', 'cancelled', 'lost_contact', 'refused',
-                                    'forfeited', 'void'], true)) continue;
+                                    'forfeited', 'void', 'recalled'], true)) continue;
 
             if ($outward) {
                 if ($outcome === 'won')   { $out['won']++;   $out['exchanges']++; }

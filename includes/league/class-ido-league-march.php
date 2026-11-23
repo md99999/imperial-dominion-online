@@ -350,6 +350,58 @@ class IDO_League_March {
         return count($stale);
     }
 
+    /**
+     * Brings every army of one league home, for a site that is leaving it.
+     *
+     * Leaving stops the league loading (IDO_League::league() reads active and
+     * pending only), and with it the escrow timeout in release_timed_out(), so
+     * an army that was mustering or away when its site left used to stay in
+     * escrow for ever: the troops, weapons and agent simply vanished from the
+     * empires that pledged them. Nothing can settle these marches once the
+     * secrets are gone either, so they are recalled now, with everything
+     * pledged returned, exactly as a timeout would have done.
+     *
+     * Takes the league id rather than reading IDO_League::league(), because it
+     * is called while the league is being left and must not depend on whether
+     * it still loads.
+     *
+     * @return int marches recalled
+     */
+    public static function recall_all(int $league_id): int {
+        global $wpdb;
+
+        $open = (array) $wpdb->get_results($wpdb->prepare(
+            'SELECT * FROM ' . IDO_DB::t('league_marches')
+            . ' WHERE league_id = %d AND direction = %s AND status IN (%s, %s, %s)',
+            $league_id, 'out',
+            IDO_League_Status::MUSTERING, IDO_League_Status::MARCHING, IDO_League_Status::IN_BATTLE
+        ));
+
+        $recalled = 0;
+        foreach ($open as $march) {
+            // The march is closed first, guarded on its status, so a result
+            // being processed at this moment and this recall cannot both settle
+            // it. Whichever changes the row owns the escrow.
+            $closed = $wpdb->query($wpdb->prepare(
+                'UPDATE ' . IDO_DB::t('league_marches')
+                . ' SET status = %s, outcome = %s, resolved_at = %s, report = %s'
+                . ' WHERE id = %d AND status = %s',
+                IDO_League_Status::RESOLVED, 'recalled', IDO_League::now(),
+                'This site left the league while the army was mustering or away. Everyone pledged came home.',
+                (int) $march->id, (string) $march->status
+            ));
+            if ($closed !== 1) continue;
+
+            IDO_League_Muster::return_all((int) $march->id);
+            $recalled++;
+        }
+
+        if ($recalled > 0) {
+            IDO_Log::news('league', 'The league is left behind, and every army that marched under it has come home.');
+        }
+        return $recalled;
+    }
+
     // -- Shared ------------------------------------------------------------
 
     public static function by_packet_uuid(string $uuid, int $peer_id): ?object {

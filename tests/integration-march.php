@@ -463,5 +463,31 @@ check('the march is closed', (string) $wpdb->get_var($wpdb->prepare(
 check('releasing again returns nothing', IDO_League_March::release_timed_out() === 0);
 
 say('');
+say('=== leaving the league brings every army home ===');
+// Once a site leaves, the league stops loading and release_timed_out() never
+// runs for it again, so recall_all() is what stands between a pledged army and
+// oblivion. One army is away, one still mustering.
+$away_ruler = empire('March Away ' . wp_rand(100, 999));
+IDO_League_Muster::call($away_ruler, (int) $peer->id, ['pawn' => 400]);
+$away_march = IDO_League_Muster::open();
+$wpdb->update(IDO_DB::t('league_marches'), [
+    'status'  => IDO_League_Status::MARCHING,
+    'sent_at' => gmdate('Y-m-d H:i:s'),
+], ['id' => (int) $away_march->id]);
+$mustering_ruler = empire('March Mustering ' . wp_rand(100, 999));
+IDO_League_Muster::call($mustering_ruler, (int) $peer->id, ['pawn' => 300]);
+
+check('the marching army is away', (int) IDO_Kingdom::reload($away_ruler)->u_pawn === 1600);
+check('the mustering army is pledged', (int) IDO_Kingdom::reload($mustering_ruler)->u_pawn === 1700);
+$recalled = IDO_League_March::recall_all((int) $league->id);
+check('both marches are recalled', $recalled === 2, (string) $recalled);
+check('the marching army is home', (int) IDO_Kingdom::reload($away_ruler)->u_pawn === 2000);
+check('the mustering army is home', (int) IDO_Kingdom::reload($mustering_ruler)->u_pawn === 2000);
+check('the march is closed as recalled', (string) $wpdb->get_var($wpdb->prepare(
+    'SELECT outcome FROM ' . IDO_DB::t('league_marches') . ' WHERE id = %d', (int) $away_march->id)) === 'recalled');
+check('recalling again returns nothing twice', IDO_League_March::recall_all((int) $league->id) === 0
+    && (int) IDO_Kingdom::reload($away_ruler)->u_pawn === 2000);
+
+say('');
 say($fails === 0 ? 'ALL CHECKS PASSED' : "$fails CHECK(S) FAILED");
 exit($fails === 0 ? 0 : 1);

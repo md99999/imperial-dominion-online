@@ -64,6 +64,7 @@ class IDO_League_Status {
                     case 'failed':       return 'The muster failed';
                     case 'cancelled':    return 'Cancelled';
                     case 'lost_contact': return 'No word ever came';
+                    case 'recalled':     return 'Recalled when this site left the league';
                     case 'forfeited':    return 'Forfeited when the board started over';
                     case 'void':         return 'Lost when the board started over';
                 }
