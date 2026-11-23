@@ -158,5 +158,34 @@ check('a name that does not resolve fails closed',
 check('a literal private address is refused before any lookup',
     !IDO_League_URL::is_callable_url('https://192.168.0.10'));
 
+echo "\n=== the addresses handed to the connection are the ones checked ===\n";
+check('a good name yields exactly its checked address',
+    IDO_League_URL::callable_addresses('https://good.example.com') === ['93.184.216.34']);
+check('a bad name yields nothing to connect to',
+    IDO_League_URL::callable_addresses('https://evil.example.com') === null);
+check('an IPv6 name yields its address for pinning',
+    IDO_League_URL::callable_addresses('https://v6.example.com') === ['2606:4700:4700::1111']);
+
+// A rebinding resolver: public to the first lookup, metadata to the next. The
+// connection is pinned to the first answer, so the second is never asked.
+$lookups = 0;
+IDO_League_URL::$resolver = static function (string $host) use (&$lookups): array {
+    $lookups++;
+    return $lookups === 1 ? ['93.184.216.34'] : ['169.254.169.254'];
+};
+$pinned = IDO_League_URL::callable_addresses('https://rebind.example.com');
+check('a rebinding name is checked once and pinned to that answer',
+    $pinned === ['93.184.216.34'] && $lookups === 1);
+check('the address it would rebind to is refused on its own',
+    !IDO_League_URL::is_public_ip('169.254.169.254'));
+
+echo "\n=== only the ports a WordPress site listens on ===\n";
+IDO_League_URL::$resolver = static fn(string $host): array => ['93.184.216.34'];
+check('443 is callable', IDO_League_URL::is_callable_url('https://good.example.com'));
+check('8443 is callable', IDO_League_URL::is_callable_url('https://good.example.com:8443'));
+check('22 is not', !IDO_League_URL::is_callable_url('https://good.example.com:22'));
+check('6379 is not', !IDO_League_URL::is_callable_url('https://good.example.com:6379'));
+check('a public literal on an odd port is not', !IDO_League_URL::is_callable_url('https://93.184.216.34:9200'));
+
 echo "\n" . ($fails === 0 ? "ALL CHECKS PASSED\n" : "$fails CHECK(S) FAILED\n");
 exit($fails === 0 ? 0 : 1);

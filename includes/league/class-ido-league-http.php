@@ -42,8 +42,16 @@ class IDO_League_HTTP {
         if ($normal === null) {
             return self::fail('That address is not one this site will call.');
         }
-        if (!IDO_League_URL::is_callable_url($normal)) {
+        $addresses = IDO_League_URL::callable_addresses($normal);
+        if ($addresses === null) {
             return self::fail('That address resolves somewhere this site will not call.');
+        }
+        $dev = IDO_League_URL::dev_mode();
+        // The address pin below is a cURL option. Without cURL, WordPress falls
+        // back to a transport that resolves the name itself, which would reopen
+        // the rebinding window, so outside development mode the call is refused.
+        if (!$dev && !function_exists('curl_init')) {
+            return self::fail('League traffic needs the PHP cURL extension, and it is not installed.');
         }
         if (!preg_match('/^[a-z-]{1,32}$/', $route)) {
             return self::fail('Bad route.');   // never from a packet; a programming error
@@ -56,11 +64,29 @@ class IDO_League_HTTP {
         // own checks ever ran. The filters are added for this one call and
         // removed immediately, and only when the environment itself says this is
         // a local or development site.
-        $dev = IDO_League_URL::dev_mode();
         $allow_local = static function () { return true; };
         if ($dev) {
             add_filter('http_request_host_is_external', $allow_local, 10, 0);
             add_filter('http_request_args', [__CLASS__, 'allow_local_args'], 10, 1);
+        }
+
+        // Pin the connection to an address that was just checked, so the
+        // library cannot resolve the name a second time and land somewhere
+        // else (DNS rebinding). TLS still verifies against the host name, so a
+        // pinned address that is not really the peer fails the handshake.
+        $pin = null;
+        $only_curl = null;
+        if (!$dev && $addresses !== []) {
+            $host = trim((string) wp_parse_url($normal, PHP_URL_HOST), '[]');
+            $port = (int) (wp_parse_url($normal, PHP_URL_PORT) ?: 443);
+            $ip   = (string) $addresses[0];
+            $entry = $host . ':' . $port . ':' . (strpos($ip, ':') !== false ? '[' . $ip . ']' : $ip);
+            $pin = static function (&$handle) use ($entry): void {
+                curl_setopt($handle, CURLOPT_RESOLVE, [$entry]);
+            };
+            $only_curl = static function () { return ['curl']; };
+            add_action('http_api_curl', $pin, 10, 1);
+            add_filter('http_api_transports', $only_curl, 10, 0);
         }
 
         $response = wp_safe_remote_post($url, [
@@ -70,15 +96,30 @@ class IDO_League_HTTP {
             'headers'     => ['Content-Type' => $content_type],
             'body'        => $payload,
             'user-agent'  => 'ImperialDominionOnline/' . IDO_VERSION,
+            // Stop reading past the cap rather than downloading the lot and
+            // then refusing it: a hostile peer can otherwise stream until PHP
+            // runs out of memory.
+            'limit_response_size' => self::MAX_RESPONSE + 1,
         ]);
 
         if ($dev) {
             remove_filter('http_request_host_is_external', $allow_local, 10);
             remove_filter('http_request_args', [__CLASS__, 'allow_local_args'], 10);
         }
+        if ($pin !== null) {
+            remove_action('http_api_curl', $pin, 10);
+            remove_filter('http_api_transports', $only_curl, 10);
+        }
 
         if (is_wp_error($response)) {
-            return self::fail($response->get_error_message());
+            // Not the library's own message. Its wording (refused, timed out,
+            // reset, certificate) told whoever chose the address what is
+            // listening there, and this text is logged and shown. The one case
+            // an administrator needs to tell apart is a certificate problem.
+            $raw_error = strtolower($response->get_error_message());
+            return self::fail(strpos($raw_error, 'ssl') !== false || strpos($raw_error, 'certificate') !== false
+                ? 'That peer\'s HTTPS certificate could not be verified.'
+                : 'That peer could not be reached.');
         }
 
         $status = (int) wp_remote_retrieve_response_code($response);
